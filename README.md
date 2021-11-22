@@ -26,3 +26,17 @@ To run the server:
 ```
 pipenv run server
 ```
+
+## Configuration via env variables
+
+You can use a local `.env` file in development for setting environment variables. See `.env.example` for available variables, and `config.py` for the place where the variables are loaded.
+
+## Creating and sending JWTs in development
+
+You can create a JWT on https://jwt.io/. Make sure to use the same secret you are using in your development server (the value of `JWT_SECRET`). The algorithm should be `HS256`.
+
+To send a request with a JWT to a server using curl:
+
+```
+curl -H "Authorization: Bearer <JWT GOES HERE>" http://localhost:8080/<your_endpoint>
+```

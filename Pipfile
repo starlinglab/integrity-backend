@@ -9,6 +9,10 @@ aiohttp = "~=3.8"
 # Recommended replacements for certain aiohttp components, for improved performance
 cchardet = "*"
 aiodns = "*"
+# To support development .env files
+python-dotenv = "*"
+# JWT support for AIO HTTP
+aiohttp-jwt = "*"
 
 [dev-packages]
 

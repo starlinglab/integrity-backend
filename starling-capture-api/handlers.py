@@ -1,4 +1,7 @@
 from aiohttp import web
 
+
 async def process_image(request):
-    return web.json_response({'result': 'ok'})
+    response = {"result": "ok", "jwt_payload": request["jwt_payload"]}
+    # TODO(anaulin): Implement.
+    return web.json_response(response)
