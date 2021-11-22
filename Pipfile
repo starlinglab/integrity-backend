@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+# Server framework
+aiohttp = "~=3.8"
+# Recommended replacements for certain aiohttp components, for improved performance
+cchardet = "*"
+aiodns = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.9"
+
+[scripts]
+server = "python starling-capture-api/main.py"
