@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+ api:
+  build:
+   context: .
+   dockerfile: Dockerfile
+  ports:
+   - 8080:8080
+  environment:
+   - JWT_SECRET=seekret
+  volumes:
+   - ./:/api
+   # Empty .venv inside the container
+   - /api/.venv
+  working_dir: /api

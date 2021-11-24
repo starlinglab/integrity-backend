@@ -40,3 +40,14 @@ To send a request with a JWT to a server using curl:
 ```
 curl -H "Authorization: Bearer <JWT GOES HERE>" http://localhost:8080/<your_endpoint>
 ```
+
+## Dockerized Debian development environment
+
+To run the `claim-tool` version in a Debian environment (as it will be in production), use the provided `docker-compose.yml` (and `Dockerfile`).
+
+To get a shell inside the container:
+```
+docker-compose run api bash
+```
+
+Once inside the container, run the usual commands (`pipenv install`, etc).
