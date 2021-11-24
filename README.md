@@ -1,4 +1,9 @@
-# starling-capture-api
+# starling-capture-api <!-- omit in toc -->
+
+- [Dev setup](#dev-setup)
+- [Configuration via env variables](#configuration-via-env-variables)
+- [Creating and sending JWTs in development](#creating-and-sending-jwts-in-development)
+- [Dockerized Debian development environment](#dockerized-debian-development-environment)
 
 ## Dev setup
 
@@ -50,4 +55,4 @@ To get a shell inside the container:
 docker-compose run api bash
 ```
 
-Once inside the container, run the usual commands (`pipenv install`, etc).
+Once inside the container, run the usual commands (`pipenv install`, etc.)
