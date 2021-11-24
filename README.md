@@ -52,7 +52,7 @@ To run the `claim-tool` version in a Debian environment (as it will be in produc
 
 To get a shell inside the container:
 ```
-docker-compose run api bash
+docker-compose run --service-ports api bash
 ```
 
 Once inside the container, run the usual commands (`pipenv install`, etc.)
