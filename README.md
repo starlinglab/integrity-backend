@@ -60,4 +60,4 @@ To get a shell inside the container:
 docker-compose run --service-ports api bash
 ```
 
-Once inside the container, run the usual commands (`pipenv install`, etc.)
+Once inside the container, run the usual commands (`pipenv install`, etc). You will also need a `claim_tool` binary inside your container (you can use `docker cp` to copy it into the container), as well as a directory for image storage.
