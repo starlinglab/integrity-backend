@@ -1,11 +1,14 @@
 from claim_tool import ClaimTool
+from multipart import Multipart
 
 from aiohttp import web
 
 
 async def process_image(request):
+    multipart = await Multipart().read(request)
+
     # TODO(anaulin): Pass in image from request, instead of hardcoded image.
-    return_code = ClaimTool().run(_generate_claim(request), "image.jpg")
+    return_code = ClaimTool().run(_generate_claim(request), multipart["image_filename"])
 
     # TODO(anaulin): Add error handling.
     response = {
