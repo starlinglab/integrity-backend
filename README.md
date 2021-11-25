@@ -1,20 +1,20 @@
 # starling-capture-api <!-- omit in toc -->
 
 - [Dev setup](#dev-setup)
-- [Configuration via env variables](#configuration-via-env-variables)
+- [Configuration](#configuration)
 - [Creating and sending JWTs in development](#creating-and-sending-jwts-in-development)
 - [Dockerized Debian development environment](#dockerized-debian-development-environment)
 
 ## Dev setup
 
-This project uses `pipenv` to manage dependencies and the Python environment (this is like `npm` or `bundler`, but for Python). To install `pipenv` on Mac:
+This is a Python3 project.  This project uses `pipenv` to manage dependencies and the Python environment (this is like `npm` or `bundler`, but for Python). To install `pipenv` on Mac:
 ```bash
 brew install pipenv
 ```
 
 See https://github.com/pypa/pipenv#installation for installation instructions in other systems.
 
-Install all Python dependencies:
+The [Pipfile](./Pipfile) list all our dependencies. To install them:
  ```
  pipenv install
  ```
@@ -32,9 +32,13 @@ To run the server:
 pipenv run server
 ```
 
-## Configuration via env variables
+## Configuration
 
-You can use a local `.env` file in development for setting environment variables. See `.env.example` for available variables, and `config.py` for the place where the variables are loaded.
+The server is configured entirely via environment variables. See [config.py](./starling-capture-api/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
+
+Most importantly, you will need to provide:
+* `CLAIM_TOOL_PATH`: A path to a fully working `claim_tool` binary. The server should have permissions to execute it, and it should be correctly configured with its keys.
+* `IMAGES_DIR`: A path to a directory to store images. The server will need write access to this directory. This will be the persistent storage for the received images with their attestations.
 
 ## Creating and sending JWTs in development
 

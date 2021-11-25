@@ -26,7 +26,7 @@ def start_server():
             )
         ]
     )
-    app.add_routes([web.post("/assets/create", handlers.process_image)])
+    app.add_routes([web.post("/assets/create", handlers.create)])
     _logger.info("Starting up server")
     web.run_app(app)
 
