@@ -44,6 +44,7 @@ class Multipart:
     async def _write_file(self, part):
         local_filename = os.path.join(config.IMAGES_DIR, part.filename)
         # Mode "x" will throw an error if a file with the same name already exists.
+        # TODO: probably need to write to a tmp directory and UUID the name
         with open(local_filename, "xb") as f:
             while True:
                 chunk = await part.read_chunk()
