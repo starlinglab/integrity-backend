@@ -1,5 +1,6 @@
 from aiohttp import web
 from aiohttp_jwt import JWTMiddleware
+from asset_helper import AssetHelper
 from fs_watcher import FsWatcher
 
 import config
@@ -11,19 +12,21 @@ import signal
 import sys
 import time
 
+_asset_helper = AssetHelper()
 _logger = logging.getLogger(__name__)
 _procs = list()
 
-def signalHandler(signum, frame):
+
+def signal_handler(signum, frame):
     '''
     SIGINT handler for the main process.
     '''
-    print('Terminating processes...')
-    killProcesses(_procs)
+    _logger.info('Terminating processes...')
+    kill_processes(_procs)
     sys.exit(0)
 
 
-def killProcesses(procs):
+def kill_processes(procs):
     for proc in procs:
         if proc.is_alive():
             try:
@@ -38,9 +41,9 @@ def killProcesses(procs):
                 pass
 
         if proc.is_alive():
-            print('Process %s [%s] is not terminated' % (proc.pid, proc.name))
+            _logger.info('Process %s [%s] is not terminated' % (proc.pid, proc.name))
         else:
-            print('Process %s [%s] is terminated' % (proc.pid, proc.name))
+            _logger.info('Process %s [%s] is terminated' % (proc.pid, proc.name))
 
 
 def configure_logging():
@@ -49,7 +52,7 @@ def configure_logging():
         level=logging.INFO,
         format="[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s: %(message)s",
         datefmt="%Y-%m-%dT%H:%M:%S%z",
-    )
+    )  
 
 
 def start_api_server():
@@ -69,13 +72,23 @@ def start_api_server():
 def start_fs_watcher():
     configure_logging()
     _logger.info("Starting up file system watcher")
-    FsWatcher().watch(config.IMAGES_DIR)
+    FsWatcher().watch(_asset_helper.get_assets_shared())
 
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signalHandler)
+    signal.signal(signal.SIGINT, signal_handler)
     configure_logging()
 
+    # Configure asset directories.
+    _asset_helper.init_dirs()
+    _logger.info("Internal assets directory: " + _asset_helper.get_assets_internal())
+    _logger.info("Internal temporary assets directory: " + _asset_helper.get_assets_internal_create())
+    _logger.info("Internal assets creation directory: " + _asset_helper.get_assets_internal_create())
+    _logger.info("Shared assets update directory: " + _asset_helper.get_assets_update())
+    _logger.info("Shared assets store directory: " + _asset_helper.get_assets_store())
+    _logger.info("Shared assets directory: " + _asset_helper.get_assets_shared())
+
+    # Start up processes for services.
     proc_fs_watcher = multiprocessing.Process(name='proc_fs_watcher', target=start_fs_watcher)
     _procs.append(proc_fs_watcher)
     proc_api_server = multiprocessing.Process(name='proc_api_server', target=start_api_server)

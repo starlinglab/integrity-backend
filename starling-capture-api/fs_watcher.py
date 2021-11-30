@@ -16,6 +16,7 @@ class FsWatcher:
             observer.stop()
         observer.join()
 
+
     class Handler(PatternMatchingEventHandler):
         """Handles file changes."""
         patterns = ["*.jpg", "*.jpeg"]
