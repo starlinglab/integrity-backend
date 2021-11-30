@@ -13,6 +13,8 @@ aiodns = "*"
 python-dotenv = "*"
 # JWT support for AIO HTTP
 aiohttp-jwt = "*"
+# Filesystem watcher
+watchdog = "~=2.1.6"
 
 [dev-packages]
 
