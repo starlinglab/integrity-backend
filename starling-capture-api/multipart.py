@@ -45,7 +45,6 @@ class Multipart:
                 _logger.info("Ignoring (for now) multipart part %s", part.name)
         return multipart_data
 
-
     async def _write_file(self, part):
         # Write file in temporary directory.
         tmp_file = _asset_helper.get_tmp_file_fullpath(".jpg")

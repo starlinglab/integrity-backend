@@ -4,6 +4,8 @@ from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
 _logger = logging.getLogger(__name__)
+
+
 class FsWatcher:
     """Watches directories for file changes."""
 
@@ -19,9 +21,9 @@ class FsWatcher:
             _logger.warning("Caught keyboard interrupt. Stopping FsWatcher.")
         observer.join()
 
-
     class Handler(PatternMatchingEventHandler):
         """Handles file changes."""
+
         patterns = ["*.jpg", "*.jpeg"]
 
         def process(self, event):

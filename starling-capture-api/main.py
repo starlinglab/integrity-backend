@@ -18,10 +18,10 @@ _procs = list()
 
 
 def signal_handler(signum, frame):
-    '''
+    """
     SIGINT handler for the main process.
-    '''
-    _logger.info('Terminating processes...')
+    """
+    _logger.info("Terminating processes...")
     kill_processes(_procs)
     sys.exit(0)
 
@@ -41,9 +41,9 @@ def kill_processes(procs):
                 _logger.warning("Caught error while killing processes: %s", err)
 
         if proc.is_alive():
-            _logger.info('Process %s [%s] is not terminated' % (proc.pid, proc.name))
+            _logger.info("Process %s [%s] is not terminated" % (proc.pid, proc.name))
         else:
-            _logger.info('Process %s [%s] is terminated' % (proc.pid, proc.name))
+            _logger.info("Process %s [%s] is terminated" % (proc.pid, proc.name))
 
 
 def configure_logging():
@@ -71,7 +71,10 @@ def start_api_server():
 
 def start_fs_watcher():
     configure_logging()
-    _logger.info("Starting up file system watcher for directory: %s", _asset_helper.get_assets_shared())
+    _logger.info(
+        "Starting up file system watcher for directory: %s",
+        _asset_helper.get_assets_shared(),
+    )
     FsWatcher().watch(_asset_helper.get_assets_shared())
 
 
@@ -82,16 +85,28 @@ if __name__ == "__main__":
     # Configure asset directories.
     _asset_helper.init_dirs()
     _logger.info("Internal assets directory: %s", _asset_helper.get_assets_internal())
-    _logger.info("Internal temporary assets directory: %s", _asset_helper.get_assets_internal_create())
-    _logger.info("Internal assets creation directory: %s", _asset_helper.get_assets_internal_create())
-    _logger.info("Shared assets update directory: %s", _asset_helper.get_assets_update())
+    _logger.info(
+        "Internal temporary assets directory: %s",
+        _asset_helper.get_assets_internal_create(),
+    )
+    _logger.info(
+        "Internal assets creation directory: %s",
+        _asset_helper.get_assets_internal_create(),
+    )
+    _logger.info(
+        "Shared assets update directory: %s", _asset_helper.get_assets_update()
+    )
     _logger.info("Shared assets store directory: %s", _asset_helper.get_assets_store())
     _logger.info("Shared assets directory: %s", _asset_helper.get_assets_shared())
 
     # Start up processes for services.
-    proc_fs_watcher = multiprocessing.Process(name='proc_fs_watcher', target=start_fs_watcher)
+    proc_fs_watcher = multiprocessing.Process(
+        name="proc_fs_watcher", target=start_fs_watcher
+    )
     _procs.append(proc_fs_watcher)
-    proc_api_server = multiprocessing.Process(name='proc_api_server', target=start_api_server)
+    proc_api_server = multiprocessing.Process(
+        name="proc_api_server", target=start_api_server
+    )
     _procs.append(proc_api_server)
 
     proc_fs_watcher.start()

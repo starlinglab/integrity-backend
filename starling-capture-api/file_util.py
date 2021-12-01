@@ -3,6 +3,7 @@ from hashlib import sha256
 import os
 import uuid
 
+
 class FileUtil:
     """Manages file system and file names."""
 
@@ -20,7 +21,6 @@ class FileUtil:
             return True
         return False
 
-
     def generate_uuid(self):
         """Generates a randomly generated UUID.
 
@@ -28,7 +28,6 @@ class FileUtil:
             the UUID
         """
         return str(uuid.uuid4())
-
 
     def digest_sha256(self, file_path):
         """Generates SHA-256 digest of a file.

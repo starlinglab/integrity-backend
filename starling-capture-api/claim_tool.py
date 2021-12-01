@@ -15,7 +15,6 @@ _logger = logging.getLogger(__name__)
 class ClaimTool:
     """Manages interactions with the claim_tool binary."""
 
-
     def run(self, claim_dict, asset_fullpath):
         """Run claim_tool on the given filename with the provided claim.
 
@@ -36,7 +35,7 @@ class ClaimTool:
             "-o",
             tmp_file,
             "-p",
-            asset_fullpath
+            asset_fullpath,
         ]
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         popen.wait()
@@ -48,6 +47,9 @@ class ClaimTool:
             internal_file = _asset_helper.get_internal_file_fullpath(tmp_file)
             shutil.move(tmp_file, internal_file)
             shutil.copy2(internal_file, _asset_helper.get_assets_shared())
-            _logger.info("New file added to the internal and shared assets directories: %s", internal_file)
+            _logger.info(
+                "New file added to the internal and shared assets directories: %s",
+                internal_file,
+            )
 
         return popen.returncode
