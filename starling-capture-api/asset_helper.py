@@ -59,28 +59,10 @@ class AssetHelper:
 
 
     def get_create_file_fullpath(self, from_file):
-        file_name, file_extension = os.path.splitext(from_file);
+        _, file_extension = os.path.splitext(from_file);
         return os.path.join(dir_internal_create, _file_util.digest_sha256(from_file) + file_extension)
 
 
     def get_internal_file_fullpath(self, from_file):
-        file_name, file_extension = os.path.splitext(from_file);
+        _, file_extension = os.path.splitext(from_file);
         return os.path.join(dir_internal_assets, _file_util.digest_sha256(from_file) + file_extension)
-
-
-    def digest_sha256(self, file_path):
-        """Generates SHA-256 digest of a file.
-
-        Args:
-            file_path: the local path to a file
-
-        Returns:
-            the HEX-encoded SHA-256 digest of the input file
-        """
-        hasher = sha256()
-        with open(file_path, "rb") as f:
-            # Parse file in blocks
-            for byte_block in iter(lambda: f.read(4096), b""):
-                hasher.update(byte_block)
-            return hasher.hexdigest()
-        # TODO: handle error (image not found, etc.)

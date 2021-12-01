@@ -1,7 +1,9 @@
-import time  
-from watchdog.observers import Observer  
+import logging
+import time
+from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
+_logger = logging.getLogger(__name__)
 class FsWatcher:
     """Watches directories for file changes."""
 
@@ -14,6 +16,7 @@ class FsWatcher:
                 time.sleep(1)
         except KeyboardInterrupt:
             observer.stop()
+            _logger.warning("Caught keyboard interrupt. Stopping FsWatcher.")
         observer.join()
 
 

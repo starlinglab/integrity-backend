@@ -28,7 +28,7 @@ class ClaimTool:
         """
         tmp_file = _asset_helper.get_tmp_file_fullpath(".jpg")
 
-        # TODO: Should the original image also be set as a parent?
+        # TODO: Update this code to set the appropriate claim and parent file in each case.
         args = [
             config.CLAIM_TOOL_PATH,
             "-c",
@@ -48,6 +48,6 @@ class ClaimTool:
             internal_file = _asset_helper.get_internal_file_fullpath(tmp_file)
             shutil.move(tmp_file, internal_file)
             shutil.copy2(internal_file, _asset_helper.get_assets_shared())
-            _logger.info("New file added to the internal and shared assets directories: " + internal_file)
+            _logger.info("New file added to the internal and shared assets directories: %s", internal_file)
 
         return popen.returncode
