@@ -56,7 +56,6 @@ def configure_logging():
 
 
 def start_api_server():
-    configure_logging()
     app = web.Application(
         middlewares=[
             JWTMiddleware(
@@ -70,7 +69,6 @@ def start_api_server():
 
 
 def start_fs_watcher():
-    configure_logging()
     _logger.info(
         "Starting up file system watcher for directory: %s",
         _asset_helper.get_assets_shared(),

@@ -6,8 +6,10 @@ import watchdog
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-_logger = logging.getLogger(__name__)
+from filecoin import Filecoin
 
+_logger = logging.getLogger(__name__)
+_filecoin = Filecoin()
 
 class FsWatcher:
     """Watches directories for file changes."""
@@ -49,7 +51,13 @@ class FsWatcher:
             Args:
                 event: the file change event
             """
-            print(event.src_path, event.event_type, event.is_directory)
+            _logger.info(f"Processing event: {event}")
+            # TODO: Only process files in the appropriate directories.
+            # TODO: Something in the implementation of the upload triggers another
+            #       FileModified event, which causes a second upload (but only a second one).
+            #       Figure out how to prevent that from happening.
+            cid = _filecoin.upload(event.src_path)
+            _logger.info(f"Uploaded {event.src_path}. CID: {cid}")
 
         def on_any_event(self, event):
             """Receives events of all types and dispatches them appropriately."""

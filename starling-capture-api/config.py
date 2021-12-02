@@ -17,3 +17,6 @@ INTERNAL_ASSET_STORE = os.environ.get("INTERNAL_ASSET_STORE")
 
 # Local directory for synchronizing with a remote file system. Must exist and be readable by the server.
 SHARED_FILE_SYSTEM = os.environ.get("SHARED_FILE_SYSTEM")
+
+# API token for the web3.storage service
+WEB3_STORAGE_API_TOKEN= os.environ.get("WEB3_STORAGE_API_TOKEN")
