@@ -19,6 +19,11 @@ The [Pipfile](./Pipfile) list all our dependencies. To install them:
  pipenv install
  ```
 
+ To install both development and default dependencies:
+ ```
+ pipenv install --dev
+ ```
+
 To get a shell within the Python environment for this project:
 ```
 pipenv shell

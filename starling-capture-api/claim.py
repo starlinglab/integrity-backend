@@ -1,4 +1,3 @@
-
 class Claim:
     """Generates the claim JSON."""
 
@@ -26,4 +25,3 @@ class Claim:
                 }
             ],
         }
-

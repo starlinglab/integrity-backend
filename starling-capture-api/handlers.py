@@ -8,7 +8,7 @@ from aiohttp import web
 async def create(request):
     data = await Multipart().read(request)
     claim = Claim().generate(request["jwt_payload"])
-    return_code = ClaimTool().run(claim, data["image_filename"])
+    return_code = ClaimTool().run(claim, data["asset_fullpath"])
 
     # TODO(anaulin): Add error handling.
     # TODO(anaulin): Add all the required metadata, errors, etc, to response.
