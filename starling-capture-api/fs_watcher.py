@@ -34,6 +34,10 @@ class FsWatcher:
         patterns = ["*.jpg", "*.jpeg"]
 
         def on_created(self, event):
+            # TODO: Figure out what do we want to do with the returned data
             _logger.info(f"Processing event: {event}")
             cid = _filecoin.upload(event.src_path)
             _logger.info(f"Uploaded {event.src_path}. CID: {cid}")
+            # This will always be None at this point. Here only for demonstration purposes.
+            maybe_pieceCid = _filecoin.get_status(cid)
+            _logger.info(f"PieceCID: {maybe_pieceCid}")
