@@ -1,6 +1,7 @@
 import config
 import os
 import requests
+import urllib
 
 _WEB3_STORAGE_BASE_URL = "https://api.web3.storage"
 _UPLOAD_URL = f"{_WEB3_STORAGE_BASE_URL}/upload"
@@ -24,15 +25,16 @@ class Filecoin:
         Returns:
             cid of the uploaded file
         """
-        # TODO: figure out what filename we want to give for the upload -- just the last part of the filename?
         files = {
             "file": (
-                os.path.basename(file_path),
+                file_path,
                 open(file_path, "rb"),
                 "application/octet-stream",
             )
         }
-        response = requests.post(_UPLOAD_URL, headers=self.auth_header, files=files)
+        # TODO: figure out what filename we want to give for the upload -- just the last part of the filename?
+        headers = { **self.auth_header, "X-NAME": os.path.basename(file_path) }
+        response = requests.post(_UPLOAD_URL, headers=headers, files=files)
         # TODO: add error handling
         return response.json()["cid"]
 
