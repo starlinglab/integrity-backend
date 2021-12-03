@@ -1,0 +1,81 @@
+{
+    "vendor": "{{vendor}}",
+    "recorder": "{{recorder}}",
+    "assertions": [
+        {
+            "label": "stds.schema-org.CreativeWork",
+            "data": {
+                "@context": "https://schema.org",
+                "@type": "CreativeWork",
+                "author": [
+                    {
+                        "@type": "Person",
+                        "credential": [
+                        ],
+                        "identifier": "{{author_identifier}}",
+                        "name": "{{author_name}}"
+                    }
+                ]
+            }
+        },
+        {
+            "label": "c2pa.actions",
+            "data": {
+                "actions": [
+                    {
+                        "action": "c2pa.created",
+                        "when": "{{created_timestamp}}"
+                    }
+                ]
+            }
+        },
+        {
+            "label": "stds.exif",
+            "data": {
+                "@context": {
+                    "exif": "http://ns.adobe.com/exif/1.0/"
+                },
+                "exif:GPSLatitude": "{{gps_latitude}}",
+                "exif:GPSLongitude": "{{gps_longitude}}"
+            }
+        },
+        {
+            "label": "stds.iptc.photo-metadata",
+            "data": {
+                "@context": {
+                    "Iptc4xmpExt": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+                    "dc" : "http://purl.org/dc/elements/1.1/"
+                },
+                "dc:creator": [ "{{author_name}}" ],
+                "dc:rights": "{{copyright}}",
+                "Iptc4xmpExt:LocationCreated": {
+                    "Iptc4xmpExt:CountryCode": "{{location_country_code}}",
+                    "Iptc4xmpExt:CountryName": "{{location_country_name}}",
+                    "Iptc4xmpExt:ProviceState": "{{location_province_state}}",
+                    "Iptc4xmpExt:City": "{{location_city}}",
+                    "Iptc4xmpExt:Sublocation": "{{location_sublocation}}",
+                    "Iptc4xmpExt:LocationDetails": "{{location_location_details}}"
+                }
+            }
+        },
+        {
+            "label": "org.starlinglab.integrity",
+            "data": {
+                "starling:Identifier": "{{starling_identifier}}",
+                "starling:Signatures": [
+                    {
+                        "starling:Provider": "{{starling_signature_provider}}",
+                        "starling:PublicKey": "{{starling_signature_public_key}}",
+                        "starling:SignedMessage": "{{starling_signature_signed_message}}",
+                        "starling:SignedMessageDescription": "{{starling_signature_signed_message_description}}",
+                        "starling:AuthenticatedPublicData": {
+                            "starling:AssetHash": "{{starling_signature_authenticated_public_data_asset_hash}}",
+                            "starling:AssetMimeType": "{{starling_signature_authenticated_public_data_asset_mime_type}}",
+                            "starling:AssetCreatedTimestamp": "{{starling_signature_authenticated_public_data_asset_created_timestamp}}"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

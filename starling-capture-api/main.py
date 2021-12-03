@@ -12,6 +12,8 @@ import signal
 import sys
 import time
 
+from claim import Claim
+
 _asset_helper = AssetHelper()
 _logger = logging.getLogger(__name__)
 _procs = list()
