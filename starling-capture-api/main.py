@@ -78,20 +78,7 @@ if __name__ == "__main__":
 
     # Configure asset directories.
     _asset_helper.init_dirs()
-    _logger.info("Internal assets directory: %s", _asset_helper.get_assets_internal())
-    _logger.info(
-        "Internal temporary assets directory: %s",
-        _asset_helper.get_assets_internal_create(),
-    )
-    _logger.info(
-        "Internal assets creation directory: %s",
-        _asset_helper.get_assets_internal_create(),
-    )
-    _logger.info(
-        "Shared assets update directory: %s", _asset_helper.get_assets_update()
-    )
-    _logger.info("Shared assets store directory: %s", _asset_helper.get_assets_store())
-    _logger.info("Shared assets directory: %s", _asset_helper.get_assets_shared())
+    _asset_helper.log_dirs()
 
     # Start up processes for services.
     proc_fs_watcher = multiprocessing.Process(

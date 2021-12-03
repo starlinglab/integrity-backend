@@ -46,7 +46,7 @@ class ClaimTool:
             # Copy the C2PA-injected asset to both the internal and shared asset directories.
             internal_file = _asset_helper.get_internal_file_fullpath(tmp_file)
             shutil.move(tmp_file, internal_file)
-            shutil.copy2(internal_file, _asset_helper.get_assets_shared())
+            shutil.copy2(internal_file, _asset_helper.get_assets_create_output())
             _logger.info(
                 "New file added to the internal and shared assets directories: %s",
                 internal_file,
