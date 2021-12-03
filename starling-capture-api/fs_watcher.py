@@ -1,9 +1,13 @@
 import logging
 import time
+
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
+from filecoin import Filecoin
+
 _logger = logging.getLogger(__name__)
+_filecoin = Filecoin()
 
 
 class FsWatcher:
@@ -12,6 +16,7 @@ class FsWatcher:
     def watch(self, dir_path):
         observer = Observer()
         observer.schedule(self.Handler(), recursive=True, path=dir_path)
+        _logger.info("Starting up file system watcher for directory: %s", dir_path)
         observer.start()
         try:
             while True:
@@ -24,24 +29,15 @@ class FsWatcher:
     class Handler(PatternMatchingEventHandler):
         """Handles file changes."""
 
+        # File patterns we want to watch for
+        # Overrides the patterns property of PatternMatchingEventHandler
         patterns = ["*.jpg", "*.jpeg"]
 
-        def process(self, event):
-            """Processes file change event.
-
-            Args:
-                event: the file change event
-            """
-            print(event.src_path, event.event_type, event.is_directory)
-
         def on_created(self, event):
-            self.process(event)
-
-        def on_modified(self, event):
-            self.process(event)
-
-        def on_moved(self, event):
-            self.process(event)
-
-        def on_deleted(self, event):
-            self.process(event)
+            # TODO: Figure out what do we want to do with the returned data
+            _logger.info(f"Processing event: {event}")
+            cid = _filecoin.upload(event.src_path)
+            _logger.info(f"Uploaded {event.src_path}. CID: {cid}")
+            # This will always be None at this point. Here only for demonstration purposes.
+            maybe_pieceCid = _filecoin.get_status(cid)
+            _logger.info(f"PieceCID: {maybe_pieceCid}")
