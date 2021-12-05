@@ -1,43 +1,61 @@
-import logging
-import time
+from actions import Actions
+from asset_helper import AssetHelper
 
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-from filecoin import Filecoin
+import logging
+import time
 
+_actions = Actions()
+_asset_helper = AssetHelper()
 _logger = logging.getLogger(__name__)
-_filecoin = Filecoin()
 
 
 class FsWatcher:
     """Watches directories for file changes."""
 
-    def watch(self, dir_path):
+    def watch(self):
         observer = Observer()
-        observer.schedule(self.Handler(), recursive=True, path=dir_path)
-        _logger.info("Starting up file system watcher for directory: %s", dir_path)
+        observer.schedule(self.AddHandler(), recursive=True, path=_asset_helper.get_assets_add())
+        observer.schedule(self.UpdateHandler(), recursive=True, path=_asset_helper.get_assets_update())
+        observer.schedule(self.StoreHandler(), recursive=True, path=_asset_helper.get_assets_store())
+        _logger.info("Starting up file system watcher for action directories.")
         observer.start()
         try:
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
             observer.stop()
-            _logger.warning("Caught keyboard interrupt. Stopping FsWatcher.")
+            _logger.warning("Caught keyboard interrupt. Stopping FsWatcher.")
         observer.join()
 
-    class Handler(PatternMatchingEventHandler):
-        """Handles file changes."""
+    class AddHandler(PatternMatchingEventHandler):
+        """Handles file changes for add action."""
 
         # File patterns we want to watch for
         # Overrides the patterns property of PatternMatchingEventHandler
         patterns = ["*.jpg", "*.jpeg"]
 
         def on_created(self, event):
-            # TODO: Figure out what do we want to do with the returned data
-            _logger.info(f"Processing event: {event}")
-            cid = _filecoin.upload(event.src_path)
-            _logger.info(f"Uploaded {event.src_path}. CID: {cid}")
-            # This will always be None at this point. Here only for demonstration purposes.
-            maybe_pieceCid = _filecoin.get_status(cid)
-            _logger.info(f"PieceCID: {maybe_pieceCid}")
+            _actions.add(event.src_path)
+
+    class UpdateHandler(PatternMatchingEventHandler):
+        """Handles file changes for update action."""
+
+        # File patterns we want to watch for
+        # Overrides the patterns property of PatternMatchingEventHandler
+        patterns = ["*.jpg", "*.jpeg"]
+
+        def on_created(self, event):
+            _actions.update(event.src_path)
+
+    class StoreHandler(PatternMatchingEventHandler):
+        """Handles file changes for store action."""
+
+        # File patterns we want to watch for
+        # Overrides the patterns property of PatternMatchingEventHandler
+        patterns = ["*.jpg", "*.jpeg"]
+
+        def on_created(self, event):
+            _actions.store(event.src_path)

@@ -1,13 +1,16 @@
 from asset_helper import AssetHelper
 from claim import Claim
 from claim_tool import ClaimTool
+from filecoin import Filecoin
 
 import logging
+import os
 import shutil
 
 _asset_helper = AssetHelper()
 _claim = Claim()
 _claim_tool = ClaimTool()
+_filecoin = Filecoin()
 _logger = logging.getLogger(__name__)
 
 
@@ -52,10 +55,15 @@ class Actions:
         Args:
             asset_fullpath: the local path to the asset file
         """
-        _logger.error(
-            "Failed to process asset with the add action: %s",
-            asset_fullpath
+        # Copy asset to both the internal and shared asset directories.
+        internal_file = _asset_helper.get_internal_file_fullpath(asset_fullpath)
+        shutil.move(asset_fullpath, internal_file)
+        shutil.copy2(internal_file, _asset_helper.get_assets_add_output())
+        _logger.info(
+            "New file added to the internal and shared assets directories: %s",
+            internal_file
         )
+        # TODO(ben): handle file errors
 
     def update(self, asset_fullpath):
         """Process asset with update action.
@@ -64,10 +72,36 @@ class Actions:
         Args:
             asset_fullpath: the local path to the asset file
         """
-        _logger.error(
-            "Failed to process asset with the update action: %s",
-            asset_fullpath
-        )
+        # Create temporary files to work with.
+        tmp_asset_file = _asset_helper.get_tmp_file_fullpath(".jpg")
+        tmp_claim_file = _asset_helper.get_tmp_file_fullpath(".json")
+        parent_file = os.path.join(_asset_helper.get_assets_internal(), os.path.basename(asset_fullpath))
+
+
+        # Inject create claim and read back from file.
+        claim = _claim.generate_update()
+        shutil.copy2(asset_fullpath, tmp_asset_file)
+        inject_success = False
+        if os.path.isfile(parent_file):
+            _logger.info("Update action found parent file for asset: %s", parent_file)
+            if _claim_tool.run_claim_inject(claim, tmp_asset_file, parent_file):
+                if _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file):
+                    # Copy the C2PA-injected asset to both the internal and shared asset directories.
+                    internal_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
+                    shutil.move(tmp_asset_file, internal_file)
+                    shutil.copy2(internal_file, _asset_helper.get_assets_update_output())
+                    _logger.info(
+                        "New file added to the internal and shared assets directories: %s",
+                        internal_file
+                    )
+                    return
+            _logger.error(
+                "Failed to process asset with the update action: %s",
+                asset_fullpath
+            )
+        else:
+            _logger.error("Update action found no parent file for asset: %s", asset_fullpath)
+
 
     def store(self, asset_fullpath):
         """Process asset with store action.
@@ -76,6 +110,13 @@ class Actions:
         Args:
             asset_fullpath: the local path to the asset file
         """
+        # # TODO: Figure out what do we want to do with the returned data
+        # _logger.info(f"Processing event: {event}")
+        # cid = _filecoin.upload(event.src_path)
+        # _logger.info(f"Uploaded {event.src_path}. CID: {cid}")
+        # # This will always be None at this point. Here only for demonstration purposes.
+        # maybe_pieceCid = _filecoin.get_status(cid)
+        # _logger.info(f"PieceCID: {maybe_pieceCid}")
         _logger.error(
             "Failed to process asset with the store action: %s",
             asset_fullpath

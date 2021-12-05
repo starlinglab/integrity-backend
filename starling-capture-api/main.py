@@ -58,6 +58,7 @@ def configure_logging():
 
 
 def start_api_server():
+    configure_logging()
     app = web.Application(
         middlewares=[
             JWTMiddleware(
@@ -71,7 +72,8 @@ def start_api_server():
 
 
 def start_fs_watcher():
-    FsWatcher().watch(_asset_helper.get_assets_store())
+    configure_logging()
+    FsWatcher().watch()
 
 
 if __name__ == "__main__":

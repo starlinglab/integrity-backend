@@ -39,3 +39,33 @@ class Claim:
             # TODO
 
         return claim
+
+    def generate_update(self):
+        """Generates a claim for the 'update' action.
+
+        Returns:
+            a dictionary containing the 'create' claim data
+        """
+        # TODO(ben)
+        claim_file_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "c2pa_claims/claim_create.json"
+        )
+        with open(claim_file_path, "r") as claim_file:
+            claim = json.load(claim_file)
+        return claim
+
+    def generate_store(self):
+        """Generates a claim for the 'update' action.
+
+        Returns:
+            a dictionary containing the 'create' claim data
+        """
+        # TODO(ben)
+        claim_file_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "c2pa_claims/claim_create.json"
+        )
+        with open(claim_file_path, "r") as claim_file:
+            claim = json.load(claim_file)
+        return claim
