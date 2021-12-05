@@ -28,7 +28,7 @@ class Multipart:
             request: an aiohttp request containing multipart data
 
         Returns:
-            a dictionary with metadata about the multipart sections encountered
+            a dictionary with metadata about the multipart sections encountered
         """
         multipart_data = {}
         reader = await request.multipart()

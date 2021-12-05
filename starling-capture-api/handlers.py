@@ -1,5 +1,4 @@
-from claim import Claim
-from claim_tool import ClaimTool
+from actions import Actions
 from multipart import Multipart
 
 from aiohttp import web
@@ -7,14 +6,13 @@ from aiohttp import web
 
 async def create(request):
     data = await Multipart().read(request)
-    claim = Claim().generate_create(request["jwt_payload"])
-    return_code = ClaimTool().run(claim, data["asset_fullpath"])
+    Actions().create(data["asset_fullpath"], request["jwt_payload"])
 
     # TODO(anaulin): Add error handling.
     # TODO(anaulin): Add all the required metadata, errors, etc, to response.
     response = {
         "result": "ok",
+        "asset_fullpath": data["asset_fullpath"],
         "jwt_payload": request["jwt_payload"],
-        "claim_tool_code": return_code,
     }
     return web.json_response(response)

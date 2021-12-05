@@ -36,7 +36,8 @@
                     "exif": "http://ns.adobe.com/exif/1.0/"
                 },
                 "exif:GPSLatitude": "{{gps_latitude}}",
-                "exif:GPSLongitude": "{{gps_longitude}}"
+                "exif:GPSLongitude": "{{gps_longitude}}",
+                "exif:GPSTimeStamp": "{{gps_timestamp}}"
             }
         },
         {
