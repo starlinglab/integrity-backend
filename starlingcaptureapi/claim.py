@@ -33,11 +33,11 @@ class Claim:
                     assertion["data"]["author"][0]["name"] = jwt_payload["author"][
                         "name"
                     ]
-                    break
+                    continue
                 if assertion["label"] == "stds.iptc.photo-metadata":
                     assertion["data"]["dc:creator"] = [jwt_payload["author"]["name"]]
                     assertion["data"]["dc:rights"] = jwt_payload["copyright"]
-                    break
+                    continue
 
             # Replace claim values with values from HTTP POST.
             # TODO
@@ -82,3 +82,17 @@ class Claim:
                     break
 
         return claim
+
+    def assertions_by_label(self, claim_dict):
+        """Helper to index existing assertions in a Claim by their label.
+
+        Args:
+            claim_dict: a Python dictionary containing claim data
+
+        Returns:
+            a dictionary mapping label string to an assertion dictionary
+        """
+        assertions_by_label = {}
+        for assertion in claim_dict["assertions"]:
+            assertions_by_label[assertion["label"]] = assertion
+        return assertions_by_label

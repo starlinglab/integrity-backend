@@ -37,9 +37,14 @@ To run the server:
 pipenv run server
 ```
 
+To run the tests:
+```
+pipenv run pytest
+```
+
 ## Configuration
 
-The server is configured entirely via environment variables. See [config.py](./starling-capture-api/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
+The server is configured entirely via environment variables. See [config.py](./starlingcaptureapi/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
 
 Most importantly, you will need to provide:
 * `CLAIM_TOOL_PATH`: A path to a fully working `claim_tool` binary. The server should have permissions to execute it, and it should be correctly configured with its keys.

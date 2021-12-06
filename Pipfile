@@ -21,14 +21,17 @@ requests = "~=2.26"
 [dev-packages]
 ### Development-only packages ###
 ### To install default and dev packages: pipenv install --dev
-# For automatic Python file formatting.
+
+# For automatic Python file formatting
 black = "*"
+# For automated testing
+pytest = "*"
 
 [requires]
 python_version = "3.9"
 
 [scripts]
 # Automatically formats all Python files
-autoformat = "black starling-capture-api"
+autoformat = "black starlingcaptureapi"
 # Starts the server
-server = "python starling-capture-api/main.py"
+server = "python starlingcaptureapi/main.py"
