@@ -1,0 +1,41 @@
+{
+    "vendor": "starlinglab",
+    "recorder": "Starling Integrity",
+    "assertions": [
+        {
+            "label": "stds.schema-org.CreativeWork",
+            "data": {
+                "@context": "https://schema.org",
+                "@type": "CreativeWork",
+                "author": [
+                    {
+                        "@type": "Organization",
+                        "credential": [
+                        ],
+                        "identifier": "https://starlinglab.org",
+                        "name": "Starling Lab"
+                    }
+                ]
+            }
+        },
+        {
+            "label": "c2pa.actions",
+            "data": {
+                "actions": [
+                    {
+                        "action": "c2pa.saved",
+                        "when": "{{saved_timestamp}}"
+                    }
+                ]
+            }
+        },
+        {
+            "label": "org.starlinglab.storage.ipfs",
+            "data": {
+                "starling:Provider": "{{starling_ipfs_provider}}",
+                "starling:IpfsCid": "{{starling_ipfs_cid}}",
+                "starling:AssetStoredTimestamp": "{{starling_asset_stored_timestamp}}"
+            }
+        }
+    ]
+}

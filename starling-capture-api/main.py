@@ -12,6 +12,8 @@ import signal
 import sys
 import time
 
+from claim import Claim
+
 _asset_helper = AssetHelper()
 _logger = logging.getLogger(__name__)
 _procs = list()
@@ -56,6 +58,7 @@ def configure_logging():
 
 
 def start_api_server():
+    configure_logging()
     app = web.Application(
         middlewares=[
             JWTMiddleware(
@@ -69,7 +72,8 @@ def start_api_server():
 
 
 def start_fs_watcher():
-    FsWatcher().watch(_asset_helper.get_assets_store())
+    configure_logging()
+    FsWatcher().watch()
 
 
 if __name__ == "__main__":
@@ -78,20 +82,7 @@ if __name__ == "__main__":
 
     # Configure asset directories.
     _asset_helper.init_dirs()
-    _logger.info("Internal assets directory: %s", _asset_helper.get_assets_internal())
-    _logger.info(
-        "Internal temporary assets directory: %s",
-        _asset_helper.get_assets_internal_create(),
-    )
-    _logger.info(
-        "Internal assets creation directory: %s",
-        _asset_helper.get_assets_internal_create(),
-    )
-    _logger.info(
-        "Shared assets update directory: %s", _asset_helper.get_assets_update()
-    )
-    _logger.info("Shared assets store directory: %s", _asset_helper.get_assets_store())
-    _logger.info("Shared assets directory: %s", _asset_helper.get_assets_shared())
+    _asset_helper.log_dirs()
 
     # Start up processes for services.
     proc_fs_watcher = multiprocessing.Process(

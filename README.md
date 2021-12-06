@@ -52,8 +52,15 @@ You can create a JWT on https://jwt.io/. Make sure to use the same secret you ar
 To send a request with a JWT to a server using curl:
 
 ```
-curl -X POST  http://localhost:8080/assets/create -H "Authorization: Bearer <JWT>" \
-     -H "Content-Type: multipart/form-data" -F "file=@<image_filename>>"
+curl -X POST http://localhost:8080/assets/create \
+     -H "Authorization: Bearer <JWT>" \
+     -H "Content-Type: multipart/form-data" \
+     -F "file=@<image_filename>>"
+```
+
+Sample JWT from `jwt-payload.json.example`:
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3IiOnsiaWRlbnRpZmllciI6Imh0dHBzOi8vaHlwaGEuY29vcCIsIm5hbWUiOiJCZW5lZGljdCBMYXUifSwiY29weXJpZ2h0IjoiQ29weXJpZ2h0IChDKSAyMDIxIEh5cGhhIFdvcmtlciBDby1vcGVyYXRpdmUuIEFsbCBSaWdodHMgUmVzZXJ2ZWQuIn0._GVB0x7EGHdxMW78XftpO4nLiAU11g7WtdJvyrrDMws
 ```
 
 ## Dockerized Debian development environment

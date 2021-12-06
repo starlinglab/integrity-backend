@@ -19,4 +19,4 @@ INTERNAL_ASSET_STORE = os.environ.get("INTERNAL_ASSET_STORE")
 SHARED_FILE_SYSTEM = os.environ.get("SHARED_FILE_SYSTEM")
 
 # API token for the web3.storage service
-WEB3_STORAGE_API_TOKEN= os.environ.get("WEB3_STORAGE_API_TOKEN")
+WEB3_STORAGE_API_TOKEN = os.environ.get("WEB3_STORAGE_API_TOKEN")

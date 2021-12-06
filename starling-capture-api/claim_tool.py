@@ -1,55 +1,73 @@
-from file_util import FileUtil
-from asset_helper import AssetHelper
-
 import config
 import json
 import logging
 import os
-import shutil
 import subprocess
 
-_asset_helper = AssetHelper()
 _logger = logging.getLogger(__name__)
 
 
 class ClaimTool:
     """Manages interactions with the claim_tool binary."""
 
-    def run(self, claim_dict, asset_fullpath):
-        """Run claim_tool on the given filename with the provided claim.
+    def run_claim_inject(self, claim_dict, asset_fullpath, parent_asset_fullpath):
+        """Overwrite the claim information an asset file with the provided claim, linked to a parent asset if provided.
 
         Args:
             claim_dict: a dictionary with the claim contents
             asset_fullpath: the local path to the asset file
+            parent_asset_fullpath: local path to the parent asset file; or None
 
         Returns:
-            an integer with the return code from the claim_tool run
+            True if successful; False if errored
         """
-        tmp_file = _asset_helper.get_tmp_file_fullpath(".jpg")
-
-        # TODO: Update this code to set the appropriate claim and parent file in each case.
-        args = [
-            config.CLAIM_TOOL_PATH,
-            "-c",
-            json.dumps(claim_dict),
-            "-o",
-            tmp_file,
-            "-p",
-            asset_fullpath,
-        ]
+        arg = None
+        if parent_asset_fullpath == None:
+            args = [
+                config.CLAIM_TOOL_PATH,
+                "--claimdef",
+                json.dumps(claim_dict),
+                "--output",
+                asset_fullpath,
+            ]
+        else:
+            args = [
+                config.CLAIM_TOOL_PATH,
+                "--claimdef",
+                json.dumps(claim_dict),
+                "--output",
+                asset_fullpath,
+                "--parent",
+                parent_asset_fullpath,
+            ]
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         popen.wait()
         if popen.returncode != 0:
             _logger.error("claim_tool returned code %d", popen.returncode)
             _logger.error("claim_tool output:\n %s", popen.stdout.read())
-        else:
-            # Copy the C2PA-injected asset to both the internal and shared asset directories.
-            internal_file = _asset_helper.get_internal_file_fullpath(tmp_file)
-            shutil.move(tmp_file, internal_file)
-            shutil.copy2(internal_file, _asset_helper.get_assets_shared())
-            _logger.info(
-                "New file added to the internal and shared assets directories: %s",
-                internal_file,
-            )
+            return False
+        return True
 
-        return popen.returncode
+    def run_claim_dump(self, asset_fullpath, claim_fullpath):
+        """Write claim information of an asset to a file.
+
+        Args:
+            asset_fullpath: the local path to the asset file
+            claim_fullpath: the local path to write claim information
+
+        Returns:
+            True if successful; False if errored
+        """
+        args = [
+            config.CLAIM_TOOL_PATH,
+            asset_fullpath,
+            "--dump_store",
+        ]
+        with open(claim_fullpath, "w") as claim_file:
+            popen = subprocess.Popen(args, stdout=claim_file)
+            popen.wait()
+            if popen.returncode != 0:
+                _logger.error("claim_tool returned code %d", popen.returncode)
+                _logger.error("claim_tool output:\n %s", popen.stdout.read())
+                return False
+        return True
