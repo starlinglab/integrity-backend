@@ -44,28 +44,39 @@ class Claim:
         """Generates a claim for the 'update' action.
 
         Returns:
-            a dictionary containing the 'create' claim data
+            a dictionary containing the 'update' claim data
         """
-        # TODO(ben)
         claim_file_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "c2pa_claims/claim_create.json"
+            "c2pa_claims/claim_update.json"
         )
         with open(claim_file_path, "r") as claim_file:
             claim = json.load(claim_file)
         return claim
 
-    def generate_store(self):
-        """Generates a claim for the 'update' action.
+    def generate_store(self, ipfs_cid):
+        """Generates a claim for the 'store' action.
+
+        Args:
+            ipfs_cid: the IPFS CID for the asset
 
         Returns:
-            a dictionary containing the 'create' claim data
+            a dictionary containing the 'store' claim data
         """
-        # TODO(ben)
         claim_file_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "c2pa_claims/claim_create.json"
+            "c2pa_claims/claim_store.json"
         )
         with open(claim_file_path, "r") as claim_file:
             claim = json.load(claim_file)
+
+            # Replace claim values.
+            for assertion in claim['assertions']:
+                if assertion['label'] == "org.starlinglab.storage.ipfs":
+                    assertion['data']['starling:Provider'] = "Web3.Storage"
+                    assertion['data']['starling:IpfsCid'] = ipfs_cid
+                    # TODO
+                    assertion['data']['starling:AssetStoredTimestamp'] = ""
+                    break
+
         return claim

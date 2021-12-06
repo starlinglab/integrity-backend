@@ -1,0 +1,33 @@
+{
+    "vendor": "starlinglab",
+    "recorder": "Starling Integrity",
+    "assertions": [
+        {
+            "label": "stds.schema-org.CreativeWork",
+            "data": {
+                "@context": "https://schema.org",
+                "@type": "CreativeWork",
+                "author": [
+                    {
+                        "@type": "Organization",
+                        "credential": [
+                        ],
+                        "identifier": "https://scmp.com",
+                        "name": "South China Morning Post"
+                    }
+                ]
+            }
+        },
+        {
+            "label": "c2pa.actions",
+            "data": {
+                "actions": [
+                    {
+                        "action": "c2pa.edited",
+                        "when": "{{edited_timestamp}}"
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -27,7 +27,7 @@ class Filecoin:
         """
         files = {
             "file": (
-                file_path,
+                os.path.basename(file_path),
                 open(file_path, "rb"),
                 "application/octet-stream",
             )
