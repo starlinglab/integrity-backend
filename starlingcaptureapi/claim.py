@@ -44,10 +44,6 @@ class Claim:
         """
         claim = copy.deepcopy(CREATE_CLAIM_TEMPLATE)
 
-        # Replace claim values with Starling Lab defaults.
-        claim["vendor"] = "starlinglab"
-        claim["recorder"] = "Starling Capture"
-
         # Replace claim values with values from JWT payload.
         for assertion in claim["assertions"]:
             if assertion["label"] == "stds.schema-org.CreativeWork":

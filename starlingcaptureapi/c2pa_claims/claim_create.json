@@ -1,6 +1,6 @@
 {
-    "vendor": "{{vendor}}",
-    "recorder": "{{recorder}}",
+    "vendor": "starlinglab",
+    "recorder": "Starling Capture",
     "assertions": [
         {
             "label": "stds.schema-org.CreativeWork",
