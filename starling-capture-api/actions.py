@@ -35,23 +35,28 @@ class Actions:
         if _claim_tool.run_claim_inject(claim, tmp_asset_file, None):
             if _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file):
                 # Copy the C2PA-injected asset to both the internal and shared asset directories.
-                internal_asset_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
+                internal_asset_file = _asset_helper.get_internal_file_fullpath(
+                    tmp_asset_file
+                )
                 shutil.move(tmp_asset_file, internal_asset_file)
-                shutil.copy2(internal_asset_file, _asset_helper.get_assets_create_output())
+                shutil.copy2(
+                    internal_asset_file, _asset_helper.get_assets_create_output()
+                )
                 _logger.info(
                     "New asset file added to the internal and shared assets directories: %s",
+                    internal_asset_file,
+                )
+                internal_claim_file = _asset_helper.get_internal_claim_fullpath(
                     internal_asset_file
                 )
-                internal_claim_file = _asset_helper.get_internal_claim_fullpath(internal_asset_file)
                 shutil.move(tmp_claim_file, internal_claim_file)
                 _logger.info(
                     "New claim file added to the internal claims directory: %s",
-                    internal_claim_file
+                    internal_claim_file,
                 )
                 return
         _logger.error(
-            "Failed to process asset with the create action: %s",
-            asset_fullpath
+            "Failed to process asset with the create action: %s", asset_fullpath
         )
 
     def add(self, asset_fullpath):
@@ -67,7 +72,7 @@ class Actions:
         shutil.copy2(internal_file, _asset_helper.get_assets_add_output())
         _logger.info(
             "New file added to the internal and shared assets directories: %s",
-            internal_file
+            internal_file,
         )
         # TODO(ben): handle file errors
 
@@ -86,7 +91,7 @@ class Actions:
         file_name, file_extension = os.path.splitext(os.path.basename(asset_fullpath))
         parent_file = os.path.join(
             _asset_helper.get_assets_internal(),
-            file_name.partition('_')[0].partition('-')[0] + file_extension
+            file_name.partition("_")[0].partition("-")[0] + file_extension,
         )
 
         # Inject update claim and read back from file.
@@ -98,27 +103,33 @@ class Actions:
             if _claim_tool.run_claim_inject(claim, tmp_asset_file, parent_file):
                 if _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file):
                     # Copy the C2PA-injected asset to both the internal and shared asset directories.
-                    internal_asset_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
+                    internal_asset_file = _asset_helper.get_internal_file_fullpath(
+                        tmp_asset_file
+                    )
                     shutil.move(tmp_asset_file, internal_asset_file)
-                    shutil.copy2(internal_asset_file, _asset_helper.get_assets_update_output())
+                    shutil.copy2(
+                        internal_asset_file, _asset_helper.get_assets_update_output()
+                    )
                     _logger.info(
                         "New asset file added to the internal and shared assets directories: %s",
+                        internal_asset_file,
+                    )
+                    internal_claim_file = _asset_helper.get_internal_claim_fullpath(
                         internal_asset_file
                     )
-                    internal_claim_file = _asset_helper.get_internal_claim_fullpath(internal_asset_file)
                     shutil.move(tmp_claim_file, internal_claim_file)
                     _logger.info(
                         "New claim file added to the internal claims directory: %s",
-                        internal_claim_file
+                        internal_claim_file,
                     )
                     return
             _logger.error(
-                "Failed to process asset with the update action: %s",
-                asset_fullpath
+                "Failed to process asset with the update action: %s", asset_fullpath
             )
         else:
-            _logger.error("Update action found no parent file for asset: %s", asset_fullpath)
-
+            _logger.error(
+                "Update action found no parent file for asset: %s", asset_fullpath
+            )
 
     def store(self, asset_fullpath):
         """Process asset with store action.
@@ -143,7 +154,7 @@ class Actions:
         file_name, file_extension = os.path.splitext(os.path.basename(asset_fullpath))
         parent_file = os.path.join(
             _asset_helper.get_assets_internal(),
-            file_name.partition('_')[0].partition('-')[0] + file_extension
+            file_name.partition("_")[0].partition("-")[0] + file_extension,
         )
 
         # Inject store claim and read back from file.
@@ -155,23 +166,30 @@ class Actions:
             if _claim_tool.run_claim_inject(claim, tmp_asset_file, parent_file):
                 if _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file):
                     # Copy the C2PA-injected asset to both the internal and shared asset directories.
-                    internal_asset_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
+                    internal_asset_file = _asset_helper.get_internal_file_fullpath(
+                        tmp_asset_file
+                    )
                     shutil.move(tmp_asset_file, internal_asset_file)
-                    shutil.copy2(internal_asset_file, _asset_helper.get_assets_store_output())
+                    shutil.copy2(
+                        internal_asset_file, _asset_helper.get_assets_store_output()
+                    )
                     _logger.info(
                         "New asset file added to the internal and shared assets directories: %s",
+                        internal_asset_file,
+                    )
+                    internal_claim_file = _asset_helper.get_internal_claim_fullpath(
                         internal_asset_file
                     )
-                    internal_claim_file = _asset_helper.get_internal_claim_fullpath(internal_asset_file)
                     shutil.move(tmp_claim_file, internal_claim_file)
                     _logger.info(
                         "New claim file added to the internal claims directory: %s",
-                        internal_claim_file
+                        internal_claim_file,
                     )
                     return
             _logger.error(
-                "Failed to process asset with the store action: %s",
-                asset_fullpath
+                "Failed to process asset with the store action: %s", asset_fullpath
             )
         else:
-            _logger.error("Store action found no parent file for asset: %s", asset_fullpath)
+            _logger.error(
+                "Store action found no parent file for asset: %s", asset_fullpath
+            )

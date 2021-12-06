@@ -63,7 +63,7 @@ class ClaimTool:
             asset_fullpath,
             "--dump_store",
         ]
-        with open(claim_fullpath, 'w') as claim_file:
+        with open(claim_fullpath, "w") as claim_file:
             popen = subprocess.Popen(args, stdout=claim_file)
             popen.wait()
             if popen.returncode != 0:

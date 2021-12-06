@@ -1,6 +1,7 @@
 import json
 import os
 
+
 class Claim:
     """Generates the claim JSON."""
 
@@ -14,25 +15,28 @@ class Claim:
             a dictionary containing the 'create' claim data
         """
         claim_file_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "c2pa_claims/claim_create.json"
+            os.path.dirname(os.path.abspath(__file__)), "c2pa_claims/claim_create.json"
         )
         with open(claim_file_path, "r") as claim_file:
             claim = json.load(claim_file)
 
             # Replace claim values with Starling Lab defaults.
-            claim['vendor'] = "starlinglab"
-            claim['recorder'] = "Starling Capture"
+            claim["vendor"] = "starlinglab"
+            claim["recorder"] = "Starling Capture"
 
             # Replace claim values with values from JWT payload.
-            for assertion in claim['assertions']:
-                if assertion['label'] == "stds.schema-org.CreativeWork":
-                    assertion['data']['author'][0]['identifier'] = jwt_payload['author']['identifier']
-                    assertion['data']['author'][0]['name'] = jwt_payload['author']['name']
+            for assertion in claim["assertions"]:
+                if assertion["label"] == "stds.schema-org.CreativeWork":
+                    assertion["data"]["author"][0]["identifier"] = jwt_payload[
+                        "author"
+                    ]["identifier"]
+                    assertion["data"]["author"][0]["name"] = jwt_payload["author"][
+                        "name"
+                    ]
                     break
-                if assertion['label'] == "stds.iptc.photo-metadata":
-                    assertion['data']['dc:creator'] = [jwt_payload['author']['name']]
-                    assertion['data']['dc:rights'] = jwt_payload['copyright']
+                if assertion["label"] == "stds.iptc.photo-metadata":
+                    assertion["data"]["dc:creator"] = [jwt_payload["author"]["name"]]
+                    assertion["data"]["dc:rights"] = jwt_payload["copyright"]
                     break
 
             # Replace claim values with values from HTTP POST.
@@ -47,8 +51,7 @@ class Claim:
             a dictionary containing the 'update' claim data
         """
         claim_file_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "c2pa_claims/claim_update.json"
+            os.path.dirname(os.path.abspath(__file__)), "c2pa_claims/claim_update.json"
         )
         with open(claim_file_path, "r") as claim_file:
             claim = json.load(claim_file)
@@ -64,19 +67,18 @@ class Claim:
             a dictionary containing the 'store' claim data
         """
         claim_file_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "c2pa_claims/claim_store.json"
+            os.path.dirname(os.path.abspath(__file__)), "c2pa_claims/claim_store.json"
         )
         with open(claim_file_path, "r") as claim_file:
             claim = json.load(claim_file)
 
             # Replace claim values.
-            for assertion in claim['assertions']:
-                if assertion['label'] == "org.starlinglab.storage.ipfs":
-                    assertion['data']['starling:Provider'] = "Web3.Storage"
-                    assertion['data']['starling:IpfsCid'] = ipfs_cid
+            for assertion in claim["assertions"]:
+                if assertion["label"] == "org.starlinglab.storage.ipfs":
+                    assertion["data"]["starling:Provider"] = "Web3.Storage"
+                    assertion["data"]["starling:IpfsCid"] = ipfs_cid
                     # TODO
-                    assertion['data']['starling:AssetStoredTimestamp'] = ""
+                    assertion["data"]["starling:AssetStoredTimestamp"] = ""
                     break
 
         return claim

@@ -17,9 +17,15 @@ class FsWatcher:
 
     def watch(self):
         observer = Observer()
-        observer.schedule(self.AddHandler(), recursive=True, path=_asset_helper.get_assets_add())
-        observer.schedule(self.UpdateHandler(), recursive=True, path=_asset_helper.get_assets_update())
-        observer.schedule(self.StoreHandler(), recursive=True, path=_asset_helper.get_assets_store())
+        observer.schedule(
+            self.AddHandler(), recursive=True, path=_asset_helper.get_assets_add()
+        )
+        observer.schedule(
+            self.UpdateHandler(), recursive=True, path=_asset_helper.get_assets_update()
+        )
+        observer.schedule(
+            self.StoreHandler(), recursive=True, path=_asset_helper.get_assets_store()
+        )
         _logger.info("Starting up file system watcher for action directories.")
         observer.start()
         try:
