@@ -9,6 +9,7 @@ _logger = logging.getLogger(__name__)
 
 # Internal directories.
 dir_internal_assets = os.path.join(config.INTERNAL_ASSET_STORE, "assets")
+dir_internal_claims = os.path.join(config.INTERNAL_ASSET_STORE, "claims")
 dir_internal_tmp = os.path.join(config.INTERNAL_ASSET_STORE, "tmp")
 dir_internal_create = os.path.join(config.INTERNAL_ASSET_STORE, "create")
 
@@ -30,6 +31,8 @@ class AssetHelper:
         """Creates the initial directory structure for asset management."""
         if _file_util.create_dir(dir_internal_assets):
             _logger.info("Created internal assets directory: " + dir_internal_assets)
+        if _file_util.create_dir(dir_internal_claims):
+            _logger.info("Created internal claims directory: " + dir_internal_claims)
         if _file_util.create_dir(dir_internal_tmp):
             _logger.info("Created internal temporary assets directory: " + dir_internal_tmp)
         if _file_util.create_dir(dir_internal_create):
@@ -52,6 +55,7 @@ class AssetHelper:
     def log_dirs(self):
         """Logs the directory structure for asset management."""
         _logger.info("Internal assets directory: %s", self.get_assets_internal())
+        _logger.info("Internal claims directory: %s", self.get_claims_internal())
         _logger.info("Internal temporary assets directory: %s", self.get_assets_internal_create())
         _logger.info("Internal assets create directory: %s", self.get_assets_internal_create())
         _logger.info("Shared assets add directory: %s", self.get_assets_add())
@@ -64,6 +68,9 @@ class AssetHelper:
 
     def get_assets_internal(self):
         return dir_internal_assets
+
+    def get_claims_internal(self):
+        return dir_internal_claims
 
     def get_assets_internal_tmp(self):
         return dir_internal_tmp
@@ -102,3 +109,7 @@ class AssetHelper:
     def get_internal_file_fullpath(self, from_file):
         _, file_extension = os.path.splitext(from_file)
         return os.path.join(dir_internal_assets, _file_util.digest_sha256(from_file) + file_extension)
+
+    def get_internal_claim_fullpath(self, from_file):
+        # TODO: shouldn't have to hash here if we can bundle this with previous func.
+        return os.path.join(dir_internal_claims, _file_util.digest_sha256(from_file) + ".json")

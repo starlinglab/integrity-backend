@@ -35,12 +35,18 @@ class Actions:
         if _claim_tool.run_claim_inject(claim, tmp_asset_file, None):
             if _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file):
                 # Copy the C2PA-injected asset to both the internal and shared asset directories.
-                internal_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
-                shutil.move(tmp_asset_file, internal_file)
-                shutil.copy2(internal_file, _asset_helper.get_assets_create_output())
+                internal_asset_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
+                shutil.move(tmp_asset_file, internal_asset_file)
+                shutil.copy2(internal_asset_file, _asset_helper.get_assets_create_output())
                 _logger.info(
-                    "New file added to the internal and shared assets directories: %s",
-                    internal_file
+                    "New asset file added to the internal and shared assets directories: %s",
+                    internal_asset_file
+                )
+                internal_claim_file = _asset_helper.get_internal_claim_fullpath(internal_asset_file)
+                shutil.move(tmp_claim_file, internal_claim_file)
+                _logger.info(
+                    "New claim file added to the internal claims directory: %s",
+                    internal_claim_file
                 )
                 return
         _logger.error(
@@ -75,24 +81,35 @@ class Actions:
         # Create temporary files to work with.
         tmp_asset_file = _asset_helper.get_tmp_file_fullpath(".jpg")
         tmp_claim_file = _asset_helper.get_tmp_file_fullpath(".json")
-        parent_file = os.path.join(_asset_helper.get_assets_internal(), os.path.basename(asset_fullpath))
 
+        # Parse file name to get internal name for parent file.
+        file_name, file_extension = os.path.splitext(os.path.basename(asset_fullpath))
+        parent_file = os.path.join(
+            _asset_helper.get_assets_internal(),
+            file_name.partition('_')[0].partition('-')[0] + file_extension
+        )
 
-        # Inject create claim and read back from file.
+        # Inject update claim and read back from file.
         claim = _claim.generate_update()
         shutil.copy2(asset_fullpath, tmp_asset_file)
-        inject_success = False
+        _logger.info("Searching for parent file: %s", parent_file)
         if os.path.isfile(parent_file):
             _logger.info("Update action found parent file for asset: %s", parent_file)
             if _claim_tool.run_claim_inject(claim, tmp_asset_file, parent_file):
                 if _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file):
                     # Copy the C2PA-injected asset to both the internal and shared asset directories.
-                    internal_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
-                    shutil.move(tmp_asset_file, internal_file)
-                    shutil.copy2(internal_file, _asset_helper.get_assets_update_output())
+                    internal_asset_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
+                    shutil.move(tmp_asset_file, internal_asset_file)
+                    shutil.copy2(internal_asset_file, _asset_helper.get_assets_update_output())
                     _logger.info(
-                        "New file added to the internal and shared assets directories: %s",
-                        internal_file
+                        "New asset file added to the internal and shared assets directories: %s",
+                        internal_asset_file
+                    )
+                    internal_claim_file = _asset_helper.get_internal_claim_fullpath(internal_asset_file)
+                    shutil.move(tmp_claim_file, internal_claim_file)
+                    _logger.info(
+                        "New claim file added to the internal claims directory: %s",
+                        internal_claim_file
                     )
                     return
             _logger.error(
