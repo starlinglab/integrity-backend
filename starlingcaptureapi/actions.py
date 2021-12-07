@@ -17,20 +17,21 @@ _logger = logging.getLogger(__name__)
 class Actions:
     """Actions for processing assets."""
 
-    def create(self, asset_fullpath, jwt_payload):
+    def create(self, asset_fullpath, jwt_payload, meta):
         """Process asset with create action.
         A new asset file is generated in the create-output folder with an original creation claim.
 
         Args:
             asset_fullpath: the local path to the asset file
             jwt_payload: a JWT payload containing metadata
+            meta: dictionary with the 'meta' section of the incoming multipart request
         """
         # Create temporary files to work with.
         tmp_asset_file = _asset_helper.get_tmp_file_fullpath(".jpg")
         tmp_claim_file = _asset_helper.get_tmp_file_fullpath(".json")
 
         # Inject create claim and read back from file.
-        claim = _claim.generate_create(jwt_payload)
+        claim = _claim.generate_create(jwt_payload, meta)
         shutil.copy2(asset_fullpath, tmp_asset_file)
         if _claim_tool.run_claim_inject(claim, tmp_asset_file, None):
             if _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file):
