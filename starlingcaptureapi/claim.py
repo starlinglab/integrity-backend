@@ -1,4 +1,5 @@
 import copy
+import geocoder
 import json
 import logging
 import os
@@ -44,22 +45,27 @@ class Claim:
             a dictionary containing the 'create' claim data
         """
         claim = copy.deepcopy(CREATE_CLAIM_TEMPLATE)
-        print(f"meta: {meta}")
 
-        # Replace claim values with values from JWT payload.
-        for assertion in claim["assertions"]:
-            if assertion["label"] == "stds.schema-org.CreativeWork":
-                assertion["data"]["author"][0]["identifier"] = jwt_payload["author"][
-                    "identifier"
-                ]
-                assertion["data"]["author"][0]["name"] = jwt_payload["author"]["name"]
-                continue
-            if assertion["label"] == "stds.iptc.photo-metadata":
-                assertion["data"]["dc:creator"] = [jwt_payload["author"]["name"]]
-                assertion["data"]["dc:rights"] = jwt_payload["copyright"]
-                continue
+        assertions = self.assertions_by_label(claim)
 
-        # Replace claim values with values from HTTP POST.
+        creative_work = assertions["stds.schema-org.CreativeWork"]
+        creative_work["data"]["author"][0]["identifier"] = jwt_payload["author"][
+            "identifier"
+        ]
+        creative_work["data"]["author"][0]["name"] = jwt_payload["author"]["name"]
+
+        geo_json = self._get_meta_location(meta)
+        photo_meta = assertions["stds.iptc.photo-metadata"]
+        photo_meta["data"]["dc:creator"] = [jwt_payload["author"]["name"]]
+        photo_meta["data"]["dc:rights"] = jwt_payload["copyright"]
+        photo_meta["data"]["Iptc4xmpExt:LocationCreated"] = {
+            "Iptc4xmpExt:CountryCode": geo_json["raw"]["address"]["country_code"],
+            "Iptc4xmpExt:CountryName": geo_json["raw"]["address"]["country"],
+            "Iptc4xmpExt:ProviceState": geo_json["raw"]["address"]["state"],
+            "Iptc4xmpExt:City": geo_json["raw"]["address"]["town"],
+        }
+
+        # Replace claim values with more values from HTTP POST.
         # TODO
 
         return claim
@@ -107,3 +113,38 @@ class Claim:
         for assertion in claim_dict["assertions"]:
             assertions_by_label[assertion["label"]] = assertion
         return assertions_by_label
+
+    def _get_meta_location(self, meta):
+        """Retrieves reverse geocoding location data based on the given metadata.
+
+        Args:
+            meta: dictionary with the 'meta' section of the request
+
+        Returns:
+            geolocation JSON
+
+        """
+        (lat, lon) = self._get_meta_lat_lon(meta)
+        # We shouldn't send more than 1 request per second. TODO: Add some kind of throttling and/or caching.
+        response = geocoder.osm([lat, lon], method="reverse")
+        # TODO: add error handling
+        return response.json
+
+    def _get_meta_lat_lon(self, meta):
+        """Extracts latitude and longitude from metadata JSON dict.
+
+        Args:
+            meta: dictionary with the 'meta' section of the request
+
+        Return:
+            (lat, lon) from the 'meta' data, returned as a pair
+        """
+        lat = lon = None
+        for info in meta["information"]:
+            if info["name"] == "Current GPS Latitude":
+                lat = info["value"]
+                continue
+            if info["name"] == "Current GPS Longitude":
+                lon = info["value"]
+                continue
+        return (lat, lon)
