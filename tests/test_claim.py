@@ -11,7 +11,7 @@ def test_generates_create_claim():
         },
         "copyright": "copyright holder",
     }
-    claim = _claim.generate_create(jwt_payload)
+    claim = _claim.generate_create(jwt_payload, {})
     assertions = _claim.assertions_by_label(claim)
     assert claim["vendor"] == "starlinglab"
     assert claim["recorder"] == "Starling Capture"

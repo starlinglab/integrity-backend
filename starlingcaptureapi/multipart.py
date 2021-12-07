@@ -40,9 +40,10 @@ class Multipart:
                 break
             if part.name == "file":
                 multipart_data["asset_fullpath"] = await self._write_file(part)
+            elif part.name == "meta":
+                multipart_data["meta"] = await part.json()
             else:
-                # TODO: Add processing of other parts
-                _logger.info("Ignoring (for now) multipart part %s", part.name)
+                _logger.warning("Ignoring multipart part %s", part.name)
         return multipart_data
 
     async def _write_file(self, part):

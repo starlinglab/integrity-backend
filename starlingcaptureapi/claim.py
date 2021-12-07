@@ -33,16 +33,18 @@ STORE_CLAIM_TEMPLATE = _load_template("claim_store.json")
 class Claim:
     """Generates the claim JSON."""
 
-    def generate_create(self, jwt_payload):
+    def generate_create(self, jwt_payload, meta):
         """Generates a claim for the 'create' action.
 
         Args:
             jwt_payload: a dictionary with the data we got from the request's JWT payload
+            meta: dictionary with the 'meta' section of the request
 
         Returns:
             a dictionary containing the 'create' claim data
         """
         claim = copy.deepcopy(CREATE_CLAIM_TEMPLATE)
+        print(f"meta: {meta}")
 
         # Replace claim values with values from JWT payload.
         for assertion in claim["assertions"]:
