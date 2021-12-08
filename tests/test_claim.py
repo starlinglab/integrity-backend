@@ -30,7 +30,7 @@ fake_geo_json = {
 
 
 def test_generates_create_claim(mocker):
-    mocker.patch.object(_claim, "_get_meta_location", return_value=fake_geo_json)
+    mocker.patch.object(_claim, "_reverse_geocode", return_value=fake_geo_json)
 
     claim = _claim.generate_create(jwt_payload, meta)
     assertions = _claim.assertions_by_label(claim)

@@ -4,6 +4,8 @@ import json
 import logging
 import os
 
+from .exif import Exif
+
 _logger = logging.getLogger(__name__)
 
 
@@ -54,7 +56,8 @@ class Claim:
         ]
         creative_work["data"]["author"][0]["name"] = jwt_payload["author"]["name"]
 
-        geo_json = self._get_meta_location(meta)
+        (lat, lon) = self._get_meta_lat_lon(meta)
+        geo_json = self._reverse_geocode(lat, lon)
         photo_meta = assertions["stds.iptc.photo-metadata"]
         photo_meta["data"]["dc:creator"] = [jwt_payload["author"]["name"]]
         photo_meta["data"]["dc:rights"] = jwt_payload["copyright"]
@@ -65,8 +68,13 @@ class Claim:
             "Iptc4xmpExt:City": geo_json["raw"]["address"]["town"],
         }
 
-        # Replace claim values with more values from HTTP POST.
-        # TODO
+        exif = assertions["stds.exif"]
+        (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
+        (exif_lon, exif_lon_ref) = Exif().convert_longitude(lon)
+        exif["data"]["exif:GPSLatitude"] = exif_lat
+        exif["data"]["exif:GPSLatitudeRef"] = exif_lat_ref
+        exif["data"]["exif:GPSLongitude"] = exif_lon
+        exif["data"]["exif:GPSLongitudeRef"] = exif_lon_ref
 
         return claim
 
@@ -114,17 +122,16 @@ class Claim:
             assertions_by_label[assertion["label"]] = assertion
         return assertions_by_label
 
-    def _get_meta_location(self, meta):
-        """Retrieves reverse geocoding location data based on the given metadata.
+    def _reverse_geocode(self, lat, lon):
+        """Retrieves reverse geocoding informatioon for the given latitude and longitude.
 
         Args:
-            meta: dictionary with the 'meta' section of the request
+            lat, long: latitude and longitude to reverse geocode, as floats
 
         Returns:
             geolocation JSON
 
         """
-        (lat, lon) = self._get_meta_lat_lon(meta)
         # We shouldn't send more than 1 request per second. TODO: Add some kind of throttling and/or caching.
         response = geocoder.osm([lat, lon], method="reverse")
         # TODO: add error handling
@@ -142,9 +149,9 @@ class Claim:
         lat = lon = None
         for info in meta["information"]:
             if info["name"] == "Current GPS Latitude":
-                lat = info["value"]
+                lat = float(info["value"])
                 continue
             if info["name"] == "Current GPS Longitude":
-                lon = info["value"]
+                lon = float(info["value"])
                 continue
         return (lat, lon)

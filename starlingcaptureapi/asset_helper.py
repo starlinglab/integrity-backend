@@ -1,6 +1,6 @@
-from file_util import FileUtil
+from .file_util import FileUtil
+from . import config
 
-import config
 import logging
 import os
 

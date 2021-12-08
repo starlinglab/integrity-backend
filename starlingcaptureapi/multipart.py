@@ -1,8 +1,5 @@
-from asset_helper import AssetHelper
+from .asset_helper import AssetHelper
 
-import config
-
-import os
 import logging
 import shutil
 

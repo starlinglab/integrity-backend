@@ -37,4 +37,4 @@ python_version = "3.9"
 # Automatically formats all Python files
 autoformat = "black starlingcaptureapi"
 # Starts the server
-server = "python starlingcaptureapi/main.py"
+server = "python main.py"

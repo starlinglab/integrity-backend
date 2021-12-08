@@ -1,7 +1,7 @@
-from asset_helper import AssetHelper
-from claim import Claim
-from claim_tool import ClaimTool
-from filecoin import Filecoin
+from .asset_helper import AssetHelper
+from .claim import Claim
+from .claim_tool import ClaimTool
+from .filecoin import Filecoin
 
 import logging
 import os

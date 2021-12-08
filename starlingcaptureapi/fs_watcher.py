@@ -1,5 +1,5 @@
-from actions import Actions
-from asset_helper import AssetHelper
+from .actions import Actions
+from .asset_helper import AssetHelper
 
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
