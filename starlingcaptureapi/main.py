@@ -66,7 +66,7 @@ def start_api_server():
             )
         ]
     )
-    app.add_routes([web.post("/assets/create", handlers.create)])
+    app.add_routes([web.post("/v1/assets/create", handlers.create)])
     _logger.info("Starting up API server")
     web.run_app(app)
 
