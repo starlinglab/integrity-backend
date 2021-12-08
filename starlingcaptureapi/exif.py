@@ -1,3 +1,4 @@
+from dateutil import parser
 from fractions import Fraction
 
 class Exif:
@@ -34,6 +35,17 @@ class Exif:
             ref = "E"
         deg = self._to_deg(lon_float)
         return (self._to_rational_str(deg), ref)
+
+    def convert_timestamp(self, value_str):
+        """Converts a timestamp string into EXIF timestamp format.
+
+        Args:
+            value_str: a timestamp string
+
+        Returns:
+            timestamp in EXIF format (YYYY:MM:DD HH:MM:SS, possibly with a timezone at the end)
+        """
+        return parser.parse(value_str).strftime("%Y:%m:%d %H:%M:%S %z")
 
     def _to_deg(self, value_float):
         """Converts a float value into a (degs, mins, secs) tuple."""

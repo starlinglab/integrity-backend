@@ -75,6 +75,7 @@ class Claim:
         exif["data"]["exif:GPSLatitudeRef"] = exif_lat_ref
         exif["data"]["exif:GPSLongitude"] = exif_lon
         exif["data"]["exif:GPSLongitudeRef"] = exif_lon_ref
+        exif["data"]["exif:GPSTimeStamp"] = self._get_exif_timestamp(meta)
 
         return claim
 
@@ -155,3 +156,16 @@ class Claim:
                 lon = float(info["value"])
                 continue
         return (lat, lon)
+
+    def _get_exif_timestamp(self, meta):
+        """Returns an EXIF-formatted version of the timestamp.
+
+        Args:
+            meta: dictionary with the 'meta' secion of the request
+
+        Return:
+            string with the exif-formatted timestamp, or None
+        """
+        for info in meta["information"]:
+            if info["name"] == "Current GPS Timestamp":
+                return Exif().convert_timestamp(info["value"])
