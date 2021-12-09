@@ -57,14 +57,15 @@ class Claim:
         ]
         creative_work["data"]["author"][0]["name"] = jwt_payload["author"]["name"]
 
+        photo_meta = assertions["stds.iptc.photo-metadata"]
+        photo_meta["data"]["dc:creator"] = [jwt_payload["author"]["name"]]
+        photo_meta["data"]["dc:rights"] = jwt_payload["copyright"]
+
         if meta:
             _logger.info("Processing metadata: %s", meta)
             (lat, lon) = self._get_meta_lat_lon(meta)
             if lat is not None and lon is not None:
                 geo_json = self._reverse_geocode(lat, lon)
-                photo_meta = assertions["stds.iptc.photo-metadata"]
-                photo_meta["data"]["dc:creator"] = [jwt_payload["author"]["name"]]
-                photo_meta["data"]["dc:rights"] = jwt_payload["copyright"]
 
                 # Insert LocationCreated.
                 if "raw" in geo_json and "address" in geo_json["raw"]:
