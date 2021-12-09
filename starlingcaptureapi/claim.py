@@ -58,32 +58,34 @@ class Claim:
         creative_work["data"]["author"][0]["name"] = jwt_payload["author"]["name"]
 
         if meta:
+            _logger.info("Processing metadata: %s", meta)
             (lat, lon) = self._get_meta_lat_lon(meta)
-            geo_json = self._reverse_geocode(lat, lon)
-            photo_meta = assertions["stds.iptc.photo-metadata"]
-            photo_meta["data"]["dc:creator"] = [jwt_payload["author"]["name"]]
-            photo_meta["data"]["dc:rights"] = jwt_payload["copyright"]
+            if lat is not None and lon is not None:
+                geo_json = self._reverse_geocode(lat, lon)
+                photo_meta = assertions["stds.iptc.photo-metadata"]
+                photo_meta["data"]["dc:creator"] = [jwt_payload["author"]["name"]]
+                photo_meta["data"]["dc:rights"] = jwt_payload["copyright"]
 
-            # Insert LocationCreated.
-            if "raw" in geo_json and "address" in geo_json["raw"]:
-                photo_meta["data"]["Iptc4xmpExt:LocationCreated"] = {}
-            if "country_code" in geo_json["raw"]["address"]:
-                photo_meta["data"]["Iptc4xmpExt:LocationCreated"]["Iptc4xmpExt:CountryCode"] = geo_json["raw"]["address"]["country_code"]
-            if "country" in geo_json["raw"]["address"]:
-                photo_meta["data"]["Iptc4xmpExt:LocationCreated"]["Iptc4xmpExt:CountryName"] = geo_json["raw"]["address"]["country"]
-            if "state" in geo_json["raw"]["address"]:
-                photo_meta["data"]["Iptc4xmpExt:LocationCreated"]["Iptc4xmpExt:ProviceState"] = geo_json["raw"]["address"]["state"]
-            if "town" in geo_json["raw"]["address"]:
-                photo_meta["data"]["Iptc4xmpExt:LocationCreated"]["Iptc4xmpExt:City"] = geo_json["raw"]["address"]["town"]
+                # Insert LocationCreated.
+                if "raw" in geo_json and "address" in geo_json["raw"]:
+                    photo_meta["data"]["Iptc4xmpExt:LocationCreated"] = {}
+                if "country_code" in geo_json["raw"]["address"]:
+                    photo_meta["data"]["Iptc4xmpExt:LocationCreated"]["Iptc4xmpExt:CountryCode"] = geo_json["raw"]["address"]["country_code"]
+                if "country" in geo_json["raw"]["address"]:
+                    photo_meta["data"]["Iptc4xmpExt:LocationCreated"]["Iptc4xmpExt:CountryName"] = geo_json["raw"]["address"]["country"]
+                if "state" in geo_json["raw"]["address"]:
+                    photo_meta["data"]["Iptc4xmpExt:LocationCreated"]["Iptc4xmpExt:ProviceState"] = geo_json["raw"]["address"]["state"]
+                if "town" in geo_json["raw"]["address"]:
+                    photo_meta["data"]["Iptc4xmpExt:LocationCreated"]["Iptc4xmpExt:City"] = geo_json["raw"]["address"]["town"]
 
-            exif = assertions["stds.exif"]
-            (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
-            (exif_lon, exif_lon_ref) = Exif().convert_longitude(lon)
-            exif["data"]["exif:GPSLatitude"] = exif_lat
-            exif["data"]["exif:GPSLatitudeRef"] = exif_lat_ref
-            exif["data"]["exif:GPSLongitude"] = exif_lon
-            exif["data"]["exif:GPSLongitudeRef"] = exif_lon_ref
-            exif["data"]["exif:GPSTimeStamp"] = self._get_exif_timestamp(meta)
+                exif = assertions["stds.exif"]
+                (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
+                (exif_lon, exif_lon_ref) = Exif().convert_longitude(lon)
+                exif["data"]["exif:GPSLatitude"] = exif_lat
+                exif["data"]["exif:GPSLatitudeRef"] = exif_lat_ref
+                exif["data"]["exif:GPSLongitude"] = exif_lon
+                exif["data"]["exif:GPSLongitudeRef"] = exif_lon_ref
+                exif["data"]["exif:GPSTimeStamp"] = self._get_exif_timestamp(meta)
 
         return claim
 
@@ -159,10 +161,10 @@ class Claim:
             return None
         lat = lon = None
         for info in meta["information"]:
-            if info["name"] == "Current GPS Latitude":
+            if info["name"] == "Last Known GPS Latitude":
                 lat = float(info["value"])
                 continue
-            if info["name"] == "Current GPS Longitude":
+            if info["name"] == "Last Known GPS Longitude":
                 lon = float(info["value"])
                 continue
         return (lat, lon)
@@ -179,5 +181,5 @@ class Claim:
         if "information" not in meta:
             return None
         for info in meta["information"]:
-            if info["name"] == "Current GPS Timestamp":
+            if info["name"] == "Last Known GPS Timestamp":
                 return Exif().convert_timestamp(info["value"])
