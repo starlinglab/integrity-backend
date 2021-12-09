@@ -46,20 +46,18 @@ class Claim:
         Returns:
             a dictionary containing the 'create' claim data
         """
-        # TODO: make cleaner. Better error handling for all missing keys.
         claim = copy.deepcopy(CREATE_CLAIM_TEMPLATE)
 
         assertions = self.assertions_by_label(claim)
 
         creative_work = assertions["stds.schema-org.CreativeWork"]
-        creative_work["data"]["author"][0]["identifier"] = jwt_payload["author"][
-            "identifier"
-        ]
-        creative_work["data"]["author"][0]["name"] = jwt_payload["author"]["name"]
+        jwt_author = jwt_payload.get("author", {})
+        creative_work["data"]["author"][0]["identifier"] = jwt_author.get("identifier")
+        creative_work["data"]["author"][0]["name"] = jwt_author.get("name")
 
         photo_meta = assertions["stds.iptc.photo-metadata"]
-        photo_meta["data"]["dc:creator"] = [jwt_payload["author"]["name"]]
-        photo_meta["data"]["dc:rights"] = jwt_payload["copyright"]
+        photo_meta["data"]["dc:creator"] = [jwt_author.get("name")]
+        photo_meta["data"]["dc:rights"] = jwt_payload.get("copyright")
 
         if meta is None:
             _logger.warning("No 'meta' found in request. Metadata will be missing from Claim.")

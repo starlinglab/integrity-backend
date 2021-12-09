@@ -58,6 +58,18 @@ def test_generates_create_claim(mocker):
     assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2021:10:30 18:43:14 +0000"
 
 
+def test_generates_create_claim_with_no_missing_author_info(mocker):
+    mocker.patch.object(_claim, "_reverse_geocode", return_value=fake_geo_json)
+
+    claim = _claim.generate_create({"bad": "jwt"}, meta)
+
+    # Mainly assert that we generated something and we didn't explode.
+    # Claim values are tested more thoroughly in other test cases
+    assert claim is not None
+    assert claim["vendor"] == "starlinglab"
+    assert claim["recorder"] == "Starling Capture"
+
+
 def test_generates_create_claim_with_no_meta(mocker):
     mocker.patch.object(_claim, "_reverse_geocode", return_value=fake_geo_json)
 
