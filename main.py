@@ -1,10 +1,6 @@
 from aiohttp import web
 from aiohttp_jwt import JWTMiddleware
-from asset_helper import AssetHelper
-from fs_watcher import FsWatcher
 
-import config
-import handlers
 import logging
 import multiprocessing
 import os
@@ -12,7 +8,12 @@ import signal
 import sys
 import time
 
-from claim import Claim
+
+from starlingcaptureapi import config, handlers
+from starlingcaptureapi.asset_helper import AssetHelper
+from starlingcaptureapi.claim import Claim
+from starlingcaptureapi.fs_watcher import FsWatcher
+
 
 _asset_helper = AssetHelper()
 _logger = logging.getLogger(__name__)

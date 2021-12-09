@@ -19,6 +19,8 @@ watchdog = "~=2.1.6"
 requests = "~=2.26"
 # For reverse geocoding of lat/longs
 geocoder = "~=1.38"
+# For date parsing and manipulation
+python-dateutil = "~=2.8"
 
 [dev-packages]
 ### Development-only packages ###
@@ -37,4 +39,4 @@ python_version = "3.9"
 # Automatically formats all Python files
 autoformat = "black starlingcaptureapi"
 # Starts the server
-server = "python starlingcaptureapi/main.py"
+server = "python main.py"

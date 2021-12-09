@@ -1,7 +1,7 @@
-import config
+from . import config
+
 import json
 import logging
-import os
 import subprocess
 
 _logger = logging.getLogger(__name__)

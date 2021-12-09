@@ -1,5 +1,5 @@
-from actions import Actions
-from multipart import Multipart
+from .actions import Actions
+from .multipart import Multipart
 
 from aiohttp import web
 

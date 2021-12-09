@@ -1,4 +1,5 @@
-import config
+from . import config
+
 import os
 import requests
 import urllib.parse
