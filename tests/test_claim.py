@@ -12,9 +12,9 @@ jwt_payload = {
 
 meta = {
     "information": [
-        {"name": "Current GPS Latitude", "value": "-15.9321422"},
-        {"name": "Current GPS Longitude", "value": "-57.6317174"},
-        {"name": "Current GPS Timestamp", "value": "2021-10-30T18:43:14Z"},
+        {"name": "Last Known GPS Latitude", "value": "-15.9321422"},
+        {"name": "Last Known GPS Longitude", "value": "-57.6317174"},
+        {"name": "Last Known GPS Timestamp", "value": "2021-10-30T18:43:14Z"},
     ]
 }
 
