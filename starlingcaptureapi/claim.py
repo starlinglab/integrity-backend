@@ -60,11 +60,15 @@ class Claim:
         photo_meta["data"]["dc:rights"] = jwt_payload.get("copyright")
 
         if meta is None:
-            _logger.warning("No 'meta' found in request. Metadata will be missing from Claim.")
+            _logger.warning(
+                "No 'meta' found in request. Metadata will be missing from Claim."
+            )
         else:
             _logger.info("Processing metadata: %s", meta)
             (lat, lon) = self._get_meta_lat_lon(meta)
-            photo_meta["data"]["Iptc4xmpExt:LocationCreated"] = self._get_location_created(lat, lon)
+            photo_meta["data"][
+                "Iptc4xmpExt:LocationCreated"
+            ] = self._get_location_created(lat, lon)
 
             exif = assertions["stds.exif"]
             exif["data"] = self._make_exif_data(lat, lon, meta)
@@ -195,7 +199,7 @@ class Claim:
         location_created["Iptc4xmpExt:ProvinceState"] = address.get("state")
         location_created["Iptc4xmpExt:City"] = address.get("town")
 
-        return {k: v for k,v in location_created.items() if v is not None}
+        return {k: v for k, v in location_created.items() if v is not None}
 
     def _make_exif_data(self, lat, lon, meta):
         """Returns the data fields for the stds.exif section of the claim
@@ -206,8 +210,8 @@ class Claim:
 
         Returns:
             dictionary to use as the value of the stds.exif field
-            might be empty, if no
-         """
+            might be empty, if no input data is provided
+        """
         exif_data = {}
 
         (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
@@ -218,5 +222,4 @@ class Claim:
         exif_data["exif:GPSLongitudeRef"] = exif_lon_ref
         exif_data["exif:GPSTimeStamp"] = self._get_exif_timestamp(meta)
 
-        return {k: v for k,v in exif_data.items() if v is not None}
-
+        return {k: v for k, v in exif_data.items() if v is not None}
