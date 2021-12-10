@@ -6,12 +6,9 @@ from aiohttp import web
 
 async def create(request):
     data = await Multipart().read(request)
-
-    meta = None
-    if "meta" in data:
-        meta = data["meta"]
-
-    Actions().create(data["asset_fullpath"], request["jwt_payload"], meta)
+    Actions().create(
+        data.get("asset_fullpath"), request["jwt_payload"], data.get("meta")
+    )
 
     # TODO(anaulin): Add error handling.
     # TODO(anaulin): Add all the required metadata, errors, etc, to response.

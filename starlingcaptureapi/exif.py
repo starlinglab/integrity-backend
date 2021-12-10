@@ -12,7 +12,11 @@ class Exif:
 
         Returns:
             (GPSLatitude, GPSLatitudeRef) tuple, in EXIF format
+            (None, None) if provided lon_float is None
         """
+        if lat_float is None:
+            return (None, None)
+
         if lat_float < 0:
             ref = "S"
         else:
@@ -28,7 +32,11 @@ class Exif:
 
         Returns:
             (GPSLongitude, GPSLongitudeRef) tuple, in EXIF format
+            (None, None) if provided lon_float is None
         """
+        if lon_float is None:
+            return (None, None)
+
         if lon_float < 0:
             ref = "W"
         else:

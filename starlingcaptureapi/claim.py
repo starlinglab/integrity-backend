@@ -46,46 +46,32 @@ class Claim:
         Returns:
             a dictionary containing the 'create' claim data
         """
-        # TODO: make cleaner. Better error handling for all missing keys.
         claim = copy.deepcopy(CREATE_CLAIM_TEMPLATE)
 
         assertions = self.assertions_by_label(claim)
 
         creative_work = assertions["stds.schema-org.CreativeWork"]
-        creative_work["data"]["author"][0]["identifier"] = jwt_payload["author"][
-            "identifier"
-        ]
-        creative_work["data"]["author"][0]["name"] = jwt_payload["author"]["name"]
+        jwt_author = jwt_payload.get("author", {})
+        creative_work["data"]["author"][0]["identifier"] = jwt_author.get("identifier")
+        creative_work["data"]["author"][0]["name"] = jwt_author.get("name")
 
-        if meta:
+        photo_meta = assertions["stds.iptc.photo-metadata"]
+        photo_meta["data"]["dc:creator"] = [jwt_author.get("name")]
+        photo_meta["data"]["dc:rights"] = jwt_payload.get("copyright")
+
+        if meta is None:
+            _logger.warning(
+                "No 'meta' found in request. Metadata will be missing from Claim."
+            )
+        else:
             _logger.info("Processing metadata: %s", meta)
             (lat, lon) = self._get_meta_lat_lon(meta)
-            if lat is not None and lon is not None:
-                geo_json = self._reverse_geocode(lat, lon)
-                photo_meta = assertions["stds.iptc.photo-metadata"]
-                photo_meta["data"]["dc:creator"] = [jwt_payload["author"]["name"]]
-                photo_meta["data"]["dc:rights"] = jwt_payload["copyright"]
+            photo_meta["data"][
+                "Iptc4xmpExt:LocationCreated"
+            ] = self._get_location_created(lat, lon)
 
-                # Insert LocationCreated.
-                if "raw" in geo_json and "address" in geo_json["raw"]:
-                    photo_meta["data"]["Iptc4xmpExt:LocationCreated"] = {}
-                if "country_code" in geo_json["raw"]["address"]:
-                    photo_meta["data"]["Iptc4xmpExt:LocationCreated"]["Iptc4xmpExt:CountryCode"] = geo_json["raw"]["address"]["country_code"]
-                if "country" in geo_json["raw"]["address"]:
-                    photo_meta["data"]["Iptc4xmpExt:LocationCreated"]["Iptc4xmpExt:CountryName"] = geo_json["raw"]["address"]["country"]
-                if "state" in geo_json["raw"]["address"]:
-                    photo_meta["data"]["Iptc4xmpExt:LocationCreated"]["Iptc4xmpExt:ProviceState"] = geo_json["raw"]["address"]["state"]
-                if "town" in geo_json["raw"]["address"]:
-                    photo_meta["data"]["Iptc4xmpExt:LocationCreated"]["Iptc4xmpExt:City"] = geo_json["raw"]["address"]["town"]
-
-                exif = assertions["stds.exif"]
-                (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
-                (exif_lon, exif_lon_ref) = Exif().convert_longitude(lon)
-                exif["data"]["exif:GPSLatitude"] = exif_lat
-                exif["data"]["exif:GPSLatitudeRef"] = exif_lat_ref
-                exif["data"]["exif:GPSLongitude"] = exif_lon
-                exif["data"]["exif:GPSLongitudeRef"] = exif_lon_ref
-                exif["data"]["exif:GPSTimeStamp"] = self._get_exif_timestamp(meta)
+            exif = assertions["stds.exif"]
+            exif["data"] = self._make_exif_data(lat, lon, meta)
 
         return claim
 
@@ -167,6 +153,8 @@ class Claim:
             if info["name"] == "Last Known GPS Longitude":
                 lon = float(info["value"])
                 continue
+        if lat is None or lon is None:
+            _logger.warning("Could not find lat or lon in 'meta'")
         return (lat, lon)
 
     def _get_exif_timestamp(self, meta):
@@ -183,3 +171,55 @@ class Claim:
         for info in meta["information"]:
             if info["name"] == "Last Known GPS Timestamp":
                 return Exif().convert_timestamp(info["value"])
+
+    def _get_location_created(self, lat, lon):
+        """Returns the Iptc4xmpExt:LocationCreated section, based on the given lat / lon
+
+        Args:
+            lat, lon: floats (or None), indicating the latitude and longitude to use
+
+        Returns:
+            dictionary to use as the value of the Iptc4xmpExt:LocationCreated field
+            might be empty if lat or lon was None, or if reverse geocoding did not return an address
+        """
+        location_created = {}
+        if lat is None or lon is None:
+            return location_created
+
+        geo_json = self._reverse_geocode(lat, lon)
+        if geo_json is None:
+            return location_created
+
+        if (address := geo_json.get("raw", {}).get("address")) is None:
+            _logger.warning("Reverse geocoding result did not include raw.address")
+            return location_created
+
+        location_created["Iptc4xmpExt:CountryCode"] = address.get("country_code")
+        location_created["Iptc4xmpExt:CountryName"] = address.get("country")
+        location_created["Iptc4xmpExt:ProvinceState"] = address.get("state")
+        location_created["Iptc4xmpExt:City"] = address.get("town")
+
+        return {k: v for k, v in location_created.items() if v is not None}
+
+    def _make_exif_data(self, lat, lon, meta):
+        """Returns the data fields for the stds.exif section of the claim
+
+        Args:
+            lat, lon: floats (or None), indicating the latitude and longitude to use
+            meta: metadata dictionary from the incoming request
+
+        Returns:
+            dictionary to use as the value of the stds.exif field
+            might be empty, if no input data is provided
+        """
+        exif_data = {}
+
+        (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
+        (exif_lon, exif_lon_ref) = Exif().convert_longitude(lon)
+        exif_data["exif:GPSLatitude"] = exif_lat
+        exif_data["exif:GPSLatitudeRef"] = exif_lat_ref
+        exif_data["exif:GPSLongitude"] = exif_lon
+        exif_data["exif:GPSLongitudeRef"] = exif_lon_ref
+        exif_data["exif:GPSTimeStamp"] = self._get_exif_timestamp(meta)
+
+        return {k: v for k, v in exif_data.items() if v is not None}

@@ -12,9 +12,9 @@ jwt_payload = {
 
 meta = {
     "information": [
-        {"name": "Current GPS Latitude", "value": "-15.9321422"},
-        {"name": "Current GPS Longitude", "value": "-57.6317174"},
-        {"name": "Current GPS Timestamp", "value": "2021-10-30T18:43:14Z"},
+        {"name": "Last Known GPS Latitude", "value": "-15.9321422"},
+        {"name": "Last Known GPS Longitude", "value": "-57.6317174"},
+        {"name": "Last Known GPS Timestamp", "value": "2021-10-30T18:43:14Z"},
     ]
 }
 
@@ -47,15 +47,89 @@ def test_generates_create_claim(mocker):
     assert photo_meta_assertion["data"]["Iptc4xmpExt:LocationCreated"] == {
         "Iptc4xmpExt:CountryCode": "br",
         "Iptc4xmpExt:CountryName": "Mock Country",
-        "Iptc4xmpExt:ProviceState": "Some State",
+        "Iptc4xmpExt:ProvinceState": "Some State",
         "Iptc4xmpExt:City": "Fake Town",
     }
     exif_assertion = assertions["stds.exif"]
-    assert exif_assertion["data"]["exif:GPSLatitude"] == "15/1 55/1 3920383475626017/70368744177664"
+    assert (
+        exif_assertion["data"]["exif:GPSLatitude"]
+        == "15/1 55/1 3920383475626017/70368744177664"
+    )
     assert exif_assertion["data"]["exif:GPSLatitudeRef"] == "S"
-    assert exif_assertion["data"]["exif:GPSLongitude"] == "57/1 37/1 7625579331556737/140737488355328"
+    assert (
+        exif_assertion["data"]["exif:GPSLongitude"]
+        == "57/1 37/1 7625579331556737/140737488355328"
+    )
     assert exif_assertion["data"]["exif:GPSLongitudeRef"] == "W"
     assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2021:10:30 18:43:14 +0000"
+
+
+def test_generates_create_claim_with_no_missing_author_info(mocker):
+    mocker.patch.object(_claim, "_reverse_geocode", return_value=fake_geo_json)
+
+    claim = _claim.generate_create({"bad": "jwt"}, meta)
+
+    # Mainly assert that we generated something and we didn't explode.
+    # Claim values are tested more thoroughly in other test cases
+    assert claim is not None
+    assert claim["vendor"] == "starlinglab"
+    assert claim["recorder"] == "Starling Capture"
+
+
+def test_generates_create_claim_with_no_meta(mocker):
+    mocker.patch.object(_claim, "_reverse_geocode", return_value=fake_geo_json)
+
+    claim = _claim.generate_create(
+        jwt_payload,
+        {
+            "information": [
+                {"name": "Last Known GPS Timestamp", "value": "2021-10-30T18:43:14Z"}
+            ]
+        },
+    )
+    assert claim is not None
+
+    assertions = _claim.assertions_by_label(claim)
+    exif_assertion = assertions["stds.exif"]
+    assert exif_assertion["data"] == {"exif:GPSTimeStamp": "2021:10:30 18:43:14 +0000"}
+
+
+def test_generates_create_claim_with_parial_meta(mocker):
+    mocker.patch.object(_claim, "_reverse_geocode", return_value=fake_geo_json)
+
+    claim = _claim.generate_create(jwt_payload, None)
+    assert claim is not None
+
+    assertions = _claim.assertions_by_label(claim)
+    photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
+    assert photo_meta_assertion["data"]["dc:creator"] == ["Jane Doe"]
+    assert photo_meta_assertion["data"]["dc:rights"] == "copyright holder"
+
+
+def test_generates_create_claim_with_no_reverse_geocode(mocker):
+    mocker.patch.object(_claim, "_reverse_geocode", return_value=None)
+
+    claim = _claim.generate_create(jwt_payload, meta)
+    assert claim is not None
+    assertions = _claim.assertions_by_label(claim)
+    photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
+    assert photo_meta_assertion["data"]["Iptc4xmpExt:LocationCreated"] == {}
+
+
+def test_generates_create_claim_with_partial_reverse_geocode(mocker):
+    mocker.patch.object(
+        _claim,
+        "_reverse_geocode",
+        return_value={"raw": {"address": {"town": "Partial Town"}}},
+    )
+
+    claim = _claim.generate_create(jwt_payload, meta)
+    assert claim is not None
+    assertions = _claim.assertions_by_label(claim)
+    photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
+    assert photo_meta_assertion["data"]["Iptc4xmpExt:LocationCreated"] == {
+        "Iptc4xmpExt:City": "Partial Town"
+    }
 
 
 def test_generates_update_claim():
