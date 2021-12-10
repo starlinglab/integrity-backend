@@ -18,11 +18,10 @@ class ClaimTool:
             asset_fullpath: the local path to the asset file
             parent_asset_fullpath: local path to the parent asset file; or None
 
-        Returns:
-            True if successful; False if errored
+        Raises:
+            Exception if something goes wrong with injection
         """
-        arg = None
-        if parent_asset_fullpath == None:
+        if parent_asset_fullpath is None:
             args = [
                 config.CLAIM_TOOL_PATH,
                 "--claimdef",
@@ -43,10 +42,9 @@ class ClaimTool:
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         popen.wait()
         if popen.returncode != 0:
-            _logger.error("claim_tool returned code %d", popen.returncode)
-            _logger.error("claim_tool output:\n %s", popen.stdout.read())
-            return False
-        return True
+            raise Exception(
+                f"claim_tool failed with code {popen.returncode} and output: {popen.stdout.read()}"
+            )
 
     def run_claim_dump(self, asset_fullpath, claim_fullpath):
         """Write claim information of an asset to a file.
@@ -55,8 +53,8 @@ class ClaimTool:
             asset_fullpath: the local path to the asset file
             claim_fullpath: the local path to write claim information
 
-        Returns:
-            True if successful; False if errored
+        Raises:
+            Exception if errors are encountered
         """
         args = [
             config.CLAIM_TOOL_PATH,
@@ -67,7 +65,6 @@ class ClaimTool:
             popen = subprocess.Popen(args, stdout=claim_file)
             popen.wait()
             if popen.returncode != 0:
-                _logger.error("claim_tool returned code %d", popen.returncode)
-                _logger.error("claim_tool output:\n %s", popen.stdout.read())
-                return False
-        return True
+                raise Exception(
+                    f"claim_tool failed with code {popen.returncode} and output: {popen.stdout.read()}"
+                )
