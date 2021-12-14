@@ -1,6 +1,7 @@
 # starling-capture-api <!-- omit in toc -->
 
 - [Dev setup](#dev-setup)
+  - [Code style and formatting](#code-style-and-formatting)
 - [Configuration](#configuration)
 - [Creating and sending JWTs in development](#creating-and-sending-jwts-in-development)
 - [Dockerized Debian development environment](#dockerized-debian-development-environment)
@@ -40,6 +41,22 @@ pipenv run server
 To run the tests:
 ```
 pipenv run pytest
+```
+
+### Code style and formatting
+
+We follow [PEP8](https://www.python.org/dev/peps/pep-0008/) style guidelines, and delegate code style issues to automated tools.
+
+We use [black](https://black.readthedocs.io/) with the default configuration for autoformatting.
+
+To auto-format the entire codebase:
+```
+pipenv run autoformat
+```
+
+To auto-format just one file:
+```
+pipenv run black path/to/your/file.py
 ```
 
 ## Configuration
