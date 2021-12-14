@@ -1,15 +1,29 @@
+from typing import Pattern
 from .actions import Actions
 from .asset_helper import AssetHelper
+
+from contextlib import contextmanager
 
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
 import logging
 import time
+import traceback
 
 _actions = Actions()
 _asset_helper = AssetHelper()
 _logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def caught_and_logged_exceptions(event):
+    """Helper for fiile handlers to catch and log any exceptions."""
+    try:
+        yield
+    except Exception as err:
+        print(traceback.format_exc())
+        _logger.error(f"Processing of event {event} errored with: {err}")
 
 
 class FsWatcher:
@@ -17,14 +31,21 @@ class FsWatcher:
 
     def watch(self):
         observer = Observer()
+        patterns = ["*.jpg", "*.jpeg"]
         observer.schedule(
-            self.AddHandler(), recursive=True, path=_asset_helper.get_assets_add()
+            self.AddHandler(patterns=patterns),
+            recursive=True,
+            path=_asset_helper.get_assets_add(),
         )
         observer.schedule(
-            self.UpdateHandler(), recursive=True, path=_asset_helper.get_assets_update()
+            self.UpdateHandler(patterns=patterns),
+            recursive=True,
+            path=_asset_helper.get_assets_update(),
         )
         observer.schedule(
-            self.StoreHandler(), recursive=True, path=_asset_helper.get_assets_store()
+            self.StoreHandler(patterns=patterns),
+            recursive=True,
+            path=_asset_helper.get_assets_store(),
         )
         _logger.info("Starting up file system watcher for action directories.")
         observer.start()
@@ -39,29 +60,20 @@ class FsWatcher:
     class AddHandler(PatternMatchingEventHandler):
         """Handles file changes for add action."""
 
-        # File patterns we want to watch for
-        # Overrides the patterns property of PatternMatchingEventHandler
-        patterns = ["*.jpg", "*.jpeg"]
-
         def on_created(self, event):
-            _actions.add(event.src_path)
+            with caught_and_logged_exceptions(event):
+                _actions.add(event.src_path)
 
     class UpdateHandler(PatternMatchingEventHandler):
         """Handles file changes for update action."""
 
-        # File patterns we want to watch for
-        # Overrides the patterns property of PatternMatchingEventHandler
-        patterns = ["*.jpg", "*.jpeg"]
-
         def on_created(self, event):
-            _actions.update(event.src_path)
+            with caught_and_logged_exceptions(event):
+                _actions.update(event.src_path)
 
     class StoreHandler(PatternMatchingEventHandler):
         """Handles file changes for store action."""
 
-        # File patterns we want to watch for
-        # Overrides the patterns property of PatternMatchingEventHandler
-        patterns = ["*.jpg", "*.jpeg"]
-
         def on_created(self, event):
-            _actions.store(event.src_path)
+            with caught_and_logged_exceptions(event):
+                _actions.store(event.src_path)
