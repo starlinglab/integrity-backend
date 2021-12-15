@@ -68,6 +68,7 @@ def start_api_server():
         ]
     )
     app.add_routes([web.post("/v1/assets/create", handlers.create)])
+    app.add_routes([web.post("/v1/assets/create-proofmode", handlers.create_proofmode)])
     _logger.info("Starting up API server")
     web.run_app(app)
 
