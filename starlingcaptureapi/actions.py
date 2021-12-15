@@ -60,6 +60,48 @@ class Actions:
         )
         return internal_asset_file
 
+    def create_proofmode(self, asset_fullpath, jwt_payload):
+        """Process proofmode bundled asset with create action.
+        A new asset file is generated in the create-proofmode-output folder with an original creation claim.
+
+        Args:
+            asset_fullpath: the local path to the proofmode bundled asset file
+            jwt_payload: a JWT payload containing metadata
+
+        Returns:
+            the local path to the asset file in the internal directory
+
+        Raises:
+            Exception if errors are encountered during processing
+        """
+        # Create temporary files to work with.
+        tmp_asset_file = _asset_helper.get_tmp_file_fullpath(".jpg")
+        tmp_claim_file = _asset_helper.get_tmp_file_fullpath(".json")
+
+        # TODO: Unzip bundle, store asset file, and create dictionary for claim creation.
+        meta_proofmode = None
+
+        # Inject create claim and read back from file.
+        claim = _claim.generate_create_proofmode(jwt_payload, meta_proofmode)
+        shutil.copy2(asset_fullpath, tmp_asset_file)
+        _claim_tool.run_claim_inject(claim, tmp_asset_file, None)
+        _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
+
+        # Copy the C2PA-injected asset to both the internal and shared asset directories.
+        internal_asset_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
+        shutil.move(tmp_asset_file, internal_asset_file)
+        shutil.copy2(internal_asset_file, _asset_helper.get_assets_create_proofmode_output())
+        _logger.info("New asset file added: %s", internal_asset_file)
+        internal_claim_file = _asset_helper.get_internal_claim_fullpath(
+            internal_asset_file
+        )
+        shutil.move(tmp_claim_file, internal_claim_file)
+        _logger.info(
+            "New claim file added to the internal claims directory: %s",
+            internal_claim_file,
+        )
+        return internal_asset_file
+
     def add(self, asset_fullpath):
         """Process asset with add action.
         The provided asset file is added to the asset management system and renamed to its internal identifier in the add-output folder.

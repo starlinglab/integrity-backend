@@ -12,6 +12,7 @@ dir_internal_assets = os.path.join(config.INTERNAL_ASSET_STORE, "assets")
 dir_internal_claims = os.path.join(config.INTERNAL_ASSET_STORE, "claims")
 dir_internal_tmp = os.path.join(config.INTERNAL_ASSET_STORE, "tmp")
 dir_internal_create = os.path.join(config.INTERNAL_ASSET_STORE, "create")
+dir_internal_create_proofmode = os.path.join(config.INTERNAL_ASSET_STORE, "create-proofmode")
 
 # Shared action directories.
 dir_add = os.path.join(config.SHARED_FILE_SYSTEM, "add")
@@ -20,6 +21,7 @@ dir_store = os.path.join(config.SHARED_FILE_SYSTEM, "store")
 
 # Shared output directories.
 dir_create_output = os.path.join(config.SHARED_FILE_SYSTEM, "create-output")
+dir_create_proofmode_output = os.path.join(config.SHARED_FILE_SYSTEM, "create-proofmode-output")
 dir_add_output = os.path.join(config.SHARED_FILE_SYSTEM, "add-output")
 dir_update_output = os.path.join(config.SHARED_FILE_SYSTEM, "update-output")
 dir_store_output = os.path.join(config.SHARED_FILE_SYSTEM, "store-output")
@@ -42,6 +44,10 @@ class AssetHelper:
             _logger.info(
                 "Created internal assets create directory: " + dir_internal_create
             )
+        if _file_util.create_dir(dir_internal_create_proofmode):
+            _logger.info(
+                "Created internal assets create-proofmode directory: " + dir_internal_create_proofmode
+            )
         if _file_util.create_dir(dir_add):
             _logger.info("Created shared assets add directory: " + dir_add)
         if _file_util.create_dir(dir_update):
@@ -51,6 +57,10 @@ class AssetHelper:
         if _file_util.create_dir(dir_create_output):
             _logger.info(
                 "Created shared assets create output directory: " + dir_create_output
+            )
+        if _file_util.create_dir(dir_create_proofmode_output):
+            _logger.info(
+                "Created shared assets create-proofmode output directory: " + dir_create_proofmode_output
             )
         if _file_util.create_dir(dir_add_output):
             _logger.info(
@@ -75,11 +85,17 @@ class AssetHelper:
         _logger.info(
             "Internal assets create directory: %s", self.get_assets_internal_create()
         )
+        _logger.info(
+            "Internal assets create-proofmode directory: %s", self.get_assets_internal_create_proofmode()
+        )
         _logger.info("Shared assets add directory: %s", self.get_assets_add())
         _logger.info("Shared assets update directory: %s", self.get_assets_update())
         _logger.info("Shared assets store directory: %s", self.get_assets_store())
         _logger.info(
             "Shared assets create output directory: %s", self.get_assets_create_output()
+        )
+        _logger.info(
+            "Shared assets create-proofmode output directory: %s", self.get_assets_create_proofmode_output()
         )
         _logger.info(
             "Shared assets add output directory: %s", self.get_assets_add_output()
@@ -103,6 +119,9 @@ class AssetHelper:
     def get_assets_internal_create(self):
         return dir_internal_create
 
+    def get_assets_internal_create_proofmode(self):
+        return dir_internal_create_proofmode
+
     def get_assets_add(self):
         return dir_add
 
@@ -117,6 +136,9 @@ class AssetHelper:
 
     def get_assets_create_output(self):
         return dir_create_output
+
+    def get_assets_create_proofmode_output(self):
+        return dir_create_proofmode_output
 
     def get_assets_update_output(self):
         return dir_update_output
@@ -133,6 +155,12 @@ class AssetHelper:
         _, file_extension = os.path.splitext(from_file)
         return os.path.join(
             dir_internal_create, _file_util.digest_sha256(from_file) + file_extension
+        )
+
+    def get_create_proofmode_file_fullpath(self, from_file):
+        _, file_extension = os.path.splitext(from_file)
+        return os.path.join(
+            dir_internal_create_proofmode, _file_util.digest_sha256(from_file) + file_extension
         )
 
     def get_internal_file_fullpath(self, from_file):

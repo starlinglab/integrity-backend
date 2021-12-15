@@ -75,6 +75,21 @@ class Claim:
 
         return claim
 
+    def generate_create_proofmode(self, jwt_payload, meta_proofmode):
+        """Generates a claim for the 'create_proofmode' action.
+
+        Args:
+            jwt_payload: a dictionary with the data we got from the request's JWT payload
+            meta_proofmode: dictionary with the metadata from a proofmode bundle
+
+        Returns:
+            a dictionary containing the 'create' claim data
+        """
+        claim = copy.deepcopy(CREATE_CLAIM_TEMPLATE)
+
+        # TODO: Parse proofmode metadata and create claim.
+        return claim
+
     def generate_update(self):
         """Generates a claim for the 'update' action.
 

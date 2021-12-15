@@ -36,14 +36,14 @@ class Multipart:
                 # No more parts, we're done reading.
                 break
             if part.name == "file":
-                multipart_data["asset_fullpath"] = await self._write_file(part)
+                multipart_data["asset_fullpath"] = await self._write_file(part, request.path)
             elif part.name == "meta":
                 multipart_data["meta"] = await part.json()
             else:
                 _logger.warning("Ignoring multipart part %s", part.name)
         return multipart_data
 
-    async def _write_file(self, part):
+    async def _write_file(self, part, request_path):
         # Write file in temporary directory.
         tmp_file = _asset_helper.get_tmp_file_fullpath(".jpg")
 
@@ -57,7 +57,10 @@ class Multipart:
                 f.write(chunk)
 
         # Move completed file over to assets creation directory.
-        create_file = _asset_helper.get_create_file_fullpath(tmp_file)
+        if request_path == "/v1/assets/create-proofmode":
+            create_file = _asset_helper.get_create_proofmode_file_fullpath(tmp_file)
+        else:
+            create_file = _asset_helper.get_create_file_fullpath(tmp_file)
         shutil.move(tmp_file, create_file)
         _logger.info("New file added to the assets creation directory: " + create_file)
 
