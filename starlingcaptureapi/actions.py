@@ -6,6 +6,7 @@ from .filecoin import Filecoin
 import logging
 import os
 import shutil
+import time
 
 _asset_helper = AssetHelper()
 _claim = Claim()
@@ -38,6 +39,7 @@ class Actions:
 
         # Inject create claim and read back from file.
         claim = _claim.generate_create(jwt_payload, meta)
+        time.sleep(1)
         shutil.copy2(asset_fullpath, tmp_asset_file)
         _claim_tool.run_claim_inject(claim, tmp_asset_file, None)
         _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
@@ -111,6 +113,7 @@ class Actions:
     def _add(self, asset_fullpath, output_dir):
         # Create temporary files to work with.
         tmp_asset_file = _asset_helper.get_tmp_file_fullpath(".jpg")
+        time.sleep(1)
         shutil.copy2(asset_fullpath, tmp_asset_file)
 
         # Copy asset to both the internal and shared asset directories.
@@ -135,6 +138,7 @@ class Actions:
         )
 
         # Inject update claim and read back from file.
+        time.sleep(1)
         shutil.copy2(asset_fullpath, tmp_asset_file)
         _logger.info("Searching for parent file: %s", parent_file)
         if not os.path.isfile(parent_file):
