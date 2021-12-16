@@ -1,10 +1,10 @@
 import copy
-import geocoder
 import json
 import logging
 import os
 
 from .exif import Exif
+from .geocoder import Geocoder
 
 _logger = logging.getLogger(__name__)
 
@@ -134,21 +134,6 @@ class Claim:
             assertions_by_label[assertion["label"]] = assertion
         return assertions_by_label
 
-    def _reverse_geocode(self, lat, lon):
-        """Retrieves reverse geocoding informatioon for the given latitude and longitude.
-
-        Args:
-            lat, long: latitude and longitude to reverse geocode, as floats
-
-        Returns:
-            geolocation JSON
-
-        """
-        # We shouldn't send more than 1 request per second. TODO: Add some kind of throttling and/or caching.
-        response = geocoder.osm([lat, lon], method="reverse")
-        # TODO: add error handling
-        return response.json
-
     def _get_meta_lat_lon(self, meta):
         """Extracts latitude and longitude from metadata JSON dict.
 
@@ -201,7 +186,7 @@ class Claim:
         if lat is None or lon is None:
             return location_created
 
-        geo_json = self._reverse_geocode(lat, lon)
+        geo_json = Geocoder().reverse_geocode(lat, lon)
         if geo_json is None:
             return location_created
 
