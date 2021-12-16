@@ -1,6 +1,6 @@
 {
     "vendor": "starlinglab",
-    "recorder": "Starling Capture",
+    "recorder": "{{recorder}}",
     "assertions": [
         {
             "label": "stds.schema-org.CreativeWork",
@@ -9,11 +9,17 @@
                 "@type": "CreativeWork",
                 "author": [
                     {
-                        "@type": "Person",
+                        "@type": "{{author_type}}",
                         "credential": [
                         ],
                         "identifier": "{{author_identifier}}",
                         "name": "{{author_name}}"
+                    },
+                    {
+                        "@id": "https://twitter.com/{{twitter_handle}}",
+                        "@type": "{{twitter_type}}",
+                        "identifier": "{{twitter_identifier}}",
+                        "name": "{{twitter_name}}"
                     }
                 ]
             }
@@ -24,7 +30,7 @@
                 "actions": [
                     {
                         "action": "c2pa.created",
-                        "when": "{{created_timestamp}}"
+                        "when": "{{authenticated_asset_created_timestamp}}"
                     }
                 ]
             }
@@ -36,7 +42,9 @@
                     "exif": "http://ns.adobe.com/exif/1.0/"
                 },
                 "exif:GPSLatitude": "{{gps_latitude}}",
+                "exif:GPSLatitudeRef": "{{gps_latitude_ref}}",
                 "exif:GPSLongitude": "{{gps_longitude}}",
+                "exif:GPSLongitudeRef": "{{gps_longitude_ref}}",
                 "exif:GPSTimeStamp": "{{gps_timestamp}}"
             }
         },
@@ -47,7 +55,9 @@
                     "Iptc4xmpExt": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
                     "dc" : "http://purl.org/dc/elements/1.1/"
                 },
-                "dc:creator": [ "{{author_name}}" ],
+                "dc:creator": [
+                    "{{author_name}}"
+                ],
                 "dc:rights": "{{copyright}}",
                 "Iptc4xmpExt:LocationCreated": {
                     "Iptc4xmpExt:CountryCode": "{{location_country_code}}",
@@ -62,17 +72,19 @@
         {
             "label": "org.starlinglab.integrity",
             "data": {
-                "starling:Identifier": "{{starling_identifier}}",
-                "starling:Signatures": [
+                "starling:identifier": "{{starling_identifier}}",
+                "starling:signatures": [
                     {
-                        "starling:Provider": "{{starling_signature_provider}}",
-                        "starling:PublicKey": "{{starling_signature_public_key}}",
-                        "starling:SignedMessage": "{{starling_signature_signed_message}}",
-                        "starling:SignedMessageDescription": "{{starling_signature_signed_message_description}}",
-                        "starling:AuthenticatedPublicData": {
-                            "starling:AssetHash": "{{starling_signature_authenticated_public_data_asset_hash}}",
-                            "starling:AssetMimeType": "{{starling_signature_authenticated_public_data_asset_mime_type}}",
-                            "starling:AssetCreatedTimestamp": "{{starling_signature_authenticated_public_data_asset_created_timestamp}}"
+                        "starling:provider": "{{signature_provider}}",
+                        "starling:algorithm": "{{signature_algorithm}}",
+                        "starling:publicKey": "{{signature_public_key}}",
+                        "starling:signature": "{{signature_signature}}",
+                        "starling:authenticatedMessage": "{{signature_authenticated_message}}",
+                        "starling:authenticatedMessageDescription": "{{signature_authenticated_message_description}}",
+                        "starling:authenticatedMessagePublic": {
+                            "starling:assetHash": "{{authenticated_asset_hash}}",
+                            "starling:assetMimeType": "{{authenticated_asset_mime_type}}",
+                            "starling:assetCreatedTimestamp": "{{authenticated_asset_created_timestamp}}"
                         }
                     }
                 ]

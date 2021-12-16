@@ -1,6 +1,6 @@
 {
     "vendor": "starlinglab",
-    "recorder": "Starling Integrity",
+    "recorder": "{{recorder}}",
     "assertions": [
         {
             "label": "stds.schema-org.CreativeWork",
@@ -9,11 +9,17 @@
                 "@type": "CreativeWork",
                 "author": [
                     {
-                        "@type": "Organization",
+                        "@type": "{{author_type}}",
                         "credential": [
                         ],
-                        "identifier": "https://scmp.com",
-                        "name": "South China Morning Post"
+                        "identifier": "{{author_identifier}}",
+                        "name": "{{author_name}}"
+                    },
+                    {
+                        "@id": "https://twitter.com/{{twitter_handle}}",
+                        "@type": "{{twitter_type}}",
+                        "identifier": "{{twitter_identifier}}",
+                        "name": "{{twitter_name}}"
                     }
                 ]
             }
@@ -23,8 +29,8 @@
             "data": {
                 "actions": [
                     {
-                        "action": "c2pa.edited",
-                        "when": "{{edited_timestamp}}"
+                        "action": "c2pa.unknown",
+                        "when": "{{asset_unknown_timestamp}}"
                     }
                 ]
             }
