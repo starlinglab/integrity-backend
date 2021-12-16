@@ -18,20 +18,16 @@ meta = {
     ]
 }
 
-fake_geo_json = {
-    "raw": {
-        "address": {
-            "town": "Fake Town",
-            "state": "Some State",
-            "country": "Mock Country",
-            "country_code": "br",
-        }
-    }
+fake_address = {
+    "city": "Fake Town",
+    "state": "Some State",
+    "country": "Mock Country",
+    "country_code": "br",
 }
 
 
 def test_generates_create_claim(reverse_geocode_mocker):
-    reverse_geocode_mocker(fake_geo_json)
+    reverse_geocode_mocker(fake_address)
 
     claim = _claim.generate_create(jwt_payload, meta)
     assertions = _claim.assertions_by_label(claim)
@@ -65,7 +61,7 @@ def test_generates_create_claim(reverse_geocode_mocker):
 
 
 def test_generates_create_claim_with_no_missing_author_info(reverse_geocode_mocker):
-    reverse_geocode_mocker(fake_geo_json)
+    reverse_geocode_mocker(fake_address)
 
     claim = _claim.generate_create({"bad": "jwt"}, meta)
 
@@ -77,7 +73,7 @@ def test_generates_create_claim_with_no_missing_author_info(reverse_geocode_mock
 
 
 def test_generates_create_claim_with_no_meta(reverse_geocode_mocker):
-    reverse_geocode_mocker(fake_geo_json)
+    reverse_geocode_mocker(fake_address)
 
     claim = _claim.generate_create(
         jwt_payload,
@@ -95,7 +91,7 @@ def test_generates_create_claim_with_no_meta(reverse_geocode_mocker):
 
 
 def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
-    reverse_geocode_mocker(fake_geo_json)
+    reverse_geocode_mocker(fake_address)
 
     claim = _claim.generate_create(jwt_payload, None)
     assert claim is not None
@@ -117,7 +113,7 @@ def test_generates_create_claim_with_no_reverse_geocode(reverse_geocode_mocker):
 
 
 def test_generates_create_claim_with_partial_reverse_geocode(reverse_geocode_mocker):
-    reverse_geocode_mocker({"raw": {"address": {"town": "Partial Town"}}})
+    reverse_geocode_mocker({"city": "Partial Town"})
 
     claim = _claim.generate_create(jwt_payload, meta)
     assert claim is not None

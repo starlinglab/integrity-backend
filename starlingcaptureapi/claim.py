@@ -186,18 +186,14 @@ class Claim:
         if lat is None or lon is None:
             return location_created
 
-        geo_json = Geocoder().reverse_geocode(lat, lon)
-        if geo_json is None:
-            return location_created
-
-        if (address := geo_json.get("raw", {}).get("address")) is None:
-            _logger.warning("Reverse geocoding result did not include raw.address")
+        address = Geocoder().reverse_geocode(lat, lon)
+        if address is None:
             return location_created
 
         location_created["Iptc4xmpExt:CountryCode"] = address.get("country_code")
         location_created["Iptc4xmpExt:CountryName"] = address.get("country")
         location_created["Iptc4xmpExt:ProvinceState"] = address.get("state")
-        location_created["Iptc4xmpExt:City"] = address.get("town")
+        location_created["Iptc4xmpExt:City"] = address.get("city")
 
         return {k: v for k, v in location_created.items() if v is not None}
 
