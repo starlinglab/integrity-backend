@@ -16,9 +16,17 @@ class Geocoder:
             geolocation JSON
 
         """
-        # We shouldn't send more than 1 request per second. TODO: Add some kind of throttling and/or caching.
+        # TODO: Add some kind of throttling and/or caching to prevent us from sending more than 1 req/sec.
         response = geocoder.osm([lat, lon], method="reverse")
-        # TODO: add error handling
+        if response.status_code != 200 or response.status != "OK":
+            _logger.error(
+                "Reverse geocode lookup for (%s, %s) failed with: %s",
+                lat,
+                lon,
+                response.status,
+            )
+            return None
+
         return self._json_to_address(response.json)
 
     def _json_to_address(self, geo_json):
