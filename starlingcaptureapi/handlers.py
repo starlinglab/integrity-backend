@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 from .actions import Actions
 from .multipart import Multipart
 
@@ -8,42 +10,47 @@ import traceback
 
 _logger = logging.getLogger(__name__)
 
+
 async def create(request):
-    data = await Multipart().read(request)
-    status = 200
-    response = {
-        "asset_fullpath": data.get("asset_fullpath"),
-        "jwt_payload": request.get("jwt_payload"),
-    }
-    try:
+    with error_handling_and_response() as response:
+        data = await Multipart().read(request)
+
+        if "meta" not in data:
+            raise ValueError("Missing 'meta' section in request")
+
         Actions().create(
             data.get("asset_fullpath"), request.get("jwt_payload"), data.get("meta")
         )
-    except Exception as err:
-        print(traceback.format_exc())
-        _logger.error(err)
-        status = 500
-        response["error"] = f"{err}"
 
-    # TODO(anaulin): Add all the required metadata, errors, etc, to response.
-    return web.json_response(response, status=status)
+    return web.json_response(response, status=response.get("status_code"))
+
 
 async def create_proofmode(request):
-    data = await Multipart().read(request)
-    status = 200
-    response = {
-        "asset_fullpath": data.get("asset_fullpath"),
-        "jwt_payload": request.get("jwt_payload"),
-    }
-    try:
+    with error_handling_and_response() as response:
+        data = await Multipart().read(request)
         Actions().create_proofmode(
             data.get("asset_fullpath"), request.get("jwt_payload")
         )
+
+    return web.json_response(response, status=response.get("status_code"))
+
+
+@contextmanager
+def error_handling_and_response():
+    """Context manager to wrap the core of a handler implementation with error handlers.
+
+    Yields:
+        response: dict containing a status and any errors encountered
+    """
+    response = {"status": "ok", "status_code": 200}
+    try:
+        yield response
     except Exception as err:
         print(traceback.format_exc())
         _logger.error(err)
-        status = 500
         response["error"] = f"{err}"
-
-    # TODO(anaulin): Add all the required metadata, errors, etc, to response.
-    return web.json_response(response, status=status)
+        response["status"] = "error"
+        if type(err) == ValueError:
+            response["status_code"] = 400
+        else:
+            response["status_code"] = 500
