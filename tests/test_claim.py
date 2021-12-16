@@ -18,20 +18,16 @@ meta = {
     ]
 }
 
-fake_geo_json = {
-    "raw": {
-        "address": {
-            "town": "Fake Town",
-            "state": "Some State",
-            "country": "Mock Country",
-            "country_code": "br",
-        }
-    }
+fake_address = {
+    "city": "Fake Town",
+    "state": "Some State",
+    "country": "Mock Country",
+    "country_code": "br",
 }
 
 
-def test_generates_create_claim(mocker):
-    mocker.patch.object(_claim, "_reverse_geocode", return_value=fake_geo_json)
+def test_generates_create_claim(reverse_geocode_mocker):
+    reverse_geocode_mocker(fake_address)
 
     claim = _claim.generate_create(jwt_payload, meta)
     assertions = _claim.assertions_by_label(claim)
@@ -64,8 +60,8 @@ def test_generates_create_claim(mocker):
     assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2021:10:30 18:43:14 +0000"
 
 
-def test_generates_create_claim_with_no_missing_author_info(mocker):
-    mocker.patch.object(_claim, "_reverse_geocode", return_value=fake_geo_json)
+def test_generates_create_claim_with_no_missing_author_info(reverse_geocode_mocker):
+    reverse_geocode_mocker(fake_address)
 
     claim = _claim.generate_create({"bad": "jwt"}, meta)
 
@@ -76,8 +72,8 @@ def test_generates_create_claim_with_no_missing_author_info(mocker):
     assert claim["recorder"] == "Starling Capture"
 
 
-def test_generates_create_claim_with_no_meta(mocker):
-    mocker.patch.object(_claim, "_reverse_geocode", return_value=fake_geo_json)
+def test_generates_create_claim_with_no_meta(reverse_geocode_mocker):
+    reverse_geocode_mocker(fake_address)
 
     claim = _claim.generate_create(
         jwt_payload,
@@ -94,8 +90,8 @@ def test_generates_create_claim_with_no_meta(mocker):
     assert exif_assertion["data"] == {"exif:GPSTimeStamp": "2021:10:30 18:43:14 +0000"}
 
 
-def test_generates_create_claim_with_parial_meta(mocker):
-    mocker.patch.object(_claim, "_reverse_geocode", return_value=fake_geo_json)
+def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
+    reverse_geocode_mocker(fake_address)
 
     claim = _claim.generate_create(jwt_payload, None)
     assert claim is not None
@@ -106,8 +102,8 @@ def test_generates_create_claim_with_parial_meta(mocker):
     assert photo_meta_assertion["data"]["dc:rights"] == "copyright holder"
 
 
-def test_generates_create_claim_with_no_reverse_geocode(mocker):
-    mocker.patch.object(_claim, "_reverse_geocode", return_value=None)
+def test_generates_create_claim_with_no_reverse_geocode(reverse_geocode_mocker):
+    reverse_geocode_mocker(None)
 
     claim = _claim.generate_create(jwt_payload, meta)
     assert claim is not None
@@ -116,12 +112,8 @@ def test_generates_create_claim_with_no_reverse_geocode(mocker):
     assert photo_meta_assertion["data"]["Iptc4xmpExt:LocationCreated"] == {}
 
 
-def test_generates_create_claim_with_partial_reverse_geocode(mocker):
-    mocker.patch.object(
-        _claim,
-        "_reverse_geocode",
-        return_value={"raw": {"address": {"town": "Partial Town"}}},
-    )
+def test_generates_create_claim_with_partial_reverse_geocode(reverse_geocode_mocker):
+    reverse_geocode_mocker({"city": "Partial Town"})
 
     claim = _claim.generate_create(jwt_payload, meta)
     assert claim is not None
