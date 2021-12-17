@@ -84,6 +84,12 @@ class Claim:
             signature["data"] = signature_data
             assertions.append(signature)
 
+        timestamp = self._timestamp_from_meta(meta)
+        if timestamp is not None:
+            c2pa_actions = assertion_templates["c2pa.actions"]
+            c2pa_actions["data"]["actions"][0]["when"] = timestamp
+            assertions.append(c2pa_actions)
+
         claim["assertions"] = assertions
 
         return claim
@@ -274,11 +280,7 @@ class Claim:
             return None
 
         proof = meta.get("proof", {})
-        timestamp = None
-        if proof.get("timestamp") is not None:
-            timestamp = datetime.datetime.fromtimestamp(
-                proof.get("timestamp") / 1000
-            ).isoformat()
+        timestamp = self._timestamp_from_meta(meta)
 
         return {
             "starling:identifier": signature.get("proofHash"),
@@ -301,3 +303,9 @@ class Claim:
 
     def _remove_keys_with_no_values(self, dictionary):
         return {k: v for k, v in dictionary.items() if v}
+
+    def _timestamp_from_meta(self, meta):
+        if (epoch_millis := meta.get("proof", {}).get("timestamp")) is not None:
+            return datetime.datetime.fromtimestamp(epoch_millis / 1000).isoformat()
+        else:
+            return None

@@ -100,6 +100,8 @@ def test_generates_create_claim(reverse_geocode_mocker):
     assert authenticated_message["starling:assetCreatedTimestamp"].startswith(
         "2021-10-30"
     )
+    c2pa_actions = assertions["c2pa.actions"]
+    assert c2pa_actions["data"]["actions"][0]["when"].startswith("2021-10-30")
 
 
 def test_generates_create_claim_with_missing_author_info(reverse_geocode_mocker):
