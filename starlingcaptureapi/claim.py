@@ -46,34 +46,34 @@ class Claim:
         Returns:
             a dictionary containing the 'create' claim data
         """
+        if meta is None:
+            raise ValueError("Meta must be present, but got None!")
+
         claim = copy.deepcopy(CREATE_CLAIM_TEMPLATE)
-
-        assertions = self.assertions_by_label(claim)
-
         claim["recorder"] = "Starling Capture by Numbers Protocol"
 
-        creative_work = assertions["stds.schema-org.CreativeWork"]
-        jwt_author = jwt_payload.get("author", {})
-        creative_work["data"]["author"][0]["identifier"] = jwt_author.get("identifier")
-        creative_work["data"]["author"][0]["name"] = jwt_author.get("name")
+        assertion_templates = self.assertions_by_label(claim)
+        assertions = []
 
-        photo_meta = assertions["stds.iptc.photo-metadata"]
-        photo_meta["data"]["dc:creator"] = [jwt_author.get("name")]
-        photo_meta["data"]["dc:rights"] = jwt_payload.get("copyright")
+        author_data = self._make_author_data(jwt_payload)
+        if author_data is not None:
+            creative_work = assertion_templates["stds.schema-org.CreativeWork"]
+            creative_work["data"] = author_data
+            assertions.append(creative_work)
 
-        if meta is None:
-            _logger.warning(
-                "No 'meta' found in request. Metadata will be missing from Claim."
-            )
-        else:
-            _logger.info("Processing metadata: %s", meta)
-            (lat, lon) = self._get_meta_lat_lon(meta)
-            photo_meta["data"][
-                "Iptc4xmpExt:LocationCreated"
-            ] = self._get_location_created(lat, lon)
+        photo_meta_data = self._make_photo_meta_data(jwt_payload, meta)
+        if photo_meta_data is not None:
+            photo_meta = assertion_templates["stds.iptc.photo-metadata"]
+            photo_meta["data"] = photo_meta_data
+            assertions.append(photo_meta)
 
-            exif = assertions["stds.exif"]
-            exif["data"] = self._make_exif_data(lat, lon, meta)
+        exif_data = self._make_exif_data(meta)
+        if exif_data is not None:
+            exif = assertion_templates["stds.exif"]
+            exif["data"] = exif_data
+            assertions.append(exif)
+
+        claim["assertions"] = assertions
 
         return claim
 
@@ -136,6 +136,21 @@ class Claim:
             assertions_by_label[assertion["label"]] = assertion
         return assertions_by_label
 
+    def _make_photo_meta_data(self, jwt_payload, meta):
+        (lat, lon) = self._get_meta_lat_lon(meta)
+        photo_meta_data = {
+            "dc:creator": [jwt_payload.get("author", {}).get("name")],
+            "dc:rights": jwt_payload.get("copyright"),
+            "Iptc4xmpExt:LocationCreated": self._get_location_created(lat, lon),
+        }
+
+        photo_meta_data = self._remove_keys_with_no_values(photo_meta_data)
+
+        if not photo_meta_data.keys():
+            return None
+
+        return photo_meta_data
+
     def _get_meta_lat_lon(self, meta):
         """Extracts latitude and longitude from metadata JSON dict.
 
@@ -146,7 +161,7 @@ class Claim:
             (lat, lon) from the 'meta' data, returned as a pair
         """
         if "information" not in meta:
-            return None
+            return (None, None)
         lat = lon = None
         for info in meta["information"]:
             if info["name"] == "Last Known GPS Latitude":
@@ -197,19 +212,20 @@ class Claim:
         location_created["Iptc4xmpExt:ProvinceState"] = address.get("state")
         location_created["Iptc4xmpExt:City"] = address.get("city")
 
-        return {k: v for k, v in location_created.items() if v is not None}
+        return self._remove_keys_with_no_values(location_created)
 
-    def _make_exif_data(self, lat, lon, meta):
+    def _make_exif_data(self, meta):
         """Returns the data fields for the stds.exif section of the claim
 
         Args:
-            lat, lon: floats (or None), indicating the latitude and longitude to use
             meta: metadata dictionary from the incoming request
 
         Returns:
             dictionary to use as the value of the stds.exif field
             might be empty, if no input data is provided
         """
+        (lat, lon) = self._get_meta_lat_lon(meta)
+
         exif_data = {}
 
         (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
@@ -220,4 +236,27 @@ class Claim:
         exif_data["exif:GPSLongitudeRef"] = exif_lon_ref
         exif_data["exif:GPSTimeStamp"] = self._get_exif_timestamp(meta)
 
-        return {k: v for k, v in exif_data.items() if v is not None}
+        exif_data = self._remove_keys_with_no_values(exif_data)
+        if not exif_data.keys():
+            return None
+
+        return exif_data
+
+    def _make_author_data(self, jwt_payload):
+        jwt_author = jwt_payload.get("author", {})
+        author = self._remove_keys_with_no_values(
+            {
+                "@type": jwt_payload.get("type"),
+                "identifier": jwt_author.get("identifier"),
+                "name": jwt_author.get("name"),
+            }
+        )
+
+        if not author.keys():
+            _logger.warning("Couldn't extract author data from JWT %s", jwt_payload)
+            return None
+
+        return {"author": [author]}
+
+    def _remove_keys_with_no_values(self, dictionary):
+        return {k: v for k, v in dictionary.items() if v}
