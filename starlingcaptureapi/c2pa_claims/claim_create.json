@@ -16,7 +16,7 @@
                         "name": "{{author_name}}"
                     },
                     {
-                        "@id": "https://twitter.com/{{twitter_handle}}",
+                        "@id": "https://twitter.com/{{twitter_name}}",
                         "@type": "{{twitter_type}}",
                         "identifier": "{{twitter_identifier}}",
                         "name": "{{twitter_name}}"
