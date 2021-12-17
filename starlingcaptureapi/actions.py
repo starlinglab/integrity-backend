@@ -95,17 +95,34 @@ class Actions:
                         exif_dict = {}
                         for (k,v) in exif_data.items():
                             if k in ExifTags.TAGS:
-                                exif_dict[ExifTags.TAGS.get(k)]=v                        
+                                exif_dict[ExifTags.TAGS.get(k)]=v
+
+                        gpsinfo = {}
+                        for key in exif_dict['GPSInfo'].keys():
+                            decode = ExifTags.GPSTAGS.get(key,key)
+                            gpsinfo[decode] = exif_dict['GPSInfo'][key]
 
                     if file.endswith(".csv"):
                         csv_reader=csv.DictReader(open(os.path.join(tmp_unzip_folder,file)))
                         meta_csv = next(csv_reader)
 
-        meta_proofmode = None
+        info = []
+        
+        # TODO: Parse this up right.
+        if 'GPSLatitude' in gpsinfo
+
+            lat = gpsinfo['GPSLongitude'][0][0] + gpsinfo['GPSLongitude'][1][0] / 60 + gpsinfo['GPSLongitude'][2][0] / (3600*100) 
+            lon = gpsinfo['GPSLatitude'][0][0] + gpsinfo['GPSLatitude'][1][0] / 60 + gpsinfo['GPSLatitude'][2][0] / (3600*100) 
+
+            row = {"name": "Last Known GPS Latitude", "value":lat}
+            info.append(row)
+            row = {"name": "Last Known GPS Longitude", "value":lon}
+            info.append(row)
+
+        meta_proofmode = {"information": info}
         
         # Inject create claim and read back from file.
         claim = _claim.generate_create_proofmode(jwt_payload, meta_proofmode)
-        shutil.copy2(asset_fullpath, tmp_asset_file)
         _claim_tool.run_claim_inject(claim, tmp_asset_file, None)
         _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
 
