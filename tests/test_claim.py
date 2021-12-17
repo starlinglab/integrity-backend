@@ -4,8 +4,14 @@ _claim = claim.Claim()
 
 jwt_payload = {
     "author": {
-        "name": "Jane Doe",
-        "identifier": "some-identifier",
+        "type": "Person",
+        "identifier": "https://hypha.coop",
+        "name": "Benedict Lau",
+    },
+    "twitter": {
+        "type": "Organization",
+        "identifier": "https://hypha.coop",
+        "name": "HyphaCoop",
     },
     "copyright": "copyright holder",
 }
@@ -48,12 +54,21 @@ def test_generates_create_claim(reverse_geocode_mocker):
     assertions = _claim.assertions_by_label(claim)
     assert claim["vendor"] == "starlinglab"
     assert claim["recorder"] == "Starling Capture by Numbers Protocol"
-    assert (
-        assertions["stds.schema-org.CreativeWork"]["data"]["author"][0]["name"]
-        == "Jane Doe"
-    )
+
+    creative_work = assertions["stds.schema-org.CreativeWork"]
+    assert len(creative_work["data"]["author"]) == 2
+    author_data = creative_work["data"]["author"][0]
+    assert author_data["@type"] == "Person"
+    assert author_data["name"] == "Benedict Lau"
+    assert author_data["credential"] == []
+    assert author_data["identifier"] == "https://hypha.coop"
+    twitter_data = creative_work["data"]["author"][1]
+    assert twitter_data["@id"] == "https://twitter.com/HyphaCoop"
+    assert twitter_data["@type"] == "Organization"
+    assert twitter_data["name"] == "HyphaCoop"
+
     photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
-    assert photo_meta_assertion["data"]["dc:creator"] == ["Jane Doe"]
+    assert photo_meta_assertion["data"]["dc:creator"] == ["Benedict Lau"]
     assert photo_meta_assertion["data"]["dc:rights"] == "copyright holder"
     assert photo_meta_assertion["data"]["Iptc4xmpExt:LocationCreated"] == {
         "Iptc4xmpExt:CountryCode": "br",
@@ -61,6 +76,7 @@ def test_generates_create_claim(reverse_geocode_mocker):
         "Iptc4xmpExt:ProvinceState": "Some State",
         "Iptc4xmpExt:City": "Fake Town",
     }
+
     exif_assertion = assertions["stds.exif"]
     assert (
         exif_assertion["data"]["exif:GPSLatitude"]
@@ -73,6 +89,7 @@ def test_generates_create_claim(reverse_geocode_mocker):
     )
     assert exif_assertion["data"]["exif:GPSLongitudeRef"] == "W"
     assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2021:10:30 18:43:14 +0000"
+
     signature_assertion = assertions["org.starlinglab.integrity"]
     assert signature_assertion["data"]["starling:identifier"] == signature.get(
         "proofHash"
@@ -100,6 +117,7 @@ def test_generates_create_claim(reverse_geocode_mocker):
     assert authenticated_message["starling:assetCreatedTimestamp"].startswith(
         "2021-10-30"
     )
+
     c2pa_actions = assertions["c2pa.actions"]
     assert c2pa_actions["data"]["actions"][0]["when"].startswith("2021-10-30")
 

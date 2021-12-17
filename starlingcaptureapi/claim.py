@@ -260,20 +260,40 @@ class Claim:
         return exif_data
 
     def _make_author_data(self, jwt_payload):
+        author = []
         jwt_author = jwt_payload.get("author", {})
-        author = self._remove_keys_with_no_values(
-            {
-                "@type": jwt_payload.get("type"),
-                "identifier": jwt_author.get("identifier"),
-                "name": jwt_author.get("name"),
-            }
-        )
+        if jwt_author:
+            author.append(
+                {
+                    "@type": jwt_author.get("type"),
+                    "credential": [],
+                    "identifier": jwt_author.get("identifier"),
+                    "name": jwt_author.get("name"),
+                }
+            )
 
-        if not author.keys():
-            _logger.warning("Couldn't extract author data from JWT %s", jwt_payload)
+        jwt_twitter = jwt_payload.get("twitter", {})
+        if jwt_twitter:
+            if (twitter_name := jwt_twitter.get("name")) is not None:
+                twitter_id = f"https://twitter.com/{twitter_name}"
+            else:
+                twitter_id = None
+            author.append(
+                {
+                    "@id": twitter_id,
+                    "@type": jwt_twitter.get("type"),
+                    "identifier": jwt_twitter.get("identifier"),
+                    "name": jwt_twitter.get("name"),
+                }
+            )
+
+        if not author:
+            _logger.warning(
+                "Couldn't extract author nor Twitter data from JWT %s", jwt_payload
+            )
             return None
 
-        return {"author": [author]}
+        return {"author": author}
 
     def _make_signature_data(self, signature, meta):
         if signature is None:
