@@ -1,3 +1,4 @@
+import datetime
 import copy
 import json
 import logging
@@ -76,6 +77,12 @@ class Claim:
             exif = assertion_templates["stds.exif"]
             exif["data"] = exif_data
             assertions.append(exif)
+
+        signature_data = self._make_signature_data(signature, meta)
+        if signature_data is not None:
+            signature = assertion_templates["org.starlinglab.integrity"]
+            signature["data"] = signature_data
+            assertions.append(signature)
 
         claim["assertions"] = assertions
 
@@ -261,6 +268,34 @@ class Claim:
             return None
 
         return {"author": [author]}
+
+    def _make_signature_data(self, signature, meta):
+        if signature is None:
+            return None
+
+        proof = meta.get("proof", {})
+        timestamp = None
+        if proof.get("timestamp") is not None:
+            timestamp = datetime.datetime.fromtimestamp(proof.get("timestamp") / 1000).isoformat()
+
+        return {
+                "starling:identifier": signature.get("proofHash"),
+                "starling:signatures": [
+                    {
+                        "starling:provider": "AndroidOpenSSL",
+                        "starling:algorithm": "numbers-AndroidOpenSSL",
+                        "starling:publicKey": signature.get("publicKey"),
+                        "starling:signature": signature.get("signature"),
+                        "starling:authenticatedMessage": signature.get("proofHash"),
+                        "starling:authenticatedMessageDescription": "Internal identifier of the authenticated bundle",
+                        "starling:authenticatedMessagePublic": {
+                            "starling:assetHash": proof.get("hash"),
+                            "starling:assetMimeType": proof.get("mimeType"),
+                            "starling:assetCreatedTimestamp": timestamp
+                        }
+                    }
+                ]
+            }
 
     def _remove_keys_with_no_values(self, dictionary):
         return {k: v for k, v in dictionary.items() if v}
