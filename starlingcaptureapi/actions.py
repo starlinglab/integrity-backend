@@ -109,7 +109,7 @@ class Actions:
         info = []
         
         # TODO: Parse this up right.
-        if 'GPSLatitude' in gpsinfo
+        if 'GPSLatitude' in gpsinfo:
 
             lat = gpsinfo['GPSLongitude'][0][0] + gpsinfo['GPSLongitude'][1][0] / 60 + gpsinfo['GPSLongitude'][2][0] / (3600*100) 
             lon = gpsinfo['GPSLatitude'][0][0] + gpsinfo['GPSLatitude'][1][0] / 60 + gpsinfo['GPSLatitude'][2][0] / (3600*100) 
