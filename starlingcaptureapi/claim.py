@@ -276,26 +276,28 @@ class Claim:
         proof = meta.get("proof", {})
         timestamp = None
         if proof.get("timestamp") is not None:
-            timestamp = datetime.datetime.fromtimestamp(proof.get("timestamp") / 1000).isoformat()
+            timestamp = datetime.datetime.fromtimestamp(
+                proof.get("timestamp") / 1000
+            ).isoformat()
 
         return {
-                "starling:identifier": signature.get("proofHash"),
-                "starling:signatures": [
-                    {
-                        "starling:provider": "AndroidOpenSSL",
-                        "starling:algorithm": "numbers-AndroidOpenSSL",
-                        "starling:publicKey": signature.get("publicKey"),
-                        "starling:signature": signature.get("signature"),
-                        "starling:authenticatedMessage": signature.get("proofHash"),
-                        "starling:authenticatedMessageDescription": "Internal identifier of the authenticated bundle",
-                        "starling:authenticatedMessagePublic": {
-                            "starling:assetHash": proof.get("hash"),
-                            "starling:assetMimeType": proof.get("mimeType"),
-                            "starling:assetCreatedTimestamp": timestamp
-                        }
-                    }
-                ]
-            }
+            "starling:identifier": signature.get("proofHash"),
+            "starling:signatures": [
+                {
+                    "starling:provider": signature.get("provider"),
+                    "starling:algorithm": f"numbers-{signature.get('provider')}",
+                    "starling:publicKey": signature.get("publicKey"),
+                    "starling:signature": signature.get("signature"),
+                    "starling:authenticatedMessage": signature.get("proofHash"),
+                    "starling:authenticatedMessageDescription": "Internal identifier of the authenticated bundle",
+                    "starling:authenticatedMessagePublic": {
+                        "starling:assetHash": proof.get("hash"),
+                        "starling:assetMimeType": proof.get("mimeType"),
+                        "starling:assetCreatedTimestamp": timestamp,
+                    },
+                }
+            ],
+        }
 
     def _remove_keys_with_no_values(self, dictionary):
         return {k: v for k, v in dictionary.items() if v}

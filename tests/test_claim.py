@@ -74,19 +74,33 @@ def test_generates_create_claim(reverse_geocode_mocker):
     assert exif_assertion["data"]["exif:GPSLongitudeRef"] == "W"
     assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2021:10:30 18:43:14 +0000"
     signature_assertion = assertions["org.starlinglab.integrity"]
-    assert signature_assertion["data"]["starling:identifier"] == signature.get("proofHash")
+    assert signature_assertion["data"]["starling:identifier"] == signature.get(
+        "proofHash"
+    )
     first_signature = signature_assertion["data"]["starling:signatures"][0]
     assert first_signature is not None
-    assert first_signature["starling:provider"] == "AndroidOpenSSL"
-    assert first_signature["starling:algorithm"] == "numbers-AndroidOpenSSL"
+    assert first_signature["starling:provider"] == signature.get("provider")
+    assert first_signature["starling:algorithm"] == "numbers-" + signature.get(
+        "provider"
+    )
     assert first_signature["starling:publicKey"] == signature.get("publicKey")
     assert first_signature["starling:signature"] == signature.get("signature")
-    assert first_signature["starling:authenticatedMessage"] == signature.get("proofHash")
-    assert first_signature["starling:authenticatedMessageDescription"] == "Internal identifier of the authenticated bundle"
+    assert first_signature["starling:authenticatedMessage"] == signature.get(
+        "proofHash"
+    )
+    assert (
+        first_signature["starling:authenticatedMessageDescription"]
+        == "Internal identifier of the authenticated bundle"
+    )
     authenticated_message = first_signature["starling:authenticatedMessagePublic"]
     assert authenticated_message["starling:assetHash"] == meta.get("proof").get("hash")
-    assert authenticated_message["starling:assetMimeType"] == meta.get("proof").get("mimeType")
-    assert authenticated_message["starling:assetCreatedTimestamp"].startswith("2021-10-30")
+    assert authenticated_message["starling:assetMimeType"] == meta.get("proof").get(
+        "mimeType"
+    )
+    assert authenticated_message["starling:assetCreatedTimestamp"].startswith(
+        "2021-10-30"
+    )
+
 
 def test_generates_create_claim_with_missing_author_info(reverse_geocode_mocker):
     reverse_geocode_mocker(fake_address)
