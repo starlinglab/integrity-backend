@@ -60,19 +60,18 @@ def test_generates_create_claim(reverse_geocode_mocker):
     assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2021:10:30 18:43:14 +0000"
 
 
-def test_generates_create_claim_with_no_missing_author_info(reverse_geocode_mocker):
+def test_generates_create_claim_with_missing_author_info(reverse_geocode_mocker):
     reverse_geocode_mocker(fake_address)
 
     claim = _claim.generate_create({"bad": "jwt"}, meta)
 
-    # Mainly assert that we generated something and we didn't explode.
-    # Claim values are tested more thoroughly in other test cases
     assert claim is not None
     assert claim["vendor"] == "starlinglab"
     assert claim["recorder"] == "Starling Capture by Numbers Protocol"
+    assert "stds.schema-org.CreativeWork" not in _claim.assertions_by_label(claim)
 
 
-def test_generates_create_claim_with_no_meta(reverse_geocode_mocker):
+def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
     reverse_geocode_mocker(fake_address)
 
     claim = _claim.generate_create(
@@ -90,18 +89,6 @@ def test_generates_create_claim_with_no_meta(reverse_geocode_mocker):
     assert exif_assertion["data"] == {"exif:GPSTimeStamp": "2021:10:30 18:43:14 +0000"}
 
 
-def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
-    reverse_geocode_mocker(fake_address)
-
-    claim = _claim.generate_create(jwt_payload, None)
-    assert claim is not None
-
-    assertions = _claim.assertions_by_label(claim)
-    photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
-    assert photo_meta_assertion["data"]["dc:creator"] == ["Jane Doe"]
-    assert photo_meta_assertion["data"]["dc:rights"] == "copyright holder"
-
-
 def test_generates_create_claim_with_no_reverse_geocode(reverse_geocode_mocker):
     reverse_geocode_mocker(None)
 
@@ -109,7 +96,7 @@ def test_generates_create_claim_with_no_reverse_geocode(reverse_geocode_mocker):
     assert claim is not None
     assertions = _claim.assertions_by_label(claim)
     photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
-    assert photo_meta_assertion["data"]["Iptc4xmpExt:LocationCreated"] == {}
+    assert "Iptc4xmpExt:LocationCreated" not in photo_meta_assertion["data"]
 
 
 def test_generates_create_claim_with_partial_reverse_geocode(reverse_geocode_mocker):
