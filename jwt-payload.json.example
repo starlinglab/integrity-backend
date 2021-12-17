@@ -1,5 +1,6 @@
 {
     "author": {
+        "type": "Person",
         "identifier": "https://hypha.coop",
         "name": "Benedict Lau"
     },
