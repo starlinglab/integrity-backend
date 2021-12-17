@@ -3,10 +3,14 @@ from .claim import Claim
 from .claim_tool import ClaimTool
 from .filecoin import Filecoin
 
+import csv
 import logging
 import os
 import shutil
 import time
+import tempfile
+import zipfile
+from PIL import Image, ExifTags
 
 _asset_helper = AssetHelper()
 _claim = Claim()
@@ -79,9 +83,26 @@ class Actions:
         tmp_asset_file = _asset_helper.get_tmp_file_fullpath(".jpg")
         tmp_claim_file = _asset_helper.get_tmp_file_fullpath(".json")
 
-        # TODO: Unzip bundle, store asset file, and create dictionary for claim creation.
-        meta_proofmode = None
+        # Unzip bundle, store asset file, and create dictionary for claim creation.
+        with tempfile.TemporaryDirectory() as tmp_unzip_folder:
+            with zipfile.ZipFile(asset_fullpath, 'r') as zip_ref:
+                zip_ref.extractall(tmp_unzip_folder)
+                for file in os.listdir(tmp_unzip_folder):
+                    if file.endswith(".jpg"):
+                        shutil.copy2(os.path.join(tmp_unzip_folder, file), tmp_asset_file)
+                        img = Image.open(os.path.join(tmp_unzip_folder, file))
+                        exif_data = img._getexif()
+                        exif_dict = {}
+                        for (k,v) in exif_data.items():
+                            if k in ExifTags.TAGS:
+                                exif_dict[ExifTags.TAGS.get(k)]=v                        
 
+                    if file.endswith(".csv"):
+                        csv_reader=csv.DictReader(open(os.path.join(tmp_unzip_folder,file)))
+                        meta_csv = next(csv_reader)
+
+        meta_proofmode = None
+        
         # Inject create claim and read back from file.
         claim = _claim.generate_create_proofmode(jwt_payload, meta_proofmode)
         shutil.copy2(asset_fullpath, tmp_asset_file)
