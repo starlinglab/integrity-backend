@@ -136,14 +136,14 @@ class AssetHelper:
 
     def get_assets_create_output(self, subfolder=None):
         if subfolder:
-            dir_subfolder = os.path.join(dir_create_output, subfolder)
+            dir_subfolder = os.path.join(dir_create_output, subfolder.lower().replace(' ', '-'))
             _file_util.create_dir(dir_subfolder)
             return dir_subfolder
         return dir_create_output
 
     def get_assets_create_proofmode_output(self, subfolder=None):
         if subfolder:
-            dir_subfolder = os.path.join(dir_create_output, subfolder)
+            dir_subfolder = os.path.join(dir_create_output, subfolder.lower().replace(' ', '-'))
             _file_util.create_dir(dir_subfolder)
             return dir_subfolder
         return dir_create_proofmode_output
