@@ -48,7 +48,8 @@ class Actions:
         # Copy the C2PA-injected asset to both the internal and shared asset directories.
         internal_asset_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
         shutil.move(tmp_asset_file, internal_asset_file)
-        shutil.copy2(internal_asset_file, _asset_helper.get_assets_create_output())
+        subfolder = jwt_payload.get("author", {}).get("name")
+        shutil.copy2(internal_asset_file, _asset_helper.get_assets_create_output(subfolder))
         _logger.info("New asset file added: %s", internal_asset_file)
         internal_claim_file = _asset_helper.get_internal_claim_fullpath(
             internal_asset_file
@@ -90,7 +91,8 @@ class Actions:
         # Copy the C2PA-injected asset to both the internal and shared asset directories.
         internal_asset_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
         shutil.move(tmp_asset_file, internal_asset_file)
-        shutil.copy2(internal_asset_file, _asset_helper.get_assets_create_proofmode_output())
+        subfolder = jwt_payload.get("author", {}).get("name")
+        shutil.copy2(internal_asset_file, _asset_helper.get_assets_create_proofmode_output(subfolder))
         _logger.info("New asset file added: %s", internal_asset_file)
         internal_claim_file = _asset_helper.get_internal_claim_fullpath(
             internal_asset_file
