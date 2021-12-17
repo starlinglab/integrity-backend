@@ -3,5 +3,11 @@
         "identifier": "https://hypha.coop",
         "name": "Benedict Lau"
     },
+    "twitter": {
+        "handle": "HyphaCoop",
+        "type": "Organization",
+        "identifier": "https://hypha.coop",
+        "name": "Hypha Worker Co-operative"
+    },
     "copyright": "Copyright (C) 2021 Hypha Worker Co-operative. All Rights Reserved."
 }

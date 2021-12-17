@@ -1,6 +1,6 @@
 {
     "vendor": "starlinglab",
-    "recorder": "Starling Integrity",
+    "recorder": "{{recorder}}",
     "assertions": [
         {
             "label": "stds.schema-org.CreativeWork",
@@ -9,11 +9,17 @@
                 "@type": "CreativeWork",
                 "author": [
                     {
-                        "@type": "Organization",
+                        "@type": "{{author_type}}",
                         "credential": [
                         ],
-                        "identifier": "https://starlinglab.org",
-                        "name": "Starling Lab"
+                        "identifier": "{{author_identifier}}",
+                        "name": "{{author_name}}"
+                    },
+                    {
+                        "@id": "https://twitter.com/{{twitter_handle}}",
+                        "@type": "{{twitter_type}}",
+                        "identifier": "{{twitter_identifier}}",
+                        "name": "{{twitter_name}}"
                     }
                 ]
             }
@@ -24,7 +30,7 @@
                 "actions": [
                     {
                         "action": "c2pa.saved",
-                        "when": "{{saved_timestamp}}"
+                        "when": "{{asset_stored_timestamp}}"
                     }
                 ]
             }
@@ -32,9 +38,9 @@
         {
             "label": "org.starlinglab.storage.ipfs",
             "data": {
-                "starling:Provider": "{{starling_ipfs_provider}}",
-                "starling:IpfsCid": "{{starling_ipfs_cid}}",
-                "starling:AssetStoredTimestamp": "{{starling_asset_stored_timestamp}}"
+                "starling:provider": "{{ipfs_provider}}",
+                "starling:ipfsCID": "{{ipfs_cid}}",
+                "starling:assetStoredTimestamp": "{{asset_stored_timestamp}}"
             }
         }
     ]

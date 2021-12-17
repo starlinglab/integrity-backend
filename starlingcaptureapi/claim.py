@@ -50,6 +50,8 @@ class Claim:
 
         assertions = self.assertions_by_label(claim)
 
+        claim["recorder"] = "Starling Capture by Numbers Protocol"
+
         creative_work = assertions["stds.schema-org.CreativeWork"]
         jwt_author = jwt_payload.get("author", {})
         creative_work["data"]["author"][0]["identifier"] = jwt_author.get("identifier")

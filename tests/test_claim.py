@@ -32,7 +32,7 @@ def test_generates_create_claim(reverse_geocode_mocker):
     claim = _claim.generate_create(jwt_payload, meta)
     assertions = _claim.assertions_by_label(claim)
     assert claim["vendor"] == "starlinglab"
-    assert claim["recorder"] == "Starling Capture"
+    assert claim["recorder"] == "Starling Capture by Numbers Protocol"
     assert (
         assertions["stds.schema-org.CreativeWork"]["data"]["author"][0]["name"]
         == "Jane Doe"
@@ -69,7 +69,7 @@ def test_generates_create_claim_with_no_missing_author_info(reverse_geocode_mock
     # Claim values are tested more thoroughly in other test cases
     assert claim is not None
     assert claim["vendor"] == "starlinglab"
-    assert claim["recorder"] == "Starling Capture"
+    assert claim["recorder"] == "Starling Capture by Numbers Protocol"
 
 
 def test_generates_create_claim_with_no_meta(reverse_geocode_mocker):
