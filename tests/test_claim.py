@@ -15,8 +15,23 @@ meta = {
         {"name": "Last Known GPS Latitude", "value": "-15.9321422"},
         {"name": "Last Known GPS Longitude", "value": "-57.6317174"},
         {"name": "Last Known GPS Timestamp", "value": "2021-10-30T18:43:14Z"},
-    ]
+    ],
+    "proof": {
+        "hash": "109213b0e49d5eba0ebd679a9e87d33eebd8dc47255ae5043022f512052f0f9b",
+        "mimeType": "image/jpeg",
+        "timestamp": 1635627729773,
+    },
 }
+
+signature = {
+    "proofHash": "109213b0e49d5eba0ebd679a9e87d33eebd8dc47255ae5043022f512052f0f9b",
+    "provider": "AndroidOpenSSL",
+    "signature": "304502200e57c4795f3a674b334332089a50ecf02dad72d5b9297db55bf67e3454f79289022100a927f5cfb7728c9b9650102f076f956918953dc3cbd0ab51f6dc1bbf7a6dceb5",
+    "publicKey": "3059301306072a8648ce3d020106082a8648ce3d0301070342000463760bc21e0f0d2fa4186c67f06e866fa075fc50a28fa9330299ac9f3b31af87ffa06aca9749085a6da162b1b685a4deeba93fecfae94c7706d55e370384cb91",
+}
+
+
+data = {"meta": meta, "signature": signature}
 
 fake_address = {
     "city": "Fake Town",
@@ -29,7 +44,7 @@ fake_address = {
 def test_generates_create_claim(reverse_geocode_mocker):
     reverse_geocode_mocker(fake_address)
 
-    claim = _claim.generate_create(jwt_payload, meta)
+    claim = _claim.generate_create(jwt_payload, data)
     assertions = _claim.assertions_by_label(claim)
     assert claim["vendor"] == "starlinglab"
     assert claim["recorder"] == "Starling Capture by Numbers Protocol"
@@ -58,12 +73,39 @@ def test_generates_create_claim(reverse_geocode_mocker):
     )
     assert exif_assertion["data"]["exif:GPSLongitudeRef"] == "W"
     assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2021:10:30 18:43:14 +0000"
+    signature_assertion = assertions["org.starlinglab.integrity"]
+    assert signature_assertion["data"]["starling:identifier"] == signature.get(
+        "proofHash"
+    )
+    first_signature = signature_assertion["data"]["starling:signatures"][0]
+    assert first_signature is not None
+    assert first_signature["starling:provider"] == signature.get("provider")
+    assert first_signature["starling:algorithm"] == "numbers-" + signature.get(
+        "provider"
+    )
+    assert first_signature["starling:publicKey"] == signature.get("publicKey")
+    assert first_signature["starling:signature"] == signature.get("signature")
+    assert first_signature["starling:authenticatedMessage"] == signature.get(
+        "proofHash"
+    )
+    assert (
+        first_signature["starling:authenticatedMessageDescription"]
+        == "Internal identifier of the authenticated bundle"
+    )
+    authenticated_message = first_signature["starling:authenticatedMessagePublic"]
+    assert authenticated_message["starling:assetHash"] == meta.get("proof").get("hash")
+    assert authenticated_message["starling:assetMimeType"] == meta.get("proof").get(
+        "mimeType"
+    )
+    assert authenticated_message["starling:assetCreatedTimestamp"].startswith(
+        "2021-10-30"
+    )
 
 
 def test_generates_create_claim_with_missing_author_info(reverse_geocode_mocker):
     reverse_geocode_mocker(fake_address)
 
-    claim = _claim.generate_create({"bad": "jwt"}, meta)
+    claim = _claim.generate_create({"bad": "jwt"}, data)
 
     assert claim is not None
     assert claim["vendor"] == "starlinglab"
@@ -77,9 +119,14 @@ def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
     claim = _claim.generate_create(
         jwt_payload,
         {
-            "information": [
-                {"name": "Last Known GPS Timestamp", "value": "2021-10-30T18:43:14Z"}
-            ]
+            "meta": {
+                "information": [
+                    {
+                        "name": "Last Known GPS Timestamp",
+                        "value": "2021-10-30T18:43:14Z",
+                    }
+                ]
+            }
         },
     )
     assert claim is not None
@@ -92,7 +139,7 @@ def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
 def test_generates_create_claim_with_no_reverse_geocode(reverse_geocode_mocker):
     reverse_geocode_mocker(None)
 
-    claim = _claim.generate_create(jwt_payload, meta)
+    claim = _claim.generate_create(jwt_payload, data)
     assert claim is not None
     assertions = _claim.assertions_by_label(claim)
     photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
@@ -102,7 +149,7 @@ def test_generates_create_claim_with_no_reverse_geocode(reverse_geocode_mocker):
 def test_generates_create_claim_with_partial_reverse_geocode(reverse_geocode_mocker):
     reverse_geocode_mocker({"city": "Partial Town"})
 
-    claim = _claim.generate_create(jwt_payload, meta)
+    claim = _claim.generate_create(jwt_payload, data)
     assert claim is not None
     assertions = _claim.assertions_by_label(claim)
     photo_meta_assertion = assertions["stds.iptc.photo-metadata"]

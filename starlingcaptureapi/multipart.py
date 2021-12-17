@@ -39,6 +39,8 @@ class Multipart:
                 multipart_data["asset_fullpath"] = await self._write_file(part, request.path)
             elif part.name == "meta":
                 multipart_data["meta"] = await part.json()
+            elif part.name == "signature":
+                multipart_data["signature"] = await part.json()
             else:
                 _logger.warning("Ignoring multipart part %s", part.name)
         return multipart_data
