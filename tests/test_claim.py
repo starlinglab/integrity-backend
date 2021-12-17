@@ -18,6 +18,8 @@ meta = {
     ]
 }
 
+data = {"meta": meta}
+
 fake_address = {
     "city": "Fake Town",
     "state": "Some State",
@@ -29,7 +31,7 @@ fake_address = {
 def test_generates_create_claim(reverse_geocode_mocker):
     reverse_geocode_mocker(fake_address)
 
-    claim = _claim.generate_create(jwt_payload, meta)
+    claim = _claim.generate_create(jwt_payload, data)
     assertions = _claim.assertions_by_label(claim)
     assert claim["vendor"] == "starlinglab"
     assert claim["recorder"] == "Starling Capture by Numbers Protocol"
@@ -63,7 +65,7 @@ def test_generates_create_claim(reverse_geocode_mocker):
 def test_generates_create_claim_with_missing_author_info(reverse_geocode_mocker):
     reverse_geocode_mocker(fake_address)
 
-    claim = _claim.generate_create({"bad": "jwt"}, meta)
+    claim = _claim.generate_create({"bad": "jwt"}, data)
 
     assert claim is not None
     assert claim["vendor"] == "starlinglab"
@@ -77,9 +79,14 @@ def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
     claim = _claim.generate_create(
         jwt_payload,
         {
-            "information": [
-                {"name": "Last Known GPS Timestamp", "value": "2021-10-30T18:43:14Z"}
-            ]
+            "meta": {
+                "information": [
+                    {
+                        "name": "Last Known GPS Timestamp",
+                        "value": "2021-10-30T18:43:14Z",
+                    }
+                ]
+            }
         },
     )
     assert claim is not None
@@ -92,7 +99,7 @@ def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
 def test_generates_create_claim_with_no_reverse_geocode(reverse_geocode_mocker):
     reverse_geocode_mocker(None)
 
-    claim = _claim.generate_create(jwt_payload, meta)
+    claim = _claim.generate_create(jwt_payload, data)
     assert claim is not None
     assertions = _claim.assertions_by_label(claim)
     photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
@@ -102,7 +109,7 @@ def test_generates_create_claim_with_no_reverse_geocode(reverse_geocode_mocker):
 def test_generates_create_claim_with_partial_reverse_geocode(reverse_geocode_mocker):
     reverse_geocode_mocker({"city": "Partial Town"})
 
-    claim = _claim.generate_create(jwt_payload, meta)
+    claim = _claim.generate_create(jwt_payload, data)
     assert claim is not None
     assertions = _claim.assertions_by_label(claim)
     photo_meta_assertion = assertions["stds.iptc.photo-metadata"]

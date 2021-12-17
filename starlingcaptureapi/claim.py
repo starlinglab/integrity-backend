@@ -36,16 +36,20 @@ STORE_CLAIM_TEMPLATE = _load_template("claim_store.json")
 class Claim:
     """Generates the claim JSON."""
 
-    def generate_create(self, jwt_payload, meta):
+    def generate_create(self, jwt_payload, data):
         """Generates a claim for the 'create' action.
 
         Args:
             jwt_payload: a dictionary with the data we got from the request's JWT payload
-            meta: dictionary with the 'meta' section of the request
+            data: dictionary with the 'meta' and 'signature' sections of the request
+                  'meta' is required
 
         Returns:
             a dictionary containing the 'create' claim data
         """
+        meta = data.get("meta")
+        signature = data.get("signature")
+
         if meta is None:
             raise ValueError("Meta must be present, but got None!")
 
