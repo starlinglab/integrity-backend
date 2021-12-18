@@ -328,7 +328,11 @@ class Claim:
         return {k: v for k, v in dictionary.items() if v}
 
     def _timestamp_from_meta(self, meta):
-        if (epoch_millis := meta.get("proof", {}).get("timestamp")) is not None:
-            return datetime.datetime.fromtimestamp(epoch_millis / 1000).isoformat()
-        else:
+        if (information := meta.get("information")) is None:
             return None
+
+        for item in information:
+            if item.get("name") == "Timestamp":
+                return item.get("value")
+
+        return None

@@ -124,12 +124,13 @@ def test_generates_create_claim(reverse_geocode_mocker):
     assert authenticated_message["starling:assetMimeType"] == meta.get("proof").get(
         "mimeType"
     )
-    assert authenticated_message["starling:assetCreatedTimestamp"].startswith(
-        "2021-10-30"
+    assert (
+        authenticated_message["starling:assetCreatedTimestamp"]
+        == "2021-12-17T23:52:47.081Z"
     )
 
     c2pa_actions = assertions["c2pa.actions"]
-    assert c2pa_actions["data"]["actions"][0]["when"].startswith("2021-10-30")
+    assert c2pa_actions["data"]["actions"][0]["when"] == "2021-12-17T23:52:47.081Z"
 
 
 def test_generates_create_claim_with_missing_author_info(reverse_geocode_mocker):
