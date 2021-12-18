@@ -21,6 +21,7 @@ meta = {
         {"name": "Last Known GPS Latitude", "value": "-15.9321422"},
         {"name": "Last Known GPS Longitude", "value": "-57.6317174"},
         {"name": "Last Known GPS Timestamp", "value": "2021-10-30T18:43:14Z"},
+        {"name": "Timestamp", "value": "2021-12-17T23:52:47.081Z"},
     ],
     "proof": {
         "hash": "109213b0e49d5eba0ebd679a9e87d33eebd8dc47255ae5043022f512052f0f9b",
@@ -114,12 +115,13 @@ def test_generates_create_claim(reverse_geocode_mocker):
     assert authenticated_message["starling:assetMimeType"] == meta.get("proof").get(
         "mimeType"
     )
-    assert authenticated_message["starling:assetCreatedTimestamp"].startswith(
-        "2021-10-30"
+    assert (
+        authenticated_message["starling:assetCreatedTimestamp"]
+        == "2021-12-17T23:52:47.081Z"
     )
 
     c2pa_actions = assertions["c2pa.actions"]
-    assert c2pa_actions["data"]["actions"][0]["when"].startswith("2021-10-30")
+    assert c2pa_actions["data"]["actions"][0]["when"] == "2021-12-17T23:52:47.081Z"
 
 
 def test_generates_create_claim_with_missing_author_info(reverse_geocode_mocker):
