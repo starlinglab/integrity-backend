@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 import copy
 import json
 import logging
@@ -32,6 +32,22 @@ def _load_template(filename):
 CREATE_CLAIM_TEMPLATE = _load_template("claim_create.json")
 UPDATE_CLAIM_TEMPLATE = _load_template("claim_update.json")
 STORE_CLAIM_TEMPLATE = _load_template("claim_store.json")
+
+# Hardcode CreativeWork author for SCMP.
+CREATIVE_WORK_AUTHOR = [
+    {
+        "@type": "Organization",
+        "credential": [],
+        "identifier": "https://scmp.com",
+        "name": "South China Morning Post",
+    },
+    {
+        "@id": "https://twitter.com/SCMPNews",
+        "@type": "Organization",
+        "identifier": "https://scmp.com",
+        "name": "SCMPNews",
+    },
+]
 
 
 class Claim:
@@ -116,6 +132,23 @@ class Claim:
             a dictionary containing the 'update' claim data
         """
         claim = copy.deepcopy(UPDATE_CLAIM_TEMPLATE)
+        claim["recorder"] = "Starling Integrity"
+
+        timestamp = datetime.now(timezone.utc).isoformat()
+
+        assertion_templates = self.assertions_by_label(claim)
+        assertions = []
+
+        creative_work = assertion_templates["stds.schema-org.CreativeWork"]
+        creative_work["data"] = {"author": CREATIVE_WORK_AUTHOR}
+        assertions.append(creative_work)
+
+        c2pa_actions = assertion_templates["c2pa.actions"]
+        c2pa_actions["data"]["actions"][0]["when"] = timestamp
+        assertions.append(c2pa_actions)
+
+        claim["assertions"] = assertions
+
         return claim
 
     def generate_store(self, ipfs_cid):
@@ -128,14 +161,28 @@ class Claim:
             a dictionary containing the 'store' claim data
         """
         claim = copy.deepcopy(STORE_CLAIM_TEMPLATE)
-        # Replace claim values.
-        for assertion in claim["assertions"]:
-            if assertion["label"] == "org.starlinglab.storage.ipfs":
-                assertion["data"]["starling:Provider"] = "Web3.Storage"
-                assertion["data"]["starling:IpfsCid"] = ipfs_cid
-                # TODO
-                assertion["data"]["starling:AssetStoredTimestamp"] = ""
-                continue
+        claim["recorder"] = "Starling Integrity"
+
+        timestamp = datetime.now(timezone.utc).isoformat()
+
+        assertion_templates = self.assertions_by_label(claim)
+        assertions = []
+
+        creative_work = assertion_templates["stds.schema-org.CreativeWork"]
+        creative_work["data"] = {"author": CREATIVE_WORK_AUTHOR}
+        assertions.append(creative_work)
+
+        c2pa_actions = assertion_templates["c2pa.actions"]
+        c2pa_actions["data"]["actions"][0]["when"] = timestamp
+        assertions.append(c2pa_actions)
+
+        ipfs_storage = assertion_templates["org.starlinglab.storage.ipfs"]
+        ipfs_storage["data"]["starling:provider"] = "Web3.Storage"
+        ipfs_storage["data"]["starling:ipfsCID"] = ipfs_cid
+        ipfs_storage["data"]["starling:assetStoredTimestamp"] = timestamp
+        assertions.append(ipfs_storage)
+
+        claim["assertions"] = assertions
 
         return claim
 

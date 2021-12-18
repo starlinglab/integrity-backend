@@ -197,7 +197,6 @@ def test_generates_update_claim():
 def test_generates_store_claim():
     claim = _claim.generate_store("a-made-up-cid")
     assertions = _claim.assertions_by_label(claim)
-    assert (
-        assertions["org.starlinglab.storage.ipfs"]["data"]["starling:IpfsCid"]
-        == "a-made-up-cid"
-    )
+    assert assertions["org.starlinglab.storage.ipfs"]["data"]["starling:provider"] == "Web3.Storage"
+    assert assertions["org.starlinglab.storage.ipfs"]["data"]["starling:ipfsCID"] == "a-made-up-cid"
+    assert assertions["org.starlinglab.storage.ipfs"]["data"]["starling:assetStoredTimestamp"] is not None
