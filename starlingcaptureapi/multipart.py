@@ -1,5 +1,6 @@
 from .asset_helper import AssetHelper
 
+import json
 import logging
 import shutil
 
@@ -30,17 +31,26 @@ class Multipart:
         multipart_data = {}
         reader = await request.multipart()
         part = None
+        asset_file = None
         while True:
             part = await reader.next()
             if part is None:
                 # No more parts, we're done reading.
                 break
             if part.name == "file":
-                multipart_data["asset_fullpath"] = await self._write_file(part, request.path)
+                asset_file = multipart_data["asset_fullpath"] = await self._write_file(
+                    part, request.path
+                )
             elif part.name == "meta":
                 multipart_data["meta"] = await part.json()
+                if asset_file is not None:
+                    await self._write_json(multipart_data["meta"], asset_file, "meta")
             elif part.name == "signature":
                 multipart_data["signature"] = await part.json()
+                if asset_file is not None:
+                    await self._write_json(
+                        multipart_data["signature"], asset_file, "signature"
+                    )
             else:
                 _logger.warning("Ignoring multipart part %s", part.name)
         return multipart_data
@@ -65,5 +75,15 @@ class Multipart:
             create_file = _asset_helper.get_create_file_fullpath(tmp_file)
         shutil.move(tmp_file, create_file)
         _logger.info("New file added to the assets creation directory: " + create_file)
-
         return create_file
+
+    async def _write_json(self, json_data, asset_file, metadata_tag):
+        json_file = _asset_helper.get_create_metadata_fullpath(asset_file, metadata_tag)
+        # Mode "a" will append if a file with the same name already exists.
+        with open(json_file, "a") as f:
+            f.write(json.dumps(json_data))
+            f.write("\n")
+        _logger.info(
+            "New metadata added to the assets creation directory: " + json_file
+        )
+        return json_file

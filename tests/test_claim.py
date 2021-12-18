@@ -21,23 +21,32 @@ meta = {
         {"name": "Last Known GPS Latitude", "value": "-15.9321422"},
         {"name": "Last Known GPS Longitude", "value": "-57.6317174"},
         {"name": "Last Known GPS Timestamp", "value": "2021-10-30T18:43:14Z"},
+        {"name": "Timestamp", "value": "2021-12-17T23:52:47.081Z"},
     ],
     "proof": {
-        "hash": "109213b0e49d5eba0ebd679a9e87d33eebd8dc47255ae5043022f512052f0f9b",
+        "hash": "476819d6203a901922683a8a2f5ff32838c58762bf7ef277a823bea4f9edf52c",
         "mimeType": "image/jpeg",
         "timestamp": 1635627729773,
     },
 }
 
-signature = {
-    "proofHash": "109213b0e49d5eba0ebd679a9e87d33eebd8dc47255ae5043022f512052f0f9b",
+signatures = [
+  {
+    "proofHash": "476819d6203a901922683a8a2f5ff32838c58762bf7ef277a823bea4f9edf52c",
     "provider": "AndroidOpenSSL",
-    "signature": "304502200e57c4795f3a674b334332089a50ecf02dad72d5b9297db55bf67e3454f79289022100a927f5cfb7728c9b9650102f076f956918953dc3cbd0ab51f6dc1bbf7a6dceb5",
-    "publicKey": "3059301306072a8648ce3d020106082a8648ce3d0301070342000463760bc21e0f0d2fa4186c67f06e866fa075fc50a28fa9330299ac9f3b31af87ffa06aca9749085a6da162b1b685a4deeba93fecfae94c7706d55e370384cb91",
-}
+    "signature": "304502205d833310b03e414cc26492dffd17bc10389e3f5631793ef665fffb1ec0ec1cea022100f10cfc74dc6109b348cfc39684c0b53d280058568df54f2c70428d580faff1a4",
+    "publicKey": "3059301306072a8648ce3d020106082a8648ce3d03010703420004a28a1e5cd501cf4540a98cb44bf357bcb166678dc3be710c40a405d0de6e7c6f92277ae73b65e08a7a53d465b338a9c751f1f3e0e68cba53e79bb551c0796a83"
+  },
+  {
+    "proofHash": "476819d6203a901922683a8a2f5ff32838c58762bf7ef277a823bea4f9edf52c",
+    "provider": "Zion",
+    "signature": "304402204e66e42d2551b080b76559131acffe97612a7106d113860697e2fa4a3de8755b022034d83ca1783f4000adf58ebce4f3714c99370511e9c2b334b2fbf0c40b95eafa",
+    "publicKey": "Session:\n3059301306072a8648ce3d020106082a8648ce3d03010703420004c33cf16bc6f0a7bac677777c6dfccc2885e76d553fff1799400ab315d6e43062efed4d6c9bc1bd51c8d5d49c16a9b8c8cf7a56cfe12c0c82f05a59d203bb31f9\n\nReceive:\n023a297c1ca2cbb123b2601de7f7a840bd8406e3e96240f8f30c7706bda91264fb\n\nSend:\n023a297c1ca2cbb123b2601de7f7a840bd8406e3e96240f8f30c7706bda91264fb"
+  }
+]
 
 
-data = {"meta": meta, "signature": signature}
+data = {"meta": meta, "signature": signatures}
 
 fake_address = {
     "city": "Fake Town",
@@ -91,6 +100,7 @@ def test_generates_create_claim(reverse_geocode_mocker):
     assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2021:10:30 18:43:14 +0000"
 
     signature_assertion = assertions["org.starlinglab.integrity"]
+    signature = signatures[0]
     assert signature_assertion["data"]["starling:identifier"] == signature.get(
         "proofHash"
     )

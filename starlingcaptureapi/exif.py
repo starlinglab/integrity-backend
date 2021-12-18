@@ -1,6 +1,7 @@
 from dateutil import parser
 from fractions import Fraction
 
+
 class Exif:
     """Helps us manage data in EXIF format."""
 
@@ -68,10 +69,7 @@ class Exif:
         rational_tuple = (self._to_rational(x) for x in deg_tuple)
         return " ".join([f"{num}/{den}" for (num, den) in rational_tuple])
 
-
     def _to_rational(self, number):
         """Convert number to rational, (numerator, denominator)."""
         f = Fraction(number)
         return (f.numerator, f.denominator)
-
-

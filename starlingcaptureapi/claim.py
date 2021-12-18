@@ -295,16 +295,16 @@ class Claim:
 
         return {"author": author}
 
-    def _make_signature_data(self, signature, meta):
-        if signature is None:
+    def _make_signature_data(self, signatures, meta):
+        if signatures is None:
             return None
 
         proof = meta.get("proof", {})
         timestamp = self._timestamp_from_meta(meta)
 
-        return {
-            "starling:identifier": signature.get("proofHash"),
-            "starling:signatures": [
+        signature_list = []
+        for signature in signatures:
+            signature_list.append(
                 {
                     "starling:provider": signature.get("provider"),
                     "starling:algorithm": f"numbers-{signature.get('provider')}",
@@ -318,7 +318,10 @@ class Claim:
                         "starling:assetCreatedTimestamp": timestamp,
                     },
                 }
-            ],
+            )
+        return {
+            "starling:identifier": proof.get("hash"),
+            "starling:signatures": signature_list,
         }
 
     def _remove_keys_with_no_values(self, dictionary):
