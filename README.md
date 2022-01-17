@@ -109,4 +109,4 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3IiOnsiaWRlbnRpZmllciI6Imh0dHBzOi8
 
 ## License
 
-See [LICENSE](license).
+See [LICENSE](LICENSE).
