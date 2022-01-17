@@ -1,14 +1,33 @@
-# starling-capture-api <!-- omit in toc -->
+# Starling Integrity API <!-- omit in toc -->
 
-- [Dev setup](#dev-setup)
-  - [Code style and formatting](#code-style-and-formatting)
+- [Overview](#overview)
 - [Configuration](#configuration)
-- [Creating and sending JWTs in development](#creating-and-sending-jwts-in-development)
-- [Dockerized Debian development environment](#dockerized-debian-development-environment)
+- [Development](#development)
+  - [Setup](#setup)
+  - [Code style and formatting](#code-style-and-formatting)
+  - [Dockerized Debian environment](#dockerized-debian-environment)
+  - [Creating and sending JWTs in development](#creating-and-sending-jwts-in-development)
+- [License](#license)
 
-## Dev setup
+## Overview
 
-This is a Python3 project.  This project uses `pipenv` to manage dependencies and the Python environment (this is like `npm` or `bundler`, but for Python). To install `pipenv` on Mac:
+The Starling Integrity API provides HTTP endpoints for creating integrity attestations based on incoming data.
+
+It depends on a binary of Adobe's `claim_tool`, which is planned to be open-sourced.
+
+## Configuration
+
+The server is configured entirely via environment variables. See [config.py](./starlingcaptureapi/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
+
+Most importantly, you will need to provide:
+* `CLAIM_TOOL_PATH`: A path to a fully working `claim_tool` binary. The server should have permissions to execute it, and it should be correctly configured with its keys.
+* `IMAGES_DIR`: A path to a directory to store images. The server will need write access to this directory. This will be the persistent storage for the received images with their attestations.
+
+## Development
+
+### Setup
+
+This is a Python3 project.  We use `pipenv` to manage dependencies and the Python environment (this is like `npm` or `bundler`, but for Python). To install `pipenv` on Mac:
 ```bash
 brew install pipenv
 ```
@@ -59,15 +78,18 @@ To auto-format just one file:
 pipenv run black path/to/your/file.py
 ```
 
-## Configuration
+### Dockerized Debian environment
 
-The server is configured entirely via environment variables. See [config.py](./starlingcaptureapi/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
+If you need to run the `claim-tool` binary in a Debian environment and don't have one on your machine, you can use the provided `docker-compose.yml` (and `Dockerfile`).
 
-Most importantly, you will need to provide:
-* `CLAIM_TOOL_PATH`: A path to a fully working `claim_tool` binary. The server should have permissions to execute it, and it should be correctly configured with its keys.
-* `IMAGES_DIR`: A path to a directory to store images. The server will need write access to this directory. This will be the persistent storage for the received images with their attestations.
+To get a shell inside the container:
+```
+docker-compose run --service-ports api bash
+```
 
-## Creating and sending JWTs in development
+Once inside the container, run the usual commands (`pipenv install`, etc). You will also need a `claim_tool` binary inside the container (you can use `docker cp` to copy it into the container), as well as a directory for image storage.
+
+### Creating and sending JWTs in development
 
 You can create a JWT on https://jwt.io/. Make sure to use the same secret you are using in your development server (the value of `JWT_SECRET`). The algorithm should be `HS256`.
 
@@ -83,15 +105,7 @@ curl -X POST http://localhost:8080/assets/create \
 Sample JWT from `jwt-payload.json.example`:
 ```
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3IiOnsiaWRlbnRpZmllciI6Imh0dHBzOi8vaHlwaGEuY29vcCIsIm5hbWUiOiJCZW5lZGljdCBMYXUifSwiY29weXJpZ2h0IjoiQ29weXJpZ2h0IChDKSAyMDIxIEh5cGhhIFdvcmtlciBDby1vcGVyYXRpdmUuIEFsbCBSaWdodHMgUmVzZXJ2ZWQuIn0._GVB0x7EGHdxMW78XftpO4nLiAU11g7WtdJvyrrDMws
-```
 
-## Dockerized Debian development environment
+## License
 
-To run the `claim-tool` version in a Debian environment (as it will be in production), use the provided `docker-compose.yml` (and `Dockerfile`).
-
-To get a shell inside the container:
-```
-docker-compose run --service-ports api bash
-```
-
-Once inside the container, run the usual commands (`pipenv install`, etc). You will also need a `claim_tool` binary inside your container (you can use `docker cp` to copy it into the container), as well as a directory for image storage.
+See [LICENSE](license).
