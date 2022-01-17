@@ -64,7 +64,7 @@ pipenv run pytest
 
 ### Code style and formatting
 
-We follow [PEP8](https://www.python.org/dev/peps/pep-0008/) style guidelines, and delegate code style issues to automated tools.
+We follow [PEP8](https://www.python.org/dev/peps/pep-0008/) style guidelines, and delegate code style issues to automated tools.
 
 We use [black](https://black.readthedocs.io/) with the default configuration for autoformatting.
 
@@ -105,6 +105,7 @@ curl -X POST http://localhost:8080/assets/create \
 Sample JWT from `jwt-payload.json.example`:
 ```
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3IiOnsiaWRlbnRpZmllciI6Imh0dHBzOi8vaHlwaGEuY29vcCIsIm5hbWUiOiJCZW5lZGljdCBMYXUifSwiY29weXJpZ2h0IjoiQ29weXJpZ2h0IChDKSAyMDIxIEh5cGhhIFdvcmtlciBDby1vcGVyYXRpdmUuIEFsbCBSaWdodHMgUmVzZXJ2ZWQuIn0._GVB0x7EGHdxMW78XftpO4nLiAU11g7WtdJvyrrDMws
+```
 
 ## License
 
