@@ -179,10 +179,11 @@ class Actions:
         file_name, file_extension = os.path.splitext(os.path.basename(added_asset))
 
         # Find custom assertions for file.
-        custom_assertions = self._load_custom_assertions()[file_name]
+        custom_assertions = self._load_custom_assertions().get(file_name)
         if custom_assertions is None:
             _logger.warning("Could not find custom assertions for asset")
-
+        else:
+            _logger.info("Found custom assertions for asset")
         return self._update(
             added_asset,
             _claim.generate_custom(custom_assertions),
@@ -250,12 +251,18 @@ class Actions:
         Return:
             a dictionary with custom assertions mapped to asset name
         """
-        custom_assertions_dictionary = None
+        custom_assertions_dictionary = {}
         custom_assertions_path = config.CUSTOM_ASSERTIONS_DICTIONARY
-        with open(custom_assertions_path, "r") as f:
-            custom_assertions_dictionary = json.load(f)
+        try:
+            with open(custom_assertions_path, "r") as f:
+                custom_assertions_dictionary = json.load(f)
+                _logger.info(
+                    "Successfully loaded custom assertions dictionary: %s",
+                    custom_assertions_path,
+                )
+        except Exception as err:
             _logger.info(
-                "Successfully loaded custom assertions dictionary: %s",
+                "No custom assertions dictionary found: %s",
                 custom_assertions_path,
             )
         return custom_assertions_dictionary
