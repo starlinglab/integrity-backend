@@ -7,6 +7,7 @@
   - [Code style and formatting](#code-style-and-formatting)
   - [Dockerized Debian environment](#dockerized-debian-environment)
   - [Creating and sending JWTs in development](#creating-and-sending-jwts-in-development)
+  - [Specifying custom assertions](#specifying-custom-assertions)
 - [License](#license)
 
 ## Overview
