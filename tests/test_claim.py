@@ -169,7 +169,7 @@ def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
     exif_assertion = assertions["stds.exif"]
     assert exif_assertion["data"] == {"exif:GPSTimeStamp": "2021:10:30 18:43:14 +0000"}
 
-    # Should prever the "Current" timestamp, if one is provided.
+    # Should prefer the "Current" timestamp, if one is provided.
     claim = _claim.generate_create(
         jwt_payload,
         {
