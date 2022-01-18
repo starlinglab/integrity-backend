@@ -100,7 +100,7 @@ class Claim:
             signature["data"] = signature_data
             assertions.append(signature)
 
-        timestamp = self._timestamp_from_meta(meta)
+        timestamp = self._get_value_from_meta(meta, "Timestamp")
         if timestamp is not None:
             c2pa_actions = assertion_templates["c2pa.actions"]
             c2pa_actions["data"]["actions"][0]["when"] = timestamp
@@ -224,19 +224,19 @@ class Claim:
         Return:
             (lat, lon) from the 'meta' data, returned as a pair
         """
-        if "information" not in meta:
-            return (None, None)
-        lat = lon = None
-        for info in meta["information"]:
-            if info["name"] == "Last Known GPS Latitude":
-                lat = float(info["value"])
-                continue
-            if info["name"] == "Last Known GPS Longitude":
-                lon = float(info["value"])
-                continue
+        lat = self._get_value_from_meta(
+            meta, "Current GPS Latitude"
+        ) or self._get_value_from_meta(meta, "Last Known GPS Latitude")
+
+        lon = self._get_value_from_meta(
+            meta, "Current GPS Longitude"
+        ) or self._get_value_from_meta(meta, "Last Known GPS Longitude")
+
         if lat is None or lon is None:
             _logger.warning("Could not find lat or lon in 'meta'")
-        return (lat, lon)
+            return (None, None)
+
+        return (float(lat), float(lon))
 
     def _get_exif_timestamp(self, meta):
         """Returns an EXIF-formatted version of the timestamp.
@@ -247,11 +247,14 @@ class Claim:
         Return:
             string with the exif-formatted timestamp, or None
         """
-        if "information" not in meta:
+        timestamp = self._get_value_from_meta(
+            meta, "Current GPS Timestamp"
+        ) or self._get_value_from_meta(meta, "Last Known GPS Timestamp")
+
+        if timestamp is None:
             return None
-        for info in meta["information"]:
-            if info["name"] == "Last Known GPS Timestamp":
-                return Exif().convert_timestamp(info["value"])
+
+        return Exif().convert_timestamp(timestamp)
 
     def _get_location_created(self, lat, lon):
         """Returns the Iptc4xmpExt:LocationCreated section, based on the given lat / lon
@@ -347,7 +350,7 @@ class Claim:
             return None
 
         proof = meta.get("proof", {})
-        timestamp = self._timestamp_from_meta(meta)
+        timestamp = self._get_value_from_meta(meta, "Timestamp")
 
         signature_list = []
         for signature in signatures:
@@ -374,12 +377,21 @@ class Claim:
     def _remove_keys_with_no_values(self, dictionary):
         return {k: v for k, v in dictionary.items() if v}
 
-    def _timestamp_from_meta(self, meta):
+    def _get_value_from_meta(self, meta, name):
+        """Gets the value for a given 'name' in meta['information'].
+
+        Args:
+            meta: dict with the 'meta' section of the request
+            name: string with the name of the value we are looking for
+
+        Returns:
+            the value corresponding to the given name, or None if not found
+        """
         if (information := meta.get("information")) is None:
             return None
 
         for item in information:
-            if item.get("name") == "Timestamp":
+            if item.get("name") == name:
                 return item.get("value")
 
         return None
