@@ -34,19 +34,19 @@ UPDATE_CLAIM_TEMPLATE = _load_template("claim_update.json")
 STORE_CLAIM_TEMPLATE = _load_template("claim_store.json")
 CUSTOM_CLAIM_TEMPLATE = _load_template("claim_custom.json")
 
-# Hardcode CreativeWork author for SCMP.
+# Hardcode CreativeWork author for Bay City News.
 CREATIVE_WORK_AUTHOR = [
     {
         "@type": "Organization",
         "credential": [],
-        "identifier": "https://scmp.com",
-        "name": "South China Morning Post",
+        "identifier": "https://www.baycitynews.com",
+        "name": "Bay City News",
     },
     {
-        "@id": "https://twitter.com/SCMPNews",
+        "@id": "https://twitter.com/baynewsmatters",
         "@type": "Organization",
-        "identifier": "https://scmp.com",
-        "name": "SCMPNews",
+        "identifier": "https://www.baycitynews.com",
+        "name": "baynewsmatters",
     },
 ]
 
