@@ -95,7 +95,6 @@ Once inside the container, run the usual commands (`pipenv install`, etc). You w
 You can create a JWT on https://jwt.io/. Make sure to use the same secret you are using in your development server (the value of `JWT_SECRET`). The algorithm should be `HS256`.
 
 To send a request with a JWT to a server using curl:
-
 ```
 curl -X POST http://localhost:8080/assets/create \
      -H "Authorization: Bearer <JWT>" \
@@ -116,4 +115,4 @@ See [custom-assertions.json.example.json](custom-assertions.json.example.json) f
 
 ## License
 
-See [LICENSE](license).
+See [LICENSE](LICENSE).
