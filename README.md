@@ -7,6 +7,7 @@
   - [Code style and formatting](#code-style-and-formatting)
   - [Dockerized Debian environment](#dockerized-debian-environment)
   - [Creating and sending JWTs in development](#creating-and-sending-jwts-in-development)
+  - [Specifying custom assertions](#specifying-custom-assertions)
 - [License](#license)
 
 ## Overview
@@ -94,7 +95,6 @@ Once inside the container, run the usual commands (`pipenv install`, etc). You w
 You can create a JWT on https://jwt.io/. Make sure to use the same secret you are using in your development server (the value of `JWT_SECRET`). The algorithm should be `HS256`.
 
 To send a request with a JWT to a server using curl:
-
 ```
 curl -X POST http://localhost:8080/assets/create \
      -H "Authorization: Bearer <JWT>" \
@@ -102,10 +102,16 @@ curl -X POST http://localhost:8080/assets/create \
      -F "file=@<image_filename>>"
 ```
 
-Sample JWT from `jwt-payload.json.example`:
+Sample JWT from [jwt-payload.json.example](jwt-payload.json.example):
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3IiOnsiaWRlbnRpZmllciI6Imh0dHBzOi8vaHlwaGEuY29vcCIsIm5hbWUiOiJCZW5lZGljdCBMYXUifSwiY29weXJpZ2h0IjoiQ29weXJpZ2h0IChDKSAyMDIxIEh5cGhhIFdvcmtlciBDby1vcGVyYXRpdmUuIEFsbCBSaWdodHMgUmVzZXJ2ZWQuIn0._GVB0x7EGHdxMW78XftpO4nLiAU11g7WtdJvyrrDMws
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3IiOnsidHlwZSI6IlBlcnNvbiIsImlkZW50aWZpZXIiOiJodHRwczovL2h5cGhhLmNvb3AiLCJuYW1lIjoiQmVuZWRpY3QgTGF1In0sInR3aXR0ZXIiOnsidHlwZSI6Ik9yZ2FuaXphdGlvbiIsImlkZW50aWZpZXIiOiJodHRwczovL2h5cGhhLmNvb3AiLCJuYW1lIjoiSHlwaGFDb29wIn0sImNvcHlyaWdodCI6IkNvcHlyaWdodCAoQykgMjAyMSBIeXBoYSBXb3JrZXIgQ28tb3BlcmF0aXZlLiBBbGwgUmlnaHRzIFJlc2VydmVkLiJ9.sv7dZ6zbpRXn2O3r3fqy4WOPs4alUUJwDyqpk5ajtKA
 ```
+
+### Specifying custom assertions
+
+If you want to create a claim with manually created assertions, specify a dictionary where the key is the SHA-256 of the parent file, and the value is a list of custom assertions, then specify the path to your dictionary file in the `CUSTOM_ASSERTIONS_DICTIONARY` environment variable in your local `.env` file.
+
+See [custom-assertions.json.example.json](custom-assertions.json.example.json) for an example.
 
 ## License
 

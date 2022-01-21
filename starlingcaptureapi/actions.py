@@ -2,7 +2,9 @@ from .asset_helper import AssetHelper
 from .claim import Claim
 from .claim_tool import ClaimTool
 from .filecoin import Filecoin
+from . import config
 
+import json
 import logging
 import os
 import shutil
@@ -160,6 +162,34 @@ class Actions:
             _asset_helper.get_assets_store_output(),
         )
 
+    def custom(self, asset_fullpath):
+        """Process asset with custom action.
+        A new asset file is generated in the custom-output folder with a claim that links it to a parent asset identified by its filename.
+
+        Args:
+            asset_fullpath: the local path to the asset file
+
+        Returns:
+            the local path to the asset file in the internal directory
+        """
+        # Add uploaded asset to the internal directory.
+        added_asset = self._add(asset_fullpath, None)
+
+        # Parse file name to get the search key.
+        file_name, file_extension = os.path.splitext(os.path.basename(added_asset))
+
+        # Find custom assertions for file.
+        custom_assertions = self._load_custom_assertions().get(file_name)
+        if custom_assertions is None:
+            _logger.warning("Could not find custom assertions for asset")
+        else:
+            _logger.info("Found custom assertions for asset")
+        return self._update(
+            added_asset,
+            _claim.generate_custom(custom_assertions),
+            _asset_helper.get_assets_custom_output(),
+        )
+
     def _add(self, asset_fullpath, output_dir):
         # Create temporary files to work with.
         tmp_asset_file = _asset_helper.get_tmp_file_fullpath(".jpg")
@@ -214,3 +244,25 @@ class Actions:
             internal_claim_file,
         )
         return internal_asset_file
+
+    def _load_custom_assertions(self):
+        """Loads custom assertions from file.
+
+        Return:
+            a dictionary with custom assertions mapped to asset name
+        """
+        custom_assertions_dictionary = {}
+        custom_assertions_path = config.CUSTOM_ASSERTIONS_DICTIONARY
+        try:
+            with open(custom_assertions_path, "r") as f:
+                custom_assertions_dictionary = json.load(f)
+                _logger.info(
+                    "Successfully loaded custom assertions dictionary: %s",
+                    custom_assertions_path,
+                )
+        except Exception as err:
+            _logger.info(
+                "No custom assertions dictionary found: %s",
+                custom_assertions_path,
+            )
+        return custom_assertions_dictionary

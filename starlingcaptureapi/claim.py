@@ -32,6 +32,7 @@ def _load_template(filename):
 CREATE_CLAIM_TEMPLATE = _load_template("claim_create.json")
 UPDATE_CLAIM_TEMPLATE = _load_template("claim_update.json")
 STORE_CLAIM_TEMPLATE = _load_template("claim_store.json")
+CUSTOM_CLAIM_TEMPLATE = _load_template("claim_custom.json")
 
 # Hardcode CreativeWork author for SCMP.
 CREATIVE_WORK_AUTHOR = [
@@ -181,6 +182,35 @@ class Claim:
         ipfs_storage["data"]["starling:ipfsCID"] = ipfs_cid
         ipfs_storage["data"]["starling:assetStoredTimestamp"] = timestamp
         assertions.append(ipfs_storage)
+
+        claim["assertions"] = assertions
+
+        return claim
+
+    def generate_custom(self, custom_assertions):
+        """Generates a claim with custom labels.
+
+        Args:
+            custom_assertions: list containing custom assertions for the claim
+
+        Returns:
+            a dictionary containing the claim data
+        """
+        claim = copy.deepcopy(CUSTOM_CLAIM_TEMPLATE)
+        claim["recorder"] = "Starling Integrity"
+
+        assertion_templates = self.assertions_by_label(claim)
+        assertions = []
+
+        creative_work = assertion_templates["stds.schema-org.CreativeWork"]
+        creative_work["data"] = {"author": CREATIVE_WORK_AUTHOR}
+        assertions.append(creative_work)
+
+        if custom_assertions is None:
+            _logger.warning("No custom assertions are appended to claim")
+        else:
+            for custom in custom_assertions:
+                assertions.append(custom)
 
         claim["assertions"] = assertions
 

@@ -20,6 +20,7 @@ dir_internal_create_proofmode = os.path.join(
 dir_add = os.path.join(config.SHARED_FILE_SYSTEM, "add")
 dir_update = os.path.join(config.SHARED_FILE_SYSTEM, "update")
 dir_store = os.path.join(config.SHARED_FILE_SYSTEM, "store")
+dir_custom = os.path.join(config.SHARED_FILE_SYSTEM, "custom")
 
 # Shared output directories.
 dir_create_output = os.path.join(config.SHARED_FILE_SYSTEM, "create-output")
@@ -29,6 +30,7 @@ dir_create_proofmode_output = os.path.join(
 dir_add_output = os.path.join(config.SHARED_FILE_SYSTEM, "add-output")
 dir_update_output = os.path.join(config.SHARED_FILE_SYSTEM, "update-output")
 dir_store_output = os.path.join(config.SHARED_FILE_SYSTEM, "store-output")
+dir_custom_output = os.path.join(config.SHARED_FILE_SYSTEM, "custom-output")
 
 
 class AssetHelper:
@@ -59,6 +61,8 @@ class AssetHelper:
             _logger.info("Created shared assets update directory: " + dir_update)
         if _file_util.create_dir(dir_store):
             _logger.info("Created shared assets store directory: " + dir_store)
+        if _file_util.create_dir(dir_custom):
+            _logger.info("Created shared assets custom directory: " + dir_custom)
         if _file_util.create_dir(dir_create_output):
             _logger.info(
                 "Created shared assets create output directory: " + dir_create_output
@@ -80,6 +84,10 @@ class AssetHelper:
             _logger.info(
                 "Created shared assets store output directory: " + dir_store_output
             )
+        if _file_util.create_dir(dir_custom_output):
+            _logger.info(
+                "Created shared assets custom output directory: " + dir_custom_output
+            )
 
     def log_dirs(self):
         """Logs the directory structure for asset management."""
@@ -98,6 +106,7 @@ class AssetHelper:
         _logger.info("Shared assets add directory: %s", self.get_assets_add())
         _logger.info("Shared assets update directory: %s", self.get_assets_update())
         _logger.info("Shared assets store directory: %s", self.get_assets_store())
+        _logger.info("Shared assets custom directory: %s", self.get_assets_custom())
         _logger.info(
             "Shared assets create output directory: %s", self.get_assets_create_output()
         )
@@ -113,6 +122,9 @@ class AssetHelper:
         )
         _logger.info(
             "Shared assets store output directory: %s", self.get_assets_store_output()
+        )
+        _logger.info(
+            "Shared assets custom output directory: %s", self.get_assets_custom_output()
         )
 
     def get_assets_internal(self):
@@ -138,6 +150,9 @@ class AssetHelper:
 
     def get_assets_store(self):
         return dir_store
+
+    def get_assets_custom(self):
+        return dir_custom
 
     def get_assets_add_output(self):
         return dir_add_output
@@ -165,6 +180,9 @@ class AssetHelper:
 
     def get_assets_store_output(self):
         return dir_store_output
+
+    def get_assets_custom_output(self):
+        return dir_custom_output
 
     def get_tmp_file_fullpath(self, file_extension):
         return os.path.join(
