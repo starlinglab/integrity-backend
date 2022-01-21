@@ -39,13 +39,13 @@ CREATIVE_WORK_AUTHOR = [
     {
         "@type": "Organization",
         "credential": [],
-        "identifier": "https://www.baycitynews.com",
+        "identifier": "https://baycitynews.com",
         "name": "Bay City News",
     },
     {
         "@id": "https://twitter.com/baynewsmatters",
         "@type": "Organization",
-        "identifier": "https://www.baycitynews.com",
+        "identifier": "https://baycitynews.com",
         "name": "baynewsmatters",
     },
 ]
