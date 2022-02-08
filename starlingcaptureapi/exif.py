@@ -72,4 +72,8 @@ class Exif:
     def _to_rational(self, number):
         """Convert number to rational, (numerator, denominator)."""
         f = Fraction(number)
+        # Rounding ensures that the result fits in 4 bytes (es per EXIF spec),
+        # and also makes it so that the denominator will be a more
+        # human-friendly power of 10.
+        f = round(f, ndigits=10)
         return (f.numerator, f.denominator)
