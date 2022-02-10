@@ -36,58 +36,37 @@ dir_custom_output = os.path.join(config.SHARED_FILE_SYSTEM, "custom-output")
 class AssetHelper:
     """Helpers for management of assets across storage systems."""
 
+    def __init__(self, organization_id):
+        """
+        Args:
+            organization_id: string uniquely representing an organization
+                must not contain spaces or special characters, as it will become
+                part of directory names (e.g. "hyphacoop" good, not "Hypha Coop")
+        """
+        self.org_id = organization_id
+
+    @staticmethod
+    def from_jwt(jwt_payload):
+        """Initializes an Asset Helper based on the data in the given JWT payload."""
+        return AssetHelper(jwt_payload["organization_id"])
+
     def init_dirs(self):
         """Creates the initial directory structure for asset management."""
-        if _file_util.create_dir(dir_internal_assets):
-            _logger.info("Created internal assets directory: " + dir_internal_assets)
-        if _file_util.create_dir(dir_internal_claims):
-            _logger.info("Created internal claims directory: " + dir_internal_claims)
-        if _file_util.create_dir(dir_internal_tmp):
-            _logger.info(
-                "Created internal temporary assets directory: " + dir_internal_tmp
-            )
-        if _file_util.create_dir(dir_internal_create):
-            _logger.info(
-                "Created internal assets create directory: " + dir_internal_create
-            )
-        if _file_util.create_dir(dir_internal_create_proofmode):
-            _logger.info(
-                "Created internal assets create-proofmode directory: "
-                + dir_internal_create_proofmode
-            )
-        if _file_util.create_dir(dir_add):
-            _logger.info("Created shared assets add directory: " + dir_add)
-        if _file_util.create_dir(dir_update):
-            _logger.info("Created shared assets update directory: " + dir_update)
-        if _file_util.create_dir(dir_store):
-            _logger.info("Created shared assets store directory: " + dir_store)
-        if _file_util.create_dir(dir_custom):
-            _logger.info("Created shared assets custom directory: " + dir_custom)
-        if _file_util.create_dir(dir_create_output):
-            _logger.info(
-                "Created shared assets create output directory: " + dir_create_output
-            )
-        if _file_util.create_dir(dir_create_proofmode_output):
-            _logger.info(
-                "Created shared assets create-proofmode output directory: "
-                + dir_create_proofmode_output
-            )
-        if _file_util.create_dir(dir_add_output):
-            _logger.info(
-                "Created shared assets add output directory: " + dir_add_output
-            )
-        if _file_util.create_dir(dir_update_output):
-            _logger.info(
-                "Created shared assets update output directory: " + dir_update_output
-            )
-        if _file_util.create_dir(dir_store_output):
-            _logger.info(
-                "Created shared assets store output directory: " + dir_store_output
-            )
-        if _file_util.create_dir(dir_custom_output):
-            _logger.info(
-                "Created shared assets custom output directory: " + dir_custom_output
-            )
+        _file_util.create_dir(dir_internal_assets)
+        _file_util.create_dir(dir_internal_claims)
+        _file_util.create_dir(dir_internal_tmp)
+        _file_util.create_dir(dir_internal_create)
+        _file_util.create_dir(dir_internal_create_proofmode)
+        _file_util.create_dir(dir_add)
+        _file_util.create_dir(dir_update)
+        _file_util.create_dir(dir_store)
+        _file_util.create_dir(dir_custom)
+        _file_util.create_dir(dir_create_output)
+        _file_util.create_dir(dir_create_proofmode_output)
+        _file_util.create_dir(dir_add_output)
+        _file_util.create_dir(dir_update_output)
+        _file_util.create_dir(dir_store_output)
+        _file_util.create_dir(dir_custom_output)
 
     def log_dirs(self):
         """Logs the directory structure for asset management."""

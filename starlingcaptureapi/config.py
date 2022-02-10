@@ -43,6 +43,9 @@ class OrganizationConfig:
             print(f"Couldn't load organization configuration from: {config_file}")
             raise err
 
+    def all_orgs(self):
+        return self.config.keys()
+
     def get(self, org_id):
         """Gets configuration dictionary for an org id."""
         return self.config.get(org_id)
@@ -54,7 +57,7 @@ class OrganizationConfig:
             for org in config["organizations"]:
                 self.config[org["id"]] = org
         # Use print because this will likely happen before logging is configured
-        print(f"Loaded configuration for organizations: {self.config.keys()}")
+        print(f"Loaded configuration for organizations: {self.all_orgs()}")
 
 
 # Load Organization-specific configuration from file

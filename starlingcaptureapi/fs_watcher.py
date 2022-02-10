@@ -12,7 +12,6 @@ import time
 import traceback
 
 _actions = Actions()
-_asset_helper = AssetHelper()
 _logger = logging.getLogger(__name__)
 
 
@@ -29,30 +28,41 @@ def caught_and_logged_exceptions(event):
 class FsWatcher:
     """Watches directories for file changes."""
 
+    def __init__(self, organization_id):
+        self.organization_id = organization_id
+
     def watch(self):
+        """
+        Args:
+            organization_id: a string identifying the organization we are watching for
+        """
         observer = Observer()
         patterns = ["*.jpg", "*.jpeg"]
+        asset_helper = AssetHelper(self.organization_id)
         observer.schedule(
-            self.AddHandler(patterns=patterns),
+            self.AddHandler(patterns=patterns).set_org_id(self.organization_id),
             recursive=True,
-            path=_asset_helper.get_assets_add(),
+            path=asset_helper.get_assets_add(),
         )
         observer.schedule(
-            self.UpdateHandler(patterns=patterns),
+            self.UpdateHandler(patterns=patterns).set_org_id(self.organization_id),
             recursive=True,
-            path=_asset_helper.get_assets_update(),
+            path=asset_helper.get_assets_update(),
         )
         observer.schedule(
-            self.StoreHandler(patterns=patterns),
+            self.StoreHandler(patterns=patterns).set_org_id(self.organization_id),
             recursive=True,
-            path=_asset_helper.get_assets_store(),
+            path=asset_helper.get_assets_store(),
         )
         observer.schedule(
-            self.CustomHandler(patterns=patterns),
+            self.CustomHandler(patterns=patterns).set_org_id(self.organization_id),
             recursive=True,
-            path=_asset_helper.get_assets_custom(),
+            path=asset_helper.get_assets_custom(),
         )
-        _logger.info("Starting up file system watcher for action directories.")
+        _logger.info(
+            "Starting up file system watcher for action directories of organization %s",
+            self.organization_id,
+        )
         observer.start()
         try:
             while True:
@@ -62,30 +72,45 @@ class FsWatcher:
             _logger.warning("Caught keyboard interrupt. Stopping FsWatcher.")
         observer.join()
 
-    class AddHandler(PatternMatchingEventHandler):
+    class OrganizationHandler(PatternMatchingEventHandler):
+        """A base handler that knows which organization it is working for."""
+
+        def set_org_id(self, organization_id):
+            """Sets the organization id for this handler.
+
+            Args:
+                organization_id: string with the unique organization id this handler is for
+
+            Returns:
+                the handler itself
+            """
+            self.organization_id = organization_id
+            return self
+
+    class AddHandler(OrganizationHandler):
         """Handles file changes for add action."""
 
         def on_created(self, event):
             with caught_and_logged_exceptions(event):
-                _actions.add(event.src_path)
+                _actions.add(self.organization_id, event.src_path)
 
-    class UpdateHandler(PatternMatchingEventHandler):
+    class UpdateHandler(OrganizationHandler):
         """Handles file changes for update action."""
 
         def on_created(self, event):
             with caught_and_logged_exceptions(event):
-                _actions.update(event.src_path)
+                _actions.update(self.organization_id, event.src_path)
 
-    class StoreHandler(PatternMatchingEventHandler):
+    class StoreHandler(OrganizationHandler):
         """Handles file changes for store action."""
 
         def on_created(self, event):
             with caught_and_logged_exceptions(event):
-                _actions.store(event.src_path)
+                _actions.store(self.organization_id, event.src_path)
 
-    class CustomHandler(PatternMatchingEventHandler):
+    class CustomHandler(OrganizationHandler):
         """Handles file changes for custom action."""
 
         def on_created(self, event):
             with caught_and_logged_exceptions(event):
-                _actions.custom(event.src_path)
+                _actions.custom(self.organization_id, event.src_path)
