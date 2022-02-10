@@ -1,0 +1,21 @@
+{
+  "organizations": [
+    {
+      "id": "baycitynews",
+      "creative_work_author": [
+        {
+            "@type": "Organization",
+            "credential": [],
+            "identifier": "https://baycitynews.com",
+            "name": "Bay City News"
+        },
+        {
+            "@id": "https://twitter.com/baynewsmatters",
+            "@type": "Organization",
+            "identifier": "https://baycitynews.com",
+            "name": "baynewsmatters"
+        }
+      ]
+    }
+  ]
+}

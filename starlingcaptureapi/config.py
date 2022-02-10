@@ -1,5 +1,6 @@
 """Configuration variables."""
 
+import json
 import os
 import dotenv
 
@@ -23,3 +24,38 @@ CUSTOM_ASSERTIONS_DICTIONARY = os.environ.get("CUSTOM_ASSERTIONS_DICTIONARY")
 
 # API token for the web3.storage service
 WEB3_STORAGE_API_TOKEN = os.environ.get("WEB3_STORAGE_API_TOKEN")
+
+
+class OrganizationConfig:
+    def __init__(self, config_file):
+        """Loads organization configuration from file.
+
+        Args:
+            config_file: string with path to JSON file with configuration
+
+        Raises:
+            Exception if configuration loading fails
+        """
+        try:
+            self._load_config_from_file(config_file)
+        except Exception as err:
+            # Use print because this will likely happen before logging is configured
+            print(f"Couldn't load organization configuration from: {config_file}")
+            raise err
+
+    def get(self, org_id):
+        """Gets configuration dictionary for an org id."""
+        return self.config.get(org_id)
+
+    def _load_config_from_file(self, config_file):
+        with open(config_file, "r") as f:
+            config = json.loads(f.read())
+            self.config = {}
+            for org in config["organizations"]:
+                self.config[org["id"]] = org
+        # Use print because this will likely happen before logging is configured
+        print(f"Loaded configuration for organizations: {self.config.keys()}")
+
+
+# Load Organization-specific configuration from file
+ORGANIZATION_CONFIG = OrganizationConfig(os.environ.get("ORG_CONFIG_JSON"))
