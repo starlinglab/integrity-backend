@@ -30,6 +30,7 @@ black = "*"
 pytest = "*"
 # For mocking in tests
 pytest-mock = "*"
+pytest-env = "*"
 
 [requires]
 python_version = "3.9"

@@ -1,4 +1,3 @@
-from typing import Pattern
 from .actions import Actions
 from .asset_helper import AssetHelper
 

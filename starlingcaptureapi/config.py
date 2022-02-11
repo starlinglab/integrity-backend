@@ -60,5 +60,7 @@ class OrganizationConfig:
         print(f"Loaded configuration for organizations: {self.all_orgs()}")
 
 
-# Load Organization-specific configuration from file
-ORGANIZATION_CONFIG = OrganizationConfig(os.environ.get("ORG_CONFIG_JSON"))
+# Disable loading of configuration from file in the test environment.
+if os.environ.get("RUN_ENV") != "test":
+    # Load Organization-specific configuration from file
+    ORGANIZATION_CONFIG = OrganizationConfig(os.environ.get("ORG_CONFIG_JSON"))
