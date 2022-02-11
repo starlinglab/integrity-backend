@@ -18,7 +18,7 @@ class AssetHelper:
         """
         if self._filename_safe(organization_id) != organization_id:
             raise ValueError(
-                f"Organization {organization_id} does not to be filename safe!"
+                f"Organization {organization_id} is not filename safe!"
             )
         self.org_id = organization_id
 
