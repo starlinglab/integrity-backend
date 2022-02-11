@@ -1,19 +1,19 @@
 {
   "organizations": [
     {
-      "id": "baycitynews",
+      "id": "hyphacoop",
       "creative_work_author": [
         {
             "@type": "Organization",
             "credential": [],
-            "identifier": "https://baycitynews.com",
-            "name": "Bay City News"
+            "identifier": "https://hypha.coop",
+            "name": "Hypha Coop"
         },
         {
-            "@id": "https://twitter.com/baynewsmatters",
+            "@id": "https://twitter.com/hyphacoop",
             "@type": "Organization",
-            "identifier": "https://baycitynews.com",
-            "name": "baynewsmatters"
+            "identifier": "https://hypha.coop",
+            "name": "hyphacoop"
         }
       ]
     }

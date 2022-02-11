@@ -36,8 +36,11 @@ class OrganizationConfig:
         Raises:
             Exception if configuration loading fails
         """
+        self.config = {}
         try:
-            self._load_config_from_file(config_file)
+            # Disable loading of configuration from file in the test environment.
+            if os.environ.get("RUN_ENV") != "test":
+                self._load_config_from_file(config_file)
         except Exception as err:
             # Use print because this will likely happen before logging is configured
             print(f"Couldn't load organization configuration from: {config_file}")
@@ -52,15 +55,20 @@ class OrganizationConfig:
 
     def _load_config_from_file(self, config_file):
         with open(config_file, "r") as f:
-            config = json.loads(f.read())
-            self.config = {}
-            for org in config["organizations"]:
+            json_config = json.loads(f.read())
+            for org in json_config["organizations"]:
                 self.config[org["id"]] = org
         # Use print because this will likely happen before logging is configured
         print(f"Loaded configuration for organizations: {self.all_orgs()}")
 
 
-# Disable loading of configuration from file in the test environment.
-if os.environ.get("RUN_ENV") != "test":
-    # Load Organization-specific configuration from file
-    ORGANIZATION_CONFIG = OrganizationConfig(os.environ.get("ORG_CONFIG_JSON"))
+# Load Organization-specific configuration from file
+ORGANIZATION_CONFIG = OrganizationConfig(os.environ.get("ORG_CONFIG_JSON"))
+
+
+def creative_work(organization_id):
+    org_config = ORGANIZATION_CONFIG.get(organization_id)
+    if org_config:
+        return org_config.get("creative_work_author", [])
+    else:
+        return []

@@ -1,8 +1,10 @@
 from .context import claim
+from .context import config
 
 _claim = claim.Claim()
 
 jwt_payload = {
+    "organization_id": "hyphacoop",
     "author": {
         "type": "Person",
         "identifier": "https://hypha.coop",
@@ -90,15 +92,9 @@ def test_generates_create_claim(reverse_geocode_mocker):
     }
 
     exif_assertion = assertions["stds.exif"]
-    assert (
-        exif_assertion["data"]["exif:GPSLatitude"]
-        == "15/1 55/1 6964/125"
-    )
+    assert exif_assertion["data"]["exif:GPSLatitude"] == "15/1 55/1 6964/125"
     assert exif_assertion["data"]["exif:GPSLatitudeRef"] == "S"
-    assert (
-        exif_assertion["data"]["exif:GPSLongitude"]
-        == "57/1 37/1 54183/1000"
-    )
+    assert exif_assertion["data"]["exif:GPSLongitude"] == "57/1 37/1 54183/1000"
     assert exif_assertion["data"]["exif:GPSLongitudeRef"] == "W"
     assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2021:10:30 18:43:14 +0000"
 
@@ -182,7 +178,7 @@ def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
                     {
                         "name": "Last Known GPS Timestamp",
                         "value": "2021-10-30T18:43:14Z",
-                    }
+                    },
                 ]
             }
         },
@@ -217,12 +213,26 @@ def test_generates_create_claim_with_partial_reverse_geocode(reverse_geocode_moc
 
 
 def test_generates_update_claim():
-    claim = _claim.generate_update()
+    claim = _claim.generate_update("hyphacoop")
     assert claim["vendor"] == "starlinglab"
 
 
 def test_generates_store_claim():
-    claim = _claim.generate_store("a-made-up-cid")
+    # Setup some organization-specific configuration
+    config.ORGANIZATION_CONFIG.config = {
+        "hyphacoop": {
+            "creative_work_author": [
+                {
+                    "@id": "https://twitter.com/somefakestuff",
+                    "@type": "Organization",
+                    "identifier": "https://example.com",
+                    "name": "hyphacoop",
+                }
+            ]
+        }
+    }
+
+    claim = _claim.generate_store("a-made-up-cid", "hyphacoop")
     assertions = _claim.assertions_by_label(claim)
     assert (
         assertions["org.starlinglab.storage.ipfs"]["data"]["starling:provider"]
@@ -238,6 +248,14 @@ def test_generates_store_claim():
         ]
         is not None
     )
+    assert assertions["stds.schema-org.CreativeWork"]["data"]["author"] == [
+        {
+            "@id": "https://twitter.com/somefakestuff",
+            "@type": "Organization",
+            "identifier": "https://example.com",
+            "name": "hyphacoop",
+        }
+    ]
 
 
 def test_prefers_current_latlon_with_fallback(reverse_geocode_mocker):

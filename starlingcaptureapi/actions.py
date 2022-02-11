@@ -140,7 +140,7 @@ class Actions:
         asset_helper = AssetHelper(organization_id)
         return self._update(
             asset_fullpath,
-            _claim.generate_update(),
+            _claim.generate_update(organization_id),
             asset_helper.get_assets_update_output(),
             asset_helper
         )
@@ -165,7 +165,7 @@ class Actions:
 
         return self._update(
             added_asset,
-            _claim.generate_store(ipfs_cid),
+            _claim.generate_store(ipfs_cid. organization_id),
             AssetHelper(organization_id).get_assets_store_output(),
         )
 
