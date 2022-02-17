@@ -109,11 +109,10 @@ class Actions:
         info = []
         
         (lat, lon) = self._get_lat_lon(exif_dict)
-        row = {"name": "Last Known GPS Latitude", "value":lat}
-        info.append(row)
-        row = {"name": "Last Known GPS Longitude", "value":lon}
-        info.append(row)
-
+        info = [
+          {"name": "Last Known GPS Latitude", "value": lat},
+          {"name": "Last Known GPS Longitude", "value": lon}
+        ]
         meta_proofmode = {"information": info}
         
         # Inject create claim and read back from file.
@@ -267,10 +266,10 @@ class Actions:
         if "GPSInfo" in exif_data:		
             gps_info = exif_data["GPSInfo"]
 
-            gps_latitude = self._get_if_exist(gps_info, "GPSLatitude")
-            gps_latitude_ref = self._get_if_exist(gps_info, 'GPSLatitudeRef')
-            gps_longitude = self._get_if_exist(gps_info, 'GPSLongitude')
-            gps_longitude_ref = self._get_if_exist(gps_info, 'GPSLongitudeRef')
+            gps_latitude = gps_info.get("GPSLatitude")
+            gps_latitude_ref = gps_info.get(gps_info, 'GPSLatitudeRef')
+            gps_longitude = gps_info.get(gps_info, 'GPSLongitude')
+            gps_longitude_ref = gps_info.get(gps_info, 'GPSLongitudeRef')
 
             if gps_latitude and gps_latitude_ref and gps_longitude and gps_longitude_ref:
                 lat = self._convert_to_degress(gps_latitude)
@@ -282,6 +281,3 @@ class Actions:
                     lon = 0 - lon
 
         return lat, lon
-    def _get_if_exist(self, data, key):
-        if key in data:
-            return data[key]
