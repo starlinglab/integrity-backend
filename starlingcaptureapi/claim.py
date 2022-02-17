@@ -4,6 +4,7 @@ import json
 import logging
 import os
 
+from . import config
 from .exif import Exif
 from .geocoder import Geocoder
 
@@ -33,22 +34,6 @@ CREATE_CLAIM_TEMPLATE = _load_template("claim_create.json")
 UPDATE_CLAIM_TEMPLATE = _load_template("claim_update.json")
 STORE_CLAIM_TEMPLATE = _load_template("claim_store.json")
 CUSTOM_CLAIM_TEMPLATE = _load_template("claim_custom.json")
-
-# Hardcode CreativeWork author for Bay City News.
-CREATIVE_WORK_AUTHOR = [
-    {
-        "@type": "Organization",
-        "credential": [],
-        "identifier": "https://baycitynews.com",
-        "name": "Bay City News",
-    },
-    {
-        "@id": "https://twitter.com/baynewsmatters",
-        "@type": "Organization",
-        "identifier": "https://baycitynews.com",
-        "name": "baynewsmatters",
-    },
-]
 
 
 class Claim:
@@ -126,7 +111,7 @@ class Claim:
         # TODO: Parse proofmode metadata and create claim.
         return claim
 
-    def generate_update(self):
+    def generate_update(self, organization_id):
         """Generates a claim for the 'update' action.
 
         Returns:
@@ -141,7 +126,7 @@ class Claim:
         assertions = []
 
         creative_work = assertion_templates["stds.schema-org.CreativeWork"]
-        creative_work["data"] = {"author": CREATIVE_WORK_AUTHOR}
+        creative_work["data"] = {"author": config.creative_work(organization_id)}
         assertions.append(creative_work)
 
         c2pa_actions = assertion_templates["c2pa.actions"]
@@ -152,7 +137,7 @@ class Claim:
 
         return claim
 
-    def generate_store(self, ipfs_cid):
+    def generate_store(self, ipfs_cid, organization_id):
         """Generates a claim for the 'store' action.
 
         Args:
@@ -170,7 +155,7 @@ class Claim:
         assertions = []
 
         creative_work = assertion_templates["stds.schema-org.CreativeWork"]
-        creative_work["data"] = {"author": CREATIVE_WORK_AUTHOR}
+        creative_work["data"] = {"author": config.creative_work(organization_id)}
         assertions.append(creative_work)
 
         c2pa_actions = assertion_templates["c2pa.actions"]

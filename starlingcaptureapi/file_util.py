@@ -1,7 +1,11 @@
 from hashlib import sha256
 
+import errno
+import logging
 import os
 import uuid
+
+_logger = logging.getLogger(__name__)
 
 
 class FileUtil:
@@ -10,16 +14,23 @@ class FileUtil:
     def create_dir(self, dir_path):
         """Creates a new directory.
 
+        Logs if the new directory was created or if it already existed.
+
         Args:
             dir_path: the local path to the new directory
 
-        Returns:
-            True if a new directory is created; False if it already exists
+        Raises:
+            any errors that happened during directory creation
+            (an already-existing directory is not considered an error)
         """
-        if not os.path.isdir(dir_path):
+        try:
             os.makedirs(dir_path)
-            return True
-        return False
+            _logger.info("Created directory %s", dir_path)
+        except OSError as err:
+            if err.errno == errno.EEXIST:
+                _logger.info("Directory %s already exists", dir_path)
+            else:
+                raise err
 
     def generate_uuid(self):
         """Generates a randomly generated UUID.

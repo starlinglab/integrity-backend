@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 async def create(request):
     with error_handling_and_response() as response:
-        data = await Multipart().read(request)
+        data = await Multipart(request).read()
 
         if "meta" not in data:
             raise ValueError("Missing 'meta' section in request")
@@ -25,7 +25,7 @@ async def create(request):
 
 async def create_proofmode(request):
     with error_handling_and_response() as response:
-        data = await Multipart().read(request)
+        data = await Multipart(request).read()
         Actions().create_proofmode(
             data.get("asset_fullpath"), request.get("jwt_payload")
         )

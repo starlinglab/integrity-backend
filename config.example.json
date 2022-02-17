@@ -1,0 +1,21 @@
+{
+  "organizations": [
+    {
+      "id": "hyphacoop",
+      "creative_work_author": [
+        {
+            "@type": "Organization",
+            "credential": [],
+            "identifier": "https://hypha.coop",
+            "name": "Hypha Worker Co-operative"
+        },
+        {
+            "@id": "https://twitter.com/hyphacoop",
+            "@type": "Organization",
+            "identifier": "https://hypha.coop",
+            "name": "HyphaCoop"
+        }
+      ]
+    }
+  ]
+}

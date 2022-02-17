@@ -10,7 +10,6 @@ import os
 import shutil
 import time
 
-_asset_helper = AssetHelper()
 _claim = Claim()
 _claim_tool = ClaimTool()
 _filecoin = Filecoin()
@@ -35,9 +34,10 @@ class Actions:
         Raises:
             Exception if errors are encountered during processing
         """
+        asset_helper = AssetHelper.from_jwt(jwt_payload)
         # Create temporary files to work with.
-        tmp_asset_file = _asset_helper.get_tmp_file_fullpath(".jpg")
-        tmp_claim_file = _asset_helper.get_tmp_file_fullpath(".json")
+        tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
+        tmp_claim_file = asset_helper.get_tmp_file_fullpath(".json")
 
         # Inject create claim and read back from file.
         claim = _claim.generate_create(jwt_payload, meta)
@@ -48,14 +48,14 @@ class Actions:
         _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
 
         # Copy the C2PA-injected asset to both the internal and shared asset directories.
-        internal_asset_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
+        internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
         shutil.move(tmp_asset_file, internal_asset_file)
         subfolder = jwt_payload.get("author", {}).get("name")
         shutil.copy2(
-            internal_asset_file, _asset_helper.get_assets_create_output(subfolder)
+            internal_asset_file, asset_helper.get_assets_create_output(subfolder)
         )
         _logger.info("New asset file added: %s", internal_asset_file)
-        internal_claim_file = _asset_helper.get_internal_claim_fullpath(
+        internal_claim_file = asset_helper.get_internal_claim_fullpath(
             internal_asset_file
         )
         shutil.move(tmp_claim_file, internal_claim_file)
@@ -79,9 +79,10 @@ class Actions:
         Raises:
             Exception if errors are encountered during processing
         """
+        asset_helper = AssetHelper.from_jwt(jwt_payload)
         # Create temporary files to work with.
-        tmp_asset_file = _asset_helper.get_tmp_file_fullpath(".jpg")
-        tmp_claim_file = _asset_helper.get_tmp_file_fullpath(".json")
+        tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
+        tmp_claim_file = asset_helper.get_tmp_file_fullpath(".json")
 
         # TODO: Unzip bundle, store asset file, and create dictionary for claim creation.
         meta_proofmode = None
@@ -93,15 +94,15 @@ class Actions:
         _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
 
         # Copy the C2PA-injected asset to both the internal and shared asset directories.
-        internal_asset_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
+        internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
         shutil.move(tmp_asset_file, internal_asset_file)
         subfolder = jwt_payload.get("author", {}).get("name")
         shutil.copy2(
             internal_asset_file,
-            _asset_helper.get_assets_create_proofmode_output(subfolder),
+            asset_helper.get_assets_create_proofmode_output(subfolder),
         )
         _logger.info("New asset file added: %s", internal_asset_file)
-        internal_claim_file = _asset_helper.get_internal_claim_fullpath(
+        internal_claim_file = asset_helper.get_internal_claim_fullpath(
             internal_asset_file
         )
         shutil.move(tmp_claim_file, internal_claim_file)
@@ -111,39 +112,45 @@ class Actions:
         )
         return internal_asset_file
 
-    def add(self, asset_fullpath):
+    def add(self, organization_id, asset_fullpath):
         """Process asset with add action.
         The provided asset file is added to the asset management system and renamed to its internal identifier in the add-output folder.
 
         Args:
+            organization_id: string with the unique identifier for the organization this action is for
             asset_fullpath: the local path to the asset file
 
         Returns:
             the local path to the asset file in the internal directory
         """
-        return self._add(asset_fullpath, _asset_helper.get_assets_add_output())
+        asset_helper = AssetHelper(organization_id)
+        return self._add(asset_fullpath, asset_helper.get_assets_add_output(), asset_helper)
 
-    def update(self, asset_fullpath):
+    def update(self, organization_id, asset_fullpath):
         """Process asset with update action.
         A new asset file is generated in the update-output folder with a claim that links it to a parent asset identified by its filename.
 
         Args:
+            organization_id: string with the unique identifier for the organization this action is for
             asset_fullpath: the local path to the asset file
 
         Returns:
             the local path to the asset file in the internal directory
         """
+        asset_helper = AssetHelper(organization_id)
         return self._update(
             asset_fullpath,
-            _claim.generate_update(),
-            _asset_helper.get_assets_update_output(),
+            _claim.generate_update(organization_id),
+            asset_helper.get_assets_update_output(),
+            asset_helper
         )
 
-    def store(self, asset_fullpath):
+    def store(self, organization_id, asset_fullpath):
         """Process asset with store action.
         The provided asset stored on decentralized storage, then a new asset file is generated in the store-output folder with a storage claim.
 
         Args:
+            organization_id: string with the unique identifier for the organization this action is for
             asset_fullpath: the local path to the asset file
 
         Returns:
@@ -158,20 +165,23 @@ class Actions:
 
         return self._update(
             added_asset,
-            _claim.generate_store(ipfs_cid),
-            _asset_helper.get_assets_store_output(),
+            _claim.generate_store(ipfs_cid. organization_id),
+            AssetHelper(organization_id).get_assets_store_output(),
         )
 
-    def custom(self, asset_fullpath):
+    def custom(self, organization_id, asset_fullpath):
         """Process asset with custom action.
         A new asset file is generated in the custom-output folder with a claim that links it to a parent asset identified by its filename.
 
         Args:
+            organization_id: string with the unique identifier for the organization this action is for
             asset_fullpath: the local path to the asset file
 
         Returns:
             the local path to the asset file in the internal directory
         """
+        asset_helper = AssetHelper(organization_id)
+
         # Add uploaded asset to the internal directory.
         added_asset = self._add(asset_fullpath, None)
 
@@ -187,18 +197,19 @@ class Actions:
         return self._update(
             added_asset,
             _claim.generate_custom(custom_assertions),
-            _asset_helper.get_assets_custom_output(),
+            asset_helper.get_assets_custom_output(),
+            asset_helper
         )
 
-    def _add(self, asset_fullpath, output_dir):
+    def _add(self, asset_fullpath, output_dir, asset_helper):
         # Create temporary files to work with.
-        tmp_asset_file = _asset_helper.get_tmp_file_fullpath(".jpg")
+        tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
         time.sleep(1)
         _logger.info("File size: %s", os.path.getsize(asset_fullpath))
         shutil.copy2(asset_fullpath, tmp_asset_file)
 
         # Copy asset to both the internal and shared asset directories.
-        internal_asset_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
+        internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
         shutil.move(tmp_asset_file, internal_asset_file)
         if output_dir is not None:
             shutil.copy2(internal_asset_file, output_dir)
@@ -206,15 +217,15 @@ class Actions:
 
         return internal_asset_file
 
-    def _update(self, asset_fullpath, claim, output_dir):
+    def _update(self, asset_fullpath, claim, output_dir, asset_helper):
         # Create temporary files to work with.
-        tmp_asset_file = _asset_helper.get_tmp_file_fullpath(".jpg")
-        tmp_claim_file = _asset_helper.get_tmp_file_fullpath(".json")
+        tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
+        tmp_claim_file = asset_helper.get_tmp_file_fullpath(".json")
 
         # Parse file name to get internal name for parent file.
         file_name, file_extension = os.path.splitext(os.path.basename(asset_fullpath))
         parent_file = os.path.join(
-            _asset_helper.get_assets_internal(),
+            asset_helper.get_assets_internal(),
             file_name.partition("_")[0].partition("-")[0] + file_extension,
         )
 
@@ -230,12 +241,12 @@ class Actions:
         _claim_tool.run_claim_inject(claim, tmp_asset_file, parent_file)
         _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
         # Copy the C2PA-injected asset to both the internal and shared asset directories.
-        internal_asset_file = _asset_helper.get_internal_file_fullpath(tmp_asset_file)
+        internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
         shutil.move(tmp_asset_file, internal_asset_file)
         if output_dir is not None:
             shutil.copy2(internal_asset_file, output_dir)
         _logger.info("New asset file added: %s", internal_asset_file)
-        internal_claim_file = _asset_helper.get_internal_claim_fullpath(
+        internal_claim_file = asset_helper.get_internal_claim_fullpath(
             internal_asset_file
         )
         shutil.move(tmp_claim_file, internal_claim_file)
