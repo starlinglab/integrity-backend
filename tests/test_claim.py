@@ -220,7 +220,7 @@ def test_generates_update_claim():
 def test_generates_store_claim():
     # Setup some organization-specific configuration
     config.ORGANIZATION_CONFIG.config = {
-        "hyphacoop": {
+        "example": {
             "creative_work_author": [
                 {
                     "@id": "https://twitter.com/example",
