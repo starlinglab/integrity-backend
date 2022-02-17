@@ -108,17 +108,11 @@ class Actions:
 
         info = []
         
-        # TODO: Parse this up right.
-        if 'GPSLatitude' in gpsinfo:
-
-            lat = gpsinfo['GPSLongitude'][0][0] + gpsinfo['GPSLongitude'][1][0] / 60 + gpsinfo['GPSLongitude'][2][0] / (3600*100) 
-            lon = gpsinfo['GPSLatitude'][0][0] + gpsinfo['GPSLatitude'][1][0] / 60 + gpsinfo['GPSLatitude'][2][0] / (3600*100) 
-
-            row = {"name": "Last Known GPS Latitude", "value":lat}
-            info.append(row)
-            row = {"name": "Last Known GPS Longitude", "value":lon}
-            info.append(row)
-
+        (lat, lon) = self._get_lat_lon(exif_dict)
+        info = [
+          {"name": "Last Known GPS Latitude", "value": lat},
+          {"name": "Last Known GPS Longitude", "value": lon}
+        ]
         meta_proofmode = {"information": info}
         
         # Inject create claim and read back from file.
@@ -247,3 +241,43 @@ class Actions:
             internal_claim_file,
         )
         return internal_asset_file
+
+    def _convert_to_degress(self, value):
+        """Helper function to convert the GPS coordinates stored in the EXIF to degress in float format"""
+        d0 = value[0][0]
+        d1 = value[0][1]
+        d = float(d0) / float(d1)
+
+        m0 = value[1][0]
+        m1 = value[1][1]
+        m = float(m0) / float(m1)
+
+        s0 = value[2][0]
+        s1 = value[2][1]
+        s = float(s0) / float(s1)
+
+        return d + (m / 60.0) + (s / 3600.0)
+
+    def _get_lat_lon(self, exif_data):
+        """Returns the latitude and longitude, if available, from the provided exif_data (obtained through get_exif_data above)"""
+        lat = None
+        lon = None
+
+        if "GPSInfo" in exif_data:		
+            gps_info = exif_data["GPSInfo"]
+
+            gps_latitude = gps_info.get("GPSLatitude")
+            gps_latitude_ref = gps_info.get(gps_info, 'GPSLatitudeRef')
+            gps_longitude = gps_info.get(gps_info, 'GPSLongitude')
+            gps_longitude_ref = gps_info.get(gps_info, 'GPSLongitudeRef')
+
+            if gps_latitude and gps_latitude_ref and gps_longitude and gps_longitude_ref:
+                lat = self._convert_to_degress(gps_latitude)
+                if gps_latitude_ref != "N":                     
+                    lat = 0 - lat
+
+                lon = self._convert_to_degress(gps_longitude)
+                if gps_longitude_ref != "E":
+                    lon = 0 - lon
+
+        return lat, lon
