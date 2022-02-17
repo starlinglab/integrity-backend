@@ -18,9 +18,7 @@ async def create(request):
         if "meta" not in data:
             raise ValueError("Missing 'meta' section in request")
 
-        Actions().create(
-            data.get("asset_fullpath"), request.get("jwt_payload"), data.get("meta")
-        )
+        Actions().create(data.get("asset_fullpath"), request.get("jwt_payload"), data)
 
     return web.json_response(response, status=response.get("status_code"))
 

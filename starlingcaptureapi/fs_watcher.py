@@ -47,6 +47,11 @@ class FsWatcher:
             recursive=True,
             path=_asset_helper.get_assets_store(),
         )
+        observer.schedule(
+            self.CustomHandler(patterns=patterns),
+            recursive=True,
+            path=_asset_helper.get_assets_custom(),
+        )
         _logger.info("Starting up file system watcher for action directories.")
         observer.start()
         try:
@@ -77,3 +82,10 @@ class FsWatcher:
         def on_created(self, event):
             with caught_and_logged_exceptions(event):
                 _actions.store(event.src_path)
+
+    class CustomHandler(PatternMatchingEventHandler):
+        """Handles file changes for custom action."""
+
+        def on_created(self, event):
+            with caught_and_logged_exceptions(event):
+                _actions.custom(event.src_path)

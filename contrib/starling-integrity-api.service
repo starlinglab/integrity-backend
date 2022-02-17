@@ -1,0 +1,13 @@
+[Unit]
+Description=Starling Integrity API
+After=network.target
+
+[Service]
+User=starling
+Restart=always
+Type=simple
+WorkingDirectory=/home/starling/starling-integrity-api
+ExecStart=/usr/local/bin/pipenv run server
+
+[Install]
+WantedBy=multi-user.target
