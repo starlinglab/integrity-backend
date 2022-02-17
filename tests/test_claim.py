@@ -4,7 +4,7 @@ from .context import config
 _claim = claim.Claim()
 
 jwt_payload = {
-    "organization_id": "hyphacoop",
+    "organization_id": "example",
     "author": {
         "type": "Person",
         "identifier": "https://hypha.coop",
@@ -213,7 +213,7 @@ def test_generates_create_claim_with_partial_reverse_geocode(reverse_geocode_moc
 
 
 def test_generates_update_claim():
-    claim = _claim.generate_update("hyphacoop")
+    claim = _claim.generate_update("example")
     assert claim["vendor"] == "starlinglab"
 
 
@@ -223,16 +223,16 @@ def test_generates_store_claim():
         "hyphacoop": {
             "creative_work_author": [
                 {
-                    "@id": "https://twitter.com/somefakestuff",
+                    "@id": "https://twitter.com/example",
                     "@type": "Organization",
                     "identifier": "https://example.com",
-                    "name": "hyphacoop",
+                    "name": "example",
                 }
             ]
         }
     }
 
-    claim = _claim.generate_store("a-made-up-cid", "hyphacoop")
+    claim = _claim.generate_store("a-made-up-cid", "example")
     assertions = _claim.assertions_by_label(claim)
     assert (
         assertions["org.starlinglab.storage.ipfs"]["data"]["starling:provider"]
@@ -250,10 +250,10 @@ def test_generates_store_claim():
     )
     assert assertions["stds.schema-org.CreativeWork"]["data"]["author"] == [
         {
-            "@id": "https://twitter.com/somefakestuff",
+            "@id": "https://twitter.com/example",
             "@type": "Organization",
             "identifier": "https://example.com",
-            "name": "hyphacoop",
+            "name": "example",
         }
     ]
 
