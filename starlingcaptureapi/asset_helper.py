@@ -17,9 +17,7 @@ class AssetHelper:
                 part of directory names (e.g. "hyphacoop" good, not "Hypha Coop")
         """
         if self._filename_safe(organization_id) != organization_id:
-            raise ValueError(
-                f"Organization {organization_id} is not filename safe!"
-            )
+            raise ValueError(f"Organization {organization_id} is not filename safe!")
         self.org_id = organization_id
 
         # Organization-specific directory prefixes
@@ -106,23 +104,15 @@ class AssetHelper:
     def get_assets_add_output(self):
         return self.dir_add_output
 
-    def get_assets_create_output(self, subfolder=None):
-        if subfolder:
-            dir_subfolder = os.path.join(
-                self.dir_create_output, self._filename_safe(subfolder)
-            )
-            _file_util.create_dir(dir_subfolder)
-            return dir_subfolder
-        return self.dir_create_output
+    def get_assets_create_output(self, subfolders=[]):
+        return self._get_path_with_subfolders(
+            self.dir_create_output, subfolders=subfolders
+        )
 
-    def get_assets_create_proofmode_output(self, subfolder=None):
-        if subfolder:
-            dir_subfolder = os.path.join(
-                self.dir_create_proofmode_output, self._filename_safe(subfolder)
-            )
-            _file_util.create_dir(dir_subfolder)
-            return dir_subfolder
-        return self.dir_create_proofmode_output
+    def get_assets_create_proofmode_output(self, subfolders=[]):
+        return self._get_path_with_subfolders(
+            self.dir_create_proofmode_output, subfolders=subfolders
+        )
 
     def get_assets_update_output(self):
         return self.dir_update_output
@@ -174,3 +164,10 @@ class AssetHelper:
 
     def _filename_safe(self, filename):
         return filename.lower().replace(" ", "-").strip()
+
+    def _get_path_with_subfolders(self, full_path, subfolders=[]):
+        """Helper to add subfolders to path, create all directories if needed."""
+        for subfolder in subfolders:
+            full_path = os.path.join(full_path, self._filename_safe(subfolder))
+        _file_util.create_dir(full_path)
+        return full_path

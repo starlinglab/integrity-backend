@@ -4,6 +4,7 @@ from .claim_tool import ClaimTool
 from .filecoin import Filecoin
 from . import config
 
+import datetime
 import json
 import logging
 import os
@@ -50,9 +51,12 @@ class Actions:
         # Copy the C2PA-injected asset to both the internal and shared asset directories.
         internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
         shutil.move(tmp_asset_file, internal_asset_file)
-        subfolder = jwt_payload.get("author", {}).get("name")
+        subfolders = [
+            jwt_payload.get("author", {}).get("name"),
+            datetime.datetime.now().strftime("%Y-%m-%d"),
+        ]
         shutil.copy2(
-            internal_asset_file, asset_helper.get_assets_create_output(subfolder)
+            internal_asset_file, asset_helper.get_assets_create_output(subfolders)
         )
         _logger.info("New asset file added: %s", internal_asset_file)
         internal_claim_file = asset_helper.get_internal_claim_fullpath(
@@ -96,10 +100,13 @@ class Actions:
         # Copy the C2PA-injected asset to both the internal and shared asset directories.
         internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
         shutil.move(tmp_asset_file, internal_asset_file)
-        subfolder = jwt_payload.get("author", {}).get("name")
+        subfolders = [
+            jwt_payload.get("author", {}).get("name"),
+            datetime.datetime.now().strftime("%Y-%m-%d"),
+        ]
         shutil.copy2(
             internal_asset_file,
-            asset_helper.get_assets_create_proofmode_output(subfolder),
+            asset_helper.get_assets_create_proofmode_output(subfolders),
         )
         _logger.info("New asset file added: %s", internal_asset_file)
         internal_claim_file = asset_helper.get_internal_claim_fullpath(
@@ -124,7 +131,9 @@ class Actions:
             the local path to the asset file in the internal directory
         """
         asset_helper = AssetHelper(organization_id)
-        return self._add(asset_fullpath, asset_helper.get_assets_add_output(), asset_helper)
+        return self._add(
+            asset_fullpath, asset_helper.get_assets_add_output(), asset_helper
+        )
 
     def update(self, organization_id, asset_fullpath):
         """Process asset with update action.
@@ -142,7 +151,7 @@ class Actions:
             asset_fullpath,
             _claim.generate_update(organization_id),
             asset_helper.get_assets_update_output(),
-            asset_helper
+            asset_helper,
         )
 
     def store(self, organization_id, asset_fullpath):
@@ -165,7 +174,7 @@ class Actions:
 
         return self._update(
             added_asset,
-            _claim.generate_store(ipfs_cid. organization_id),
+            _claim.generate_store(ipfs_cid.organization_id),
             AssetHelper(organization_id).get_assets_store_output(),
         )
 
@@ -198,7 +207,7 @@ class Actions:
             added_asset,
             _claim.generate_custom(custom_assertions),
             asset_helper.get_assets_custom_output(),
-            asset_helper
+            asset_helper,
         )
 
     def _add(self, asset_fullpath, output_dir, asset_helper):
