@@ -102,7 +102,7 @@ curl -X POST http://localhost:8080/assets/create \
      -F "file=@<image_filename>>"
 ```
 
-Sample JWT from [jwt-payload.json.example](jwt-payload.json.example) and `JWT_SECRET="super-seekret"`:
+Sample JWT from [jwt-payload.example.json](jwt-payload.example.json) and `JWT_SECRET="super-seekret"`:
 ```
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmdhbml6YXRpb25faWQiOiJoeXBoYWNvb3AiLCJhdXRob3IiOnsidHlwZSI6IlBlcnNvbiIsImlkZW50aWZpZXIiOiJodHRwczovL2h5cGhhLmNvb3AiLCJuYW1lIjoiQmVuZWRpY3QgTGF1In0sInR3aXR0ZXIiOnsidHlwZSI6Ik9yZ2FuaXphdGlvbiIsImlkZW50aWZpZXIiOiJodHRwczovL2h5cGhhLmNvb3AiLCJuYW1lIjoiSHlwaGFDb29wIn0sImNvcHlyaWdodCI6IkNvcHlyaWdodCAoQykgMjAyMSBIeXBoYSBXb3JrZXIgQ28tb3BlcmF0aXZlLiBBbGwgUmlnaHRzIFJlc2VydmVkLiJ9.9l-NgzCgdDvPavxr3RHs6bpfE10_PocK_FxztBKX2vg
 ```
@@ -111,7 +111,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmdhbml6YXRpb25faWQiOiJoeXBoYWNvb3AiLCJ
 
 If you want to create a claim with manually created assertions, specify a dictionary where the key is the SHA-256 of the parent file, and the value is a list of custom assertions, then specify the path to your dictionary file in the `CUSTOM_ASSERTIONS_DICTIONARY` environment variable in your local `.env` file.
 
-See [custom-assertions.json.example.json](custom-assertions.json.example.json) for an example.
+See [custom-assertions.example.json](custom-assertions.example.json) for an example.
 
 ## License
 
