@@ -9,3 +9,4 @@ from starlingcaptureapi import claim
 from starlingcaptureapi import config
 from starlingcaptureapi import exif
 from starlingcaptureapi import geocoder
+from starlingcaptureapi import iscn
