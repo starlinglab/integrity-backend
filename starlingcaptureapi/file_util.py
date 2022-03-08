@@ -1,9 +1,11 @@
+from . import config
 from hashlib import sha256
 
 import errno
 import logging
 import os
 import uuid
+import subprocess
 
 _logger = logging.getLogger(__name__)
 
@@ -56,3 +58,48 @@ class FileUtil:
                 hasher.update(byte_block)
             return hasher.hexdigest()
         # TODO: handle error (image not found, etc.)
+
+    def cidv1(self, file_path):
+        """Generates the CIDv1 of a file, as determined by ipfs add.
+
+        Args:
+            file_path: the local path to a file
+
+        Returns:
+            CIDv1 in the canonical string format
+        """
+
+        if not os.path.exists(os.path.expanduser("~/.ipfs")):
+            proc = subprocess.run(
+                ["ipfs", "init"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+            if proc.returncode != 0:
+                raise Exception(
+                    f"'ipfs init' failed with code {proc.returncode} and output:\n\n{proc.stdout}"
+                )
+
+            _logger.info("Created IPFS repo since it didn't exist")
+
+        proc = subprocess.run(
+            [
+                config.IPFS_BIN_PATH,
+                "add",
+                "--only-hash",
+                "--cid-version=1",
+                "-Q",
+                file_path,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+
+        if proc.returncode != 0:
+            raise Exception(
+                f"'ipfs init' failed with code {proc.returncode} and output:\n\n{proc.stdout}"
+            )
+
+        return proc.stdout.strip()
