@@ -1,3 +1,5 @@
+from .crypto_util import AESCipher
+from Crypto.Cipher import AES
 from hashlib import sha256
 
 import errno
@@ -56,3 +58,36 @@ class FileUtil:
                 hasher.update(byte_block)
             return hasher.hexdigest()
         # TODO: handle error (image not found, etc.)
+
+    def encrypt(self, key, file_path, enc_file_path):
+        """Writes an encrypted version of the file to disk.
+
+        Args:
+            key: an AES-256 key as bytes (32 bytes)
+            file_path: the path to the unencrypted file
+            enc_file_path: the path where the encrypted file will go
+
+        Raises:
+            Any AES errors
+            Any errors during file creation or I/O
+        """
+
+        cipher = AESCipher(key)
+
+        # Read and encrypt 32 KiB at a time
+        buffer_size = 32 * 1024
+
+        with open(file_path, "rb") as clear, open(enc_file_path, "wb") as enc:
+            # Begin file with Intialization Vector
+            enc.write(cipher.iv)
+
+            while True:
+                data = clear.read(buffer_size)
+
+                if len(data) % AES.block_size != 0 or len(data) == 0:
+                    # This is the final block in the file
+                    # It's not a multiple of the AES block size so it must be padded
+                    enc.write(cipher.encrypt_last_block(data))
+                    break
+
+                enc.write(cipher.encrypt(data))
