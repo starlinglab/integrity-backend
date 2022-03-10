@@ -30,3 +30,25 @@ class Iscn:
             return False
 
         return True
+
+    @staticmethod
+    def make_registration_and_register(asset_meta_path: str) -> bool:
+        """Creates a registration record for this asset, signs it and registers it with ISCN.
+
+        Args:
+            asset_meta_path: full local path to metadata JSON for this asset
+            encrypted_archive_path: full local path to the encrypted archive
+
+        Returns:
+            True if the registration succeeded; False otherwise
+        """
+        # 1. Create registration record.
+        #    See discussion in https://github.com/starlinglab/starling-integrity-api/issues/53
+        #    for schema details. Might need to flesh out a few more details. Output of this step
+        #    is some JSON.
+        # 2. Sign registration record with authsign (Ana's note: I have no idea what this means, but it says so in Mural)
+        # 3. Send registration records out:
+        #    TODO: are we sending out the signed record? If not, where does this signed record go to?
+        #    3.1. Send to ISCN, using `register` method above
+        #    3.2. Send to Numbers. TODO: figure out what the endpoint for Numbers is, interface, etc.
+        pass

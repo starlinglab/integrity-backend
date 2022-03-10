@@ -56,3 +56,20 @@ class FileUtil:
                 hasher.update(byte_block)
             return hasher.hexdigest()
         # TODO: handle error (image not found, etc.)
+
+    @staticmethod
+    def make_encrypted_archival_zip(asset_meta_path: str) -> str:
+        """Creates an encrypted zip for archival, based on the given metadata file.
+
+        1. Collect all the files needed for the zip, based on the hash in the `asset_meta_path` filename
+        2. Zip ALL the files from step #1
+        3. Encrypt the zip from step #2
+
+        Args:
+            asset_meta_path: full local path to metadata JSON file for the asset to zip and encrypt
+
+        Return:
+            full local path to zipped and encrypted file
+        """
+        pass
+

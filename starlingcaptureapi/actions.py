@@ -2,6 +2,8 @@ from .asset_helper import AssetHelper
 from .claim import Claim
 from .claim_tool import ClaimTool
 from .filecoin import Filecoin
+from .file_util import FileUtil
+from .iscn import Iscn
 from . import config
 
 import datetime
@@ -19,6 +21,20 @@ _logger = logging.getLogger(__name__)
 
 class Actions:
     """Actions for processing assets."""
+
+    def archive(self, asset_meta_path: str):
+        """Archive asset.
+
+        Args:
+            asset_meta_fullpath: full local path to the metadata JSON file for this asset
+
+        Returns:
+            nothing? do we need to return something here?
+        """
+        encrypted_archive_path = FileUtil.make_encrypted_archival_zip(asset_meta_path)
+        Iscn.make_registration_and_register(asset_meta_path, encrypted_archive_path)
+        # TODO: does the archive need to be pushed to Filecoin or somewhere else?
+
 
     def create(self, asset_fullpath, jwt_payload, meta):
         """Process asset with create action.
