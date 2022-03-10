@@ -99,7 +99,7 @@ class FileUtil:
 
         if proc.returncode != 0:
             raise Exception(
-                f"'ipfs init' failed with code {proc.returncode} and output:\n\n{proc.stdout}"
+                f"'ipfs add --only-hash --cid-version=1' failed with code {proc.returncode} and output:\n\n{proc.stdout}"
             )
 
         return proc.stdout.strip()
