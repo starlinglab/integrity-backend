@@ -1,6 +1,7 @@
 from .asset_helper import AssetHelper
 from .claim import Claim
 from .claim_tool import ClaimTool
+from .encrypted_archive import EncryptedArchive
 from .filecoin import Filecoin
 from .file_util import FileUtil
 from .iscn import Iscn
@@ -31,8 +32,8 @@ class Actions:
         Returns:
             nothing? do we need to return something here?
         """
-        encrypted_archive_path = FileUtil.make_encrypted_archival_zip(asset_meta_path)
-        Iscn.make_registration_and_register(asset_meta_path, encrypted_archive_path)
+        encrypted_archive = EncryptedArchive.make_from_meta(asset_meta_path)
+        Iscn.register_archive(encrypted_archive)
         # TODO: does the archive need to be pushed to Filecoin or somewhere else?
 
 

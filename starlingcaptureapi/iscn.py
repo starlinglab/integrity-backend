@@ -1,3 +1,4 @@
+from .encrypted_archive import EncryptedArchive
 from . import config
 
 import logging
@@ -31,13 +32,13 @@ class Iscn:
 
         return True
 
-    @staticmethod
-    def make_registration_and_register(asset_meta_path: str) -> bool:
+    @classmethod
+    def register_archive(encrypted_archive: EncryptedArchive) -> bool:
         """Creates a registration record for this asset, signs it and registers it with ISCN.
 
         Args:
-            asset_meta_path: full local path to metadata JSON for this asset
-            encrypted_archive_path: full local path to the encrypted archive
+            encrypted_archive: the encrypted archive to register
+                this archive gives us access to metadata, CIDs, file paths, etc
 
         Returns:
             True if the registration succeeded; False otherwise
