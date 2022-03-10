@@ -25,6 +25,9 @@ CUSTOM_ASSERTIONS_DICTIONARY = os.environ.get("CUSTOM_ASSERTIONS_DICTIONARY")
 # API token for the web3.storage service
 WEB3_STORAGE_API_TOKEN = os.environ.get("WEB3_STORAGE_API_TOKEN")
 
+# Address of ISCN registration HTTP server to use
+ISCN_SERVER = os.environ.get("ISCN_SERVER")
+
 
 class OrganizationConfig:
     def __init__(self, config_file):
