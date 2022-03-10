@@ -77,12 +77,14 @@ class FileUtil:
         # Read and encrypt 32 KiB at a time
         buffer_size = 32 * 1024
 
-        with open(file_path, "rb") as clear, open(enc_file_path, "wb") as enc:
-            # Begin file with Intialization Vector
+        with open(file_path, "rb") as dec, open(enc_file_path, "wb") as enc:
+            # Begin file with the Initialization Vector.
+            # This is a standard way of storing the IV in a file for AES-CBC,
+            # and it's what the lit-js-sdk does.
             enc.write(cipher.iv)
 
             while True:
-                data = clear.read(buffer_size)
+                data = dec.read(buffer_size)
 
                 if len(data) % AES.block_size != 0 or len(data) == 0:
                     # This is the final block in the file
@@ -91,3 +93,35 @@ class FileUtil:
                     break
 
                 enc.write(cipher.encrypt(data))
+
+    def decrypt(self, key, file_path, dec_file_path):
+        """Writes an decrypted version of the file to disk.
+
+        Args:
+            key: an AES-256 key as bytes (32 bytes)
+            file_path: the path to the encrypted file
+            dec_file_path: the path where the decrypted file will go
+
+        Raises:
+            Any AES errors
+            Any errors during file creation or I/O
+        """
+
+        # Read and decrypt 32 KiB at a time
+        buffer_size = 32 * 1024
+
+        with open(file_path, "rb") as enc, open(dec_file_path, "wb") as dec:
+            # Get IV
+            iv = enc.read(16)
+            cipher = AESCipher(key, iv)
+
+            while True:
+                data = enc.read(buffer_size)
+
+                if len(data) % AES.block_size != 0 or len(data) == 0:
+                    # This is the final block in the file
+                    # It's not a multiple of the AES block size so it must be unpadded
+                    dec.write(cipher.decrypt_last_block(data))
+                    break
+
+                dec.write(cipher.decrypt(data))

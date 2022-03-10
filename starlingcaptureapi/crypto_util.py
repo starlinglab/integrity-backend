@@ -25,9 +25,9 @@ class AESCipher:
     All inputs and outputs are bytes, not strings.
     """
 
-    def __init__(self, key):
+    def __init__(self, key, iv=None):
         self.key = key
-        self.iv = os.urandom(AES.block_size)
+        self.iv = os.urandom(AES.block_size) if iv is None else iv
         self.cipher = AES.new(self.key, AES.MODE_CBC, self.iv)
 
     def encrypt(self, raw):
@@ -42,18 +42,23 @@ class AESCipher:
     def decrypt_last_block(self, enc):
         return self._unpad(self.cipher.decrypt(enc))
 
-    # Adapted from: https://stackoverflow.com/a/21928790
+    # Padding funcs adapted from: https://stackoverflow.com/a/21928790
+    #
+    # PKCS7 padding is pretty standard for AES-CBC, and it's what WebCrypto
+    # and therefore the lit-js-sdk uses.
 
     @staticmethod
-    def _pad(s):
+    def _pad(b):
         """PKCS7 padding"""
         return (
-            s
-            + (AES.block_size - len(s) % AES.block_size)
-            * chr(AES.block_size - len(s) % AES.block_size).encode()
+            b
+            + (AES.block_size - len(b) % AES.block_size)
+            * chr(AES.block_size - len(b) % AES.block_size).encode()
         )
 
     @staticmethod
-    def _unpad(s):
-        """PKCS7 padding"""
-        return s[: -ord(s[len(s) - 1 :])]
+    def _unpad(b):
+        """PKCS7 unpadding"""
+        if len(b) == 0:
+            return b""
+        return b[: -ord(b[len(b) - 1 :])]
