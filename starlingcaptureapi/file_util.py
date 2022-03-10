@@ -67,6 +67,9 @@ class FileUtil:
 
         Returns:
             CIDv1 in the canonical string format
+
+        Raises:
+            Exception if errors are encountered during processing
         """
 
         if not os.path.exists(os.path.expanduser("~/.ipfs")):
