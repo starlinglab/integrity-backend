@@ -1,9 +1,11 @@
+from . import config
 from hashlib import sha256
 
 import errno
 import logging
 import os
 import uuid
+import subprocess
 
 _logger = logging.getLogger(__name__)
 
@@ -56,3 +58,37 @@ class FileUtil:
                 hasher.update(byte_block)
             return hasher.hexdigest()
         # TODO: handle error (image not found, etc.)
+
+    def timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
+        """Creates a opentimestamps file for the given file.
+
+        Args:
+            file_path: path to file
+            ts_file_path: output path for opentimestamps file (.ots)
+            timeout: Timeout before giving up on a calendar
+            min_cals: timestamp is considered done if at least this many calendars replied
+
+        Raises:
+            any file I/O errors
+            Exception if errors are encountered during processing
+        """
+
+        with open(file_path, "rb") as inp, open(ts_file_path, "wb") as out:
+            proc = subprocess.run(
+                [
+                    config.OTS_CLIENT_PATH,
+                    "stamp",
+                    "--timeout",
+                    str(timeout),
+                    "-m",
+                    str(min_cals),
+                ],
+                stdin=inp,  # Read file from stdin, so that output is on stdout
+                stdout=out,  # Write output to given output file
+                stderr=subprocess.PIPE,
+            )
+
+        if proc.returncode != 0:
+            raise Exception(
+                f"'ots stamp' failed with code {proc.returncode} and output:\n\n{proc.stderr.decode()}"
+            )

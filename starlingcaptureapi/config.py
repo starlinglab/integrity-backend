@@ -25,6 +25,8 @@ CUSTOM_ASSERTIONS_DICTIONARY = os.environ.get("CUSTOM_ASSERTIONS_DICTIONARY")
 # API token for the web3.storage service
 WEB3_STORAGE_API_TOKEN = os.environ.get("WEB3_STORAGE_API_TOKEN")
 
+# Full path to Opentimestamps client. Must be already configured.
+OTS_CLIENT_PATH = os.environ.get("OTS_CLIENT_PATH")
 
 class OrganizationConfig:
     def __init__(self, config_file):
