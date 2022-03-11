@@ -56,3 +56,19 @@ class FileUtil:
                 hasher.update(byte_block)
             return hasher.hexdigest()
         # TODO: handle error (image not found, etc.)
+
+    @staticmethod
+    def get_hash_from_filename(filename: str) -> str:
+        """Extracts the file hash from the given filename.
+
+        Args:
+            filename: the filename to process, which is expected to be shaped like:
+                `<hash>-meta.json`
+                `<hash>-signature.json`
+                `<hash>.<ext>`
+
+        Returns:
+            the hash part of the filename
+        """
+        name, _ = os.path.splitext(os.path.basename(filename))
+        return name.split("-")[0]

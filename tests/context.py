@@ -8,5 +8,6 @@ from starlingcaptureapi import asset_helper
 from starlingcaptureapi import claim
 from starlingcaptureapi import config
 from starlingcaptureapi import exif
+from starlingcaptureapi import file_util
 from starlingcaptureapi import geocoder
 from starlingcaptureapi import iscn

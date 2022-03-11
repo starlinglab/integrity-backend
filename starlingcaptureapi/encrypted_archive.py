@@ -1,14 +1,19 @@
+from .file_util import FileUtil
+
+
 class EncryptedArchive:
     """Based on a metadata file, handles zipping, encryption and CID creation."""
 
     def __init__(self, asset_meta_path: str):
         self.meta_path = asset_meta_path
-        self.path = None
+
+        self.archive_path = None
+        self.asset_hash = None
+        self.cid = None
         self.recorded_content_cid = None
         self.zip_archive_cid = None
-        self.cid = None
 
-    @classmethod
+    @staticmethod
     def make_from_meta(asset_meta_path):
         """Creates an encrypted zip for archival, based on the given metadata file.
 
@@ -35,4 +40,5 @@ class EncryptedArchive:
             self.zip_archive_cid : CID of the unencrypted ZIP archive file
             self.cid : CID of the encrypted archive file
         """
+        self.asset_hash = FileUtil.get_hash_from_filename(self.meta_path)
         pass

@@ -3,7 +3,6 @@ from .claim import Claim
 from .claim_tool import ClaimTool
 from .encrypted_archive import EncryptedArchive
 from .filecoin import Filecoin
-from .file_util import FileUtil
 from .iscn import Iscn
 from . import config
 
@@ -29,12 +28,11 @@ class Actions:
         Args:
             asset_meta_fullpath: full local path to the metadata JSON file for this asset
 
-        Returns:
-            nothing? do we need to return something here?
+        Raises:
+            Exception if errors are encountered during processing
         """
-        encrypted_archive = EncryptedArchive.make_from_meta(asset_meta_path)
-        Iscn.register_archive(encrypted_archive)
-        # TODO: does the archive need to be pushed to Filecoin or somewhere else?
+        archive = EncryptedArchive.make_from_meta(asset_meta_path)
+        Iscn.register_archive(archive)
 
 
     def create(self, asset_fullpath, jwt_payload, meta):
