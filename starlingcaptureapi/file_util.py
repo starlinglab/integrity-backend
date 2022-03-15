@@ -9,7 +9,6 @@ import logging
 import os
 import subprocess
 import uuid
-import subprocess
 
 _logger = logging.getLogger(__name__)
 
