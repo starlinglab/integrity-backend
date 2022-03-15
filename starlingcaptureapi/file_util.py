@@ -128,7 +128,7 @@ class FileUtil:
                     break
 
                 dec.write(cipher.decrypt(data))
-    
+
     @staticmethod
     def digest_cidv1(self, file_path):
         """Generates the CIDv1 of a file, as determined by ipfs add.
