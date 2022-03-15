@@ -4,8 +4,8 @@ from hashlib import sha256
 import errno
 import logging
 import os
-import uuid
 import subprocess
+import uuid
 
 _logger = logging.getLogger(__name__)
 
