@@ -13,6 +13,9 @@ JWT_SECRET = os.environ.get("JWT_SECRET")
 # Full path to claim_tool binary. Must be already configured.
 CLAIM_TOOL_PATH = os.environ.get("CLAIM_TOOL_PATH")
 
+# Full path to IPFS client binary. Must be already configured.
+IPFS_CLIENT_PATH = os.environ.get("IPFS_CLIENT_PATH")
+
 # Local directory for storing internal assets. Must exist and be readable by the server.
 INTERNAL_ASSET_STORE = os.environ.get("INTERNAL_ASSET_STORE")
 
@@ -24,6 +27,9 @@ CUSTOM_ASSERTIONS_DICTIONARY = os.environ.get("CUSTOM_ASSERTIONS_DICTIONARY")
 
 # API token for the web3.storage service
 WEB3_STORAGE_API_TOKEN = os.environ.get("WEB3_STORAGE_API_TOKEN")
+
+# Full path to Opentimestamps client. Must be already configured.
+OTS_CLIENT_PATH = os.environ.get("OTS_CLIENT_PATH")
 
 # Address of ISCN registration HTTP server to use
 ISCN_SERVER = os.environ.get("ISCN_SERVER")

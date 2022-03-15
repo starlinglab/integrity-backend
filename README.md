@@ -16,6 +16,10 @@ The Starling Integrity API provides HTTP endpoints for creating integrity attest
 
 It depends on a binary of Adobe's `claim_tool`, which is planned to be open-sourced.
 
+Other required binaries:
+- `ots` from [opentimestamps-client](https://github.com/opentimestamps/opentimestamps-client)
+- `ipfs` from [ipfs.io](https://ipfs.io)
+
 ## Configuration
 
 The server is configured entirely via environment variables. See [config.py](./starlingcaptureapi/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
