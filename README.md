@@ -17,7 +17,7 @@ The Starling Integrity API provides HTTP endpoints for creating integrity attest
 It depends on a binary of Adobe's `claim_tool`, which is planned to be open-sourced.
 
 Other required binaries:
-- `ipfs` from https://ipfs.io
+- `ipfs` from [ipfs.io](https://ipfs.io)
 
 ## Configuration
 
