@@ -190,10 +190,10 @@ class FileUtil:
             iv = enc.read(16)
             cipher = AESCipher(key, iv)
 
-            data = enc.read(BUFFER_SIZE / 2)
+            data = enc.read(int(BUFFER_SIZE / 2))
             while True:
                 prev_data = data
-                data = enc.read(BUFFER_SIZE / 2)
+                data = enc.read(int(BUFFER_SIZE / 2))
 
                 if len(data) == 0:
                     # prev_data is the final block in the file and is therefore padded
