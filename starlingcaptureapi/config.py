@@ -28,6 +28,9 @@ CUSTOM_ASSERTIONS_DICTIONARY = os.environ.get("CUSTOM_ASSERTIONS_DICTIONARY")
 # API token for the web3.storage service
 WEB3_STORAGE_API_TOKEN = os.environ.get("WEB3_STORAGE_API_TOKEN")
 
+# Full path to Opentimestamps client. Must be already configured.
+OTS_CLIENT_PATH = os.environ.get("OTS_CLIENT_PATH")
+
 # Address of ISCN registration HTTP server to use
 ISCN_SERVER = os.environ.get("ISCN_SERVER")
 
