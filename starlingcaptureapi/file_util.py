@@ -89,7 +89,7 @@ class FileUtil:
 
         proc = subprocess.run(
             [
-                config.IPFS_BIN_PATH,
+                config.IPFS_CLIENT_PATH,
                 "add",
                 "--only-hash",
                 "--cid-version=1",
