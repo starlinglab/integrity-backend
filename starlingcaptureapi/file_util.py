@@ -110,24 +110,25 @@ class FileUtil:
             Any errors during file creation or I/O
         """
 
-        # Read and decrypt 32 KiB at a time
-        buffer_size = 32 * 1024
+        # Read and decrypt 16 KiB at a time
+        buffer_size = 16 * 1024
 
         with open(file_path, "rb") as enc, open(dec_file_path, "wb") as dec:
             # Get IV
             iv = enc.read(16)
             cipher = AESCipher(key, iv)
 
+            data = enc.read(buffer_size)
             while True:
+                prev_data = data
                 data = enc.read(buffer_size)
 
-                if len(data) % AES.block_size != 0 or len(data) == 0:
-                    # This is the final block in the file
-                    # It's not a multiple of the AES block size so it must be unpadded
-                    dec.write(cipher.decrypt_last_block(data))
+                if len(data) == 0:
+                    # prev_data is the final block in the file and is therefore padded
+                    dec.write(cipher.decrypt_last_block(prev_data))
                     break
 
-                dec.write(cipher.decrypt(data))
+                dec.write(cipher.decrypt(prev_data))
 
     @staticmethod
     def digest_cidv1(self, file_path):
