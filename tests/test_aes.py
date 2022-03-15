@@ -12,7 +12,6 @@ fu = file_util.FileUtil()
 def test_encrypt_decrypt(tmp_path):
     # Cleartext is just random bytes
     cleartext = os.urandom(511)  # Not a multiple of 16, tests padding
-    print("Cleartext length:", len(cleartext))
     key = crypto_util.new_aes_key()
 
     clear = tmp_path / "clear.bin"
