@@ -2,7 +2,7 @@ from . import config
 from .crypto_util import AESCipher
 
 from Crypto.Cipher import AES
-from hashlib import sha256
+from hashlib import sha256, md5
 
 import errno
 import logging
@@ -53,14 +53,35 @@ class FileUtil:
 
         Returns:
             the HEX-encoded SHA-256 digest of the input file
+
+        Raises:
+            any file I/O errors
         """
         hasher = sha256()
         with open(file_path, "rb") as f:
             # Parse file in blocks
-            for byte_block in iter(lambda: f.read(4096), b""):
+            for byte_block in iter(lambda: f.read(32 * 1024), b""):
                 hasher.update(byte_block)
             return hasher.hexdigest()
-        # TODO: handle error (image not found, etc.)
+
+    def digest_md5(self, file_path):
+        """Generates MD5 digest of a file.
+
+        Args:
+            file_path: the local path to a file
+
+        Returns:
+            the HEX-encoded MD5 digest of the input file
+
+        Raises:
+            any file I/O errors
+        """
+        hasher = md5()
+        with open(file_path, "rb") as f:
+            # Parse file in blocks
+            for byte_block in iter(lambda: f.read(32 * 1024), b""):
+                hasher.update(byte_block)
+            return hasher.hexdigest()
 
     def register_timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
         """Creates a opentimestamps file for the given file.
