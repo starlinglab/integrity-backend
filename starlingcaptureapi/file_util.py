@@ -13,6 +13,9 @@ import uuid
 _logger = logging.getLogger(__name__)
 
 
+BUFFER_SIZE = 32 * 1024  # 32 KiB
+
+
 class FileUtil:
     """Manages file system and file names."""
 
@@ -60,7 +63,7 @@ class FileUtil:
         hasher = sha256()
         with open(file_path, "rb") as f:
             # Parse file in blocks
-            for byte_block in iter(lambda: f.read(32 * 1024), b""):
+            for byte_block in iter(lambda: f.read(BUFFER_SIZE), b""):
                 hasher.update(byte_block)
             return hasher.hexdigest()
 
@@ -79,7 +82,7 @@ class FileUtil:
         hasher = md5()
         with open(file_path, "rb") as f:
             # Parse file in blocks
-            for byte_block in iter(lambda: f.read(32 * 1024), b""):
+            for byte_block in iter(lambda: f.read(BUFFER_SIZE), b""):
                 hasher.update(byte_block)
             return hasher.hexdigest()
 
@@ -132,9 +135,6 @@ class FileUtil:
 
         cipher = AESCipher(key)
 
-        # Read and encrypt 32 KiB at a time
-        buffer_size = 32 * 1024
-
         with open(file_path, "rb") as dec, open(enc_file_path, "wb") as enc:
             # Begin file with the Initialization Vector.
             # This is a standard way of storing the IV in a file for AES-CBC,
@@ -142,7 +142,7 @@ class FileUtil:
             enc.write(cipher.iv)
 
             while True:
-                data = dec.read(buffer_size)
+                data = dec.read(BUFFER_SIZE)
 
                 if len(data) % AES.block_size != 0 or len(data) == 0:
                     # This is the final block in the file
@@ -165,18 +165,15 @@ class FileUtil:
             Any errors during file creation or I/O
         """
 
-        # Read and decrypt 16 KiB at a time
-        buffer_size = 16 * 1024
-
         with open(file_path, "rb") as enc, open(dec_file_path, "wb") as dec:
             # Get IV
             iv = enc.read(16)
             cipher = AESCipher(key, iv)
 
-            data = enc.read(buffer_size)
+            data = enc.read(BUFFER_SIZE / 2)
             while True:
                 prev_data = data
-                data = enc.read(buffer_size)
+                data = enc.read(BUFFER_SIZE / 2)
 
                 if len(data) == 0:
                     # prev_data is the final block in the file and is therefore padded
