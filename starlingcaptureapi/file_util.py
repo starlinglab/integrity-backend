@@ -59,7 +59,7 @@ class FileUtil:
             return hasher.hexdigest()
         # TODO: handle error (image not found, etc.)
 
-    def timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
+    def register_timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
         """Creates a opentimestamps file for the given file.
 
         Args:
