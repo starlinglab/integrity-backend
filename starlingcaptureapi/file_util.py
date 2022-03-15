@@ -48,6 +48,34 @@ class FileUtil:
         """
         return str(uuid.uuid4())
 
+    def digest(self, algo, file_path):
+        """Generates cryptographic hash digest of a file.
+
+        Args:
+            algo: A string representing the hash algorithm. ("sha256", "md5")
+            file_path: the local path to a file
+
+        Returns:
+            the HEX-encoded digest of the input file
+
+        Raises:
+            any file I/O errors
+            NotImplementedError for an unknown hash algo
+        """
+
+        if algo == "sha256":
+            hasher = sha256()
+        elif algo == "md5":
+            hasher = md5()
+        else:
+            raise NotImplementedError(f"unknown hash algo {algo}")
+
+        with open(file_path, "rb") as f:
+            # Parse file in blocks
+            for byte_block in iter(lambda: f.read(BUFFER_SIZE), b""):
+                hasher.update(byte_block)
+            return hasher.hexdigest()
+
     def digest_sha256(self, file_path):
         """Generates SHA-256 digest of a file.
 
@@ -60,12 +88,8 @@ class FileUtil:
         Raises:
             any file I/O errors
         """
-        hasher = sha256()
-        with open(file_path, "rb") as f:
-            # Parse file in blocks
-            for byte_block in iter(lambda: f.read(BUFFER_SIZE), b""):
-                hasher.update(byte_block)
-            return hasher.hexdigest()
+
+        return self.digest("sha256", file_path)
 
     def digest_md5(self, file_path):
         """Generates MD5 digest of a file.
@@ -79,12 +103,8 @@ class FileUtil:
         Raises:
             any file I/O errors
         """
-        hasher = md5()
-        with open(file_path, "rb") as f:
-            # Parse file in blocks
-            for byte_block in iter(lambda: f.read(BUFFER_SIZE), b""):
-                hasher.update(byte_block)
-            return hasher.hexdigest()
+
+        return self.digest("md5", file_path)
 
     def register_timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
         """Creates a opentimestamps file for the given file.
