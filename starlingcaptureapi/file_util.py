@@ -1,10 +1,13 @@
 from .crypto_util import AESCipher
+from . import config
+
 from Crypto.Cipher import AES
 from hashlib import sha256
 
 import errno
 import logging
 import os
+import subprocess
 import uuid
 
 _logger = logging.getLogger(__name__)
@@ -125,3 +128,52 @@ class FileUtil:
                     break
 
                 dec.write(cipher.decrypt(data))
+    
+    @staticmethod
+    def digest_cidv1(self, file_path):
+        """Generates the CIDv1 of a file, as determined by ipfs add.
+
+        Args:
+            file_path: the local path to a file
+
+        Returns:
+            CIDv1 in the canonical string format
+
+        Raises:
+            Exception if errors are encountered during processing
+        """
+
+        if not os.path.exists(os.path.expanduser("~/.ipfs")):
+            proc = subprocess.run(
+                ["ipfs", "init"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+            if proc.returncode != 0:
+                raise Exception(
+                    f"'ipfs init' failed with code {proc.returncode} and output:\n\n{proc.stdout}"
+                )
+
+            _logger.info("Created IPFS repo since it didn't exist")
+
+        proc = subprocess.run(
+            [
+                config.IPFS_CLIENT_PATH,
+                "add",
+                "--only-hash",
+                "--cid-version=1",
+                "-Q",
+                file_path,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+
+        if proc.returncode != 0:
+            raise Exception(
+                f"'ipfs add --only-hash --cid-version=1' failed with code {proc.returncode} and output:\n\n{proc.stdout}"
+            )
+
+        return proc.stdout.strip()

@@ -89,12 +89,12 @@ if __name__ == "__main__":
     for org_id in config.ORGANIZATION_CONFIG.all_orgs():
         _procs.append(
             multiprocessing.Process(
-                name="proc_fs_watcher", target=lambda: start_fs_watcher(org_id)
+                name=f"fs_watcher_{org_id}", target=start_fs_watcher, args=(org_id,)
             )
         )
 
     proc_api_server = multiprocessing.Process(
-        name="proc_api_server", target=start_api_server
+        name="api_server", target=start_api_server
     )
     _procs.append(proc_api_server)
 

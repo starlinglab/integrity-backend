@@ -16,6 +16,9 @@ The Starling Integrity API provides HTTP endpoints for creating integrity attest
 
 It depends on a binary of Adobe's `claim_tool`, which is planned to be open-sourced.
 
+Other required binaries:
+- `ipfs` from [ipfs.io](https://ipfs.io)
+
 ## Configuration
 
 The server is configured entirely via environment variables. See [config.py](./starlingcaptureapi/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
@@ -23,6 +26,7 @@ The server is configured entirely via environment variables. See [config.py](./s
 Most importantly, you will need to provide:
 * `CLAIM_TOOL_PATH`: A path to a fully working `claim_tool` binary. The server should have permissions to execute it, and it should be correctly configured with its keys.
 * `IMAGES_DIR`: A path to a directory to store images. The server will need write access to this directory. This will be the persistent storage for the received images with their attestations.
+* `ISCN_SERVER`: The instance of the ISCN server to send registration requests to. Typically, this will be `http://localhost:3000` if you are using the sample server at https://github.com/likecoin/iscn-js/tree/master/sample/server in its default configuration.
 
 ## Development
 
