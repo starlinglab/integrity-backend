@@ -95,7 +95,7 @@ class FileUtil:
                 enc.write(cipher.encrypt(data))
 
     def decrypt(self, key, file_path, dec_file_path):
-        """Writes an decrypted version of the file to disk.
+        """Writes a decrypted version of the file to disk.
 
         Args:
             key: an AES-256 key as bytes (32 bytes)
