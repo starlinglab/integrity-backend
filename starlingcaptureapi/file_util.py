@@ -96,7 +96,7 @@ class FileUtil:
             raise Exception(
                 f"'ots stamp' failed with code {proc.returncode} and output:\n\n{proc.stderr.decode()}"
             )
-    
+
     def encrypt(self, key, file_path, enc_file_path):
         """Writes an encrypted version of the file to disk.
 
