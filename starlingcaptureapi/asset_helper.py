@@ -1,9 +1,12 @@
+import logging
+
 from .file_util import FileUtil
 from . import config
 
 import os
 
 _file_util = FileUtil()
+_logger = logging.getLogger(__name__)
 
 
 class AssetHelper:
@@ -16,7 +19,7 @@ class AssetHelper:
                 must not contain spaces or special characters, as it will become
                 part of directory names (e.g. "hyphacoop" good, not "Hypha Coop")
         """
-        if self._filename_safe(organization_id) != organization_id:
+        if not self._is_filename_safe(organization_id):
             raise ValueError(f"Organization {organization_id} is not filename safe!")
         self.org_id = organization_id
 
@@ -63,6 +66,7 @@ class AssetHelper:
 
     def init_dirs(self):
         """Creates the initial directory structure for asset management."""
+        _logger.info(f"Initializing directories for {self.org_id}")
         _file_util.create_dir(self.dir_internal_assets)
         _file_util.create_dir(self.dir_internal_claims)
         _file_util.create_dir(self.dir_internal_tmp)
@@ -78,6 +82,7 @@ class AssetHelper:
         _file_util.create_dir(self.dir_update_output)
         _file_util.create_dir(self.dir_store_output)
         _file_util.create_dir(self.dir_custom_output)
+        self._init_collection_dirs()
 
     def get_assets_internal(self):
         return self.dir_internal_assets
@@ -176,3 +181,21 @@ class AssetHelper:
             full_path = os.path.join(full_path, self._filename_safe(subfolder))
         _file_util.create_dir(full_path)
         return full_path
+
+    def _init_collection_dirs(self):
+        _logger.info(f"Initializing collection directories for {self.org_id}")
+        collections = config.ORGANIZATION_CONFIG.get(self.org_id).get("collections")
+        if collections == None or len(collections) == 0:
+            _logger.info(f"No collections found for {self.org_id}")
+            return
+
+        for collection in collections:
+            id = collection["id"]
+            if not self._is_filename_safe(id):
+                raise ValueError(
+                    f"Collection {id} for org {self.org_id} is not filename safe"
+                )
+            _file_util.create_dir(os.path.join(self.internal_prefix, id))
+
+    def _is_filename_safe(self, filename):
+        return self._filename_safe(filename) == filename
