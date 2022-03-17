@@ -7,8 +7,10 @@ from hashlib import sha256, md5
 import errno
 import logging
 import os
+import re
 import subprocess
 import uuid
+import zipfile
 
 _logger = logging.getLogger(__name__)
 
@@ -106,6 +108,56 @@ class FileUtil:
 
         return self.digest("md5", file_path)
 
+    @staticmethod
+    def get_hash_from_filename(filename: str) -> str:
+        """Extracts the file hash from the given filename.
+
+        Args:
+            filename: the filename to process, which is expected to be shaped like:
+                `<hash>-meta.json`
+                `<hash>-signature.json`
+                `<hash>.<ext>`
+
+        Returns:
+            the hash part of the filename
+        """
+        name, _ = os.path.splitext(os.path.basename(filename))
+        return name.split("-")[0]
+
+    @staticmethod
+    def get_organization_id_from_filename(filename: str) -> str:
+        """Extracts the organization id from the given filename.
+
+        Args:
+            filename: full filename to process, expected to be shaped like:
+                ..../internal/organization_id/...some_filename.some_ext
+
+        Returns:
+            the extracted organization id
+
+        Raises:
+            Exception if couldn't find an organization id
+        """
+        match = re.search(f".*{config.INTERNAL_ASSET_STORE}\\/(.*?)\\/.*", filename)
+        if match and len(match.groups()) > 0:
+            return match.group(1)
+
+        raise Exception(f"Could not extract organization id from filename {filename}")
+
+    @staticmethod
+    def make_zip(filenames: list[str], out_file: str):
+        """Makes a zip file containing the given list of files.
+
+        Args:
+            filenames: list of full filenames to include in zip
+            out_file: full path to output zip file
+        """
+        with zipfile.ZipFile(out_file, "w") as zipf:
+            for filename in filenames:
+                # This defaults to having an archive name that matches the given filename,
+                # which preserve the entire directory structure.
+                zipf.write(filename, compress_type=zipfile.ZIP_DEFLATED)
+    
     def register_timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
         """Creates a opentimestamps file for the given file.
 

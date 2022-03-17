@@ -1,7 +1,9 @@
 from .asset_helper import AssetHelper
 from .claim import Claim
 from .claim_tool import ClaimTool
+from .encrypted_archive import EncryptedArchive
 from .filecoin import Filecoin
+from .iscn import Iscn
 from . import config
 
 import datetime
@@ -19,6 +21,19 @@ _logger = logging.getLogger(__name__)
 
 class Actions:
     """Actions for processing assets."""
+
+    def archive(self, asset_meta_path: str):
+        """Archive asset.
+
+        Args:
+            asset_meta_fullpath: full local path to the metadata JSON file for this asset
+
+        Raises:
+            Exception if errors are encountered during processing
+        """
+        archive = EncryptedArchive.make_from_meta(asset_meta_path)
+        Iscn.register_archive(archive)
+
 
     def create(self, asset_fullpath, jwt_payload, meta):
         """Process asset with create action.

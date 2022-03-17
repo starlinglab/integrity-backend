@@ -52,9 +52,14 @@ class AssetHelper:
         self.dir_custom_output = os.path.join(self.shared_prefix, "custom-output")
 
     @staticmethod
-    def from_jwt(jwt_payload):
+    def from_jwt(jwt_payload: dict):
         """Initializes an Asset Helper based on the data in the given JWT payload."""
         return AssetHelper(jwt_payload["organization_id"])
+
+    @staticmethod
+    def from_filename(filename: str):
+        """Initializes an Asset Helper based on the data in the given JWT payload."""
+        return AssetHelper(FileUtil.get_organization_id_from_filename(filename))
 
     def init_dirs(self):
         """Creates the initial directory structure for asset management."""

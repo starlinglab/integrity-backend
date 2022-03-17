@@ -58,6 +58,16 @@ class FsWatcher:
             recursive=True,
             path=asset_helper.get_assets_custom(),
         )
+        # TODO: Implement this.
+        # Watch metadata JSON files for archivals. The metadata should be written after the archival
+        # data is written, so that when the metadata JSON is written, we know that the archival data
+        # is now complete on disc.
+        # for collection in Config.ORGANIZATION_CONFIG.get(self.organization_id).get(collections, []):
+        #   observer.schedule(
+        #       self.ArchiveHandler(patterns=["*-meta.json"]).set_org_id(self.organization_id),
+        #       recursive=True,
+        #       path=asset_helper.get_assets_archive(), # TODO: or are we watching the `create` folder?
+        #   )
         _logger.info(
             "Starting up file system watcher for action directories of organization %s",
             self.organization_id,
@@ -113,3 +123,10 @@ class FsWatcher:
         def on_created(self, event):
             with caught_and_logged_exceptions(event):
                 _actions.custom(self.organization_id, event.src_path)
+
+    class ArchiveHandler(OrganizationHandler):
+        """Handles file changes for Archive action."""
+
+        def on_created(self, event):
+            with caught_and_logged_exceptions(event):
+                _actions.archive(event.src_path)
