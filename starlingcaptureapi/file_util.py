@@ -2,7 +2,7 @@ from . import config
 from .crypto_util import AESCipher
 
 from Crypto.Cipher import AES
-from hashlib import sha256
+from hashlib import sha256, md5
 
 import errno
 import logging
@@ -11,6 +11,9 @@ import subprocess
 import uuid
 
 _logger = logging.getLogger(__name__)
+
+
+BUFFER_SIZE = 32 * 1024  # 32 KiB
 
 
 class FileUtil:
@@ -45,6 +48,34 @@ class FileUtil:
         """
         return str(uuid.uuid4())
 
+    def digest(self, algo, file_path):
+        """Generates cryptographic hash digest of a file.
+
+        Args:
+            algo: A string representing the hash algorithm. ("sha256", "md5")
+            file_path: the local path to a file
+
+        Returns:
+            the HEX-encoded digest of the input file
+
+        Raises:
+            any file I/O errors
+            NotImplementedError for an unknown hash algo
+        """
+
+        if algo == "sha256":
+            hasher = sha256()
+        elif algo == "md5":
+            hasher = md5()
+        else:
+            raise NotImplementedError(f"unknown hash algo {algo}")
+
+        with open(file_path, "rb") as f:
+            # Parse file in blocks
+            for byte_block in iter(lambda: f.read(BUFFER_SIZE), b""):
+                hasher.update(byte_block)
+            return hasher.hexdigest()
+
     def digest_sha256(self, file_path):
         """Generates SHA-256 digest of a file.
 
@@ -53,14 +84,27 @@ class FileUtil:
 
         Returns:
             the HEX-encoded SHA-256 digest of the input file
+
+        Raises:
+            any file I/O errors
         """
-        hasher = sha256()
-        with open(file_path, "rb") as f:
-            # Parse file in blocks
-            for byte_block in iter(lambda: f.read(4096), b""):
-                hasher.update(byte_block)
-            return hasher.hexdigest()
-        # TODO: handle error (image not found, etc.)
+
+        return self.digest("sha256", file_path)
+
+    def digest_md5(self, file_path):
+        """Generates MD5 digest of a file.
+
+        Args:
+            file_path: the local path to a file
+
+        Returns:
+            the HEX-encoded MD5 digest of the input file
+
+        Raises:
+            any file I/O errors
+        """
+
+        return self.digest("md5", file_path)
 
     def register_timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
         """Creates a opentimestamps file for the given file.
@@ -111,9 +155,6 @@ class FileUtil:
 
         cipher = AESCipher(key)
 
-        # Read and encrypt 32 KiB at a time
-        buffer_size = 32 * 1024
-
         with open(file_path, "rb") as dec, open(enc_file_path, "wb") as enc:
             # Begin file with the Initialization Vector.
             # This is a standard way of storing the IV in a file for AES-CBC,
@@ -121,7 +162,7 @@ class FileUtil:
             enc.write(cipher.iv)
 
             while True:
-                data = dec.read(buffer_size)
+                data = dec.read(BUFFER_SIZE)
 
                 if len(data) % AES.block_size != 0 or len(data) == 0:
                     # This is the final block in the file
@@ -144,18 +185,15 @@ class FileUtil:
             Any errors during file creation or I/O
         """
 
-        # Read and decrypt 16 KiB at a time
-        buffer_size = 16 * 1024
-
         with open(file_path, "rb") as enc, open(dec_file_path, "wb") as dec:
             # Get IV
             iv = enc.read(16)
             cipher = AESCipher(key, iv)
 
-            data = enc.read(buffer_size)
+            data = enc.read(int(BUFFER_SIZE / 2))
             while True:
                 prev_data = data
-                data = enc.read(buffer_size)
+                data = enc.read(int(BUFFER_SIZE / 2))
 
                 if len(data) == 0:
                     # prev_data is the final block in the file and is therefore padded
