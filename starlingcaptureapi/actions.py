@@ -3,6 +3,7 @@ from .claim import Claim
 from .claim_tool import ClaimTool
 from .encrypted_archive import EncryptedArchive
 from .filecoin import Filecoin
+from .file_util import FileUtil
 from .iscn import Iscn
 from . import config
 
@@ -162,9 +163,10 @@ class Actions:
             the local path to the asset file in the internal directory
         """
         asset_helper = AssetHelper(organization_id)
+        collection_id = FileUtil.get_collection_id_from_filename(asset_fullpath)
         return self._update(
             asset_fullpath,
-            _claim.generate_update(organization_id),
+            _claim.generate_update(organization_id, collection_id),
             asset_helper.get_assets_update_output(),
             asset_helper,
         )

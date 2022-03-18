@@ -45,7 +45,9 @@ class OrganizationConfig:
         Raises:
             Exception if configuration loading fails
         """
+        self.json_config = {}
         self.config = {}
+        self.collections = {}
         try:
             # Disable loading of configuration from file in the test environment.
             if os.environ.get("RUN_ENV") != "test":
@@ -62,22 +64,45 @@ class OrganizationConfig:
         """Gets configuration dictionary for an org id."""
         return self.config.get(org_id)
 
+    def get_collection(self, org_id, collection_id):
+        """Returns the configuration for a collection in an org."""
+        return self.collections.get(org_id, {}).get(collection_id)
+
     def _load_config_from_file(self, config_file):
         with open(config_file, "r") as f:
-            json_config = json.loads(f.read())
-            for org in json_config["organizations"]:
-                self.config[org["id"]] = org
+            self.json_config = json.loads(f.read())
+        self._index_json_config()
+
         # Use print because this will likely happen before logging is configured
-        print(f"Loaded configuration for organizations: {self.all_orgs()}")
+        print(f"Loaded configuration for organizations: {list(self.all_orgs())}")
+
+    def _index_json_config(self):
+        # Index by organization, collection and action id/name for ease of access
+        for org in self.json_config["organizations"]:
+            self.config[org["id"]] = org
+            self.collections[org["id"]] = {}
+            for coll_conf in org.get("collections", []):
+                self.collections[org["id"]][coll_conf["id"]] = {
+                    "conf": coll_conf,
+                    "actions": {
+                        action["name"]: action
+                        for action in coll_conf.get("actions", [])
+                    },
+                }
 
 
 # Load Organization-specific configuration from file
 ORGANIZATION_CONFIG = OrganizationConfig(os.environ.get("ORG_CONFIG_JSON"))
 
 
-def creative_work(organization_id):
-    org_config = ORGANIZATION_CONFIG.get(organization_id)
-    if org_config:
-        return org_config.get("creative_work_author", [])
-    else:
+def creative_work(organization_id, collection_id, action_name):
+    coll_config = ORGANIZATION_CONFIG.get_collection(organization_id, collection_id)
+    if coll_config == None:
         return []
+
+    return (
+        coll_config.get("actions", {})
+        .get(action_name, {})
+        .get("params", {})
+        .get("creative_work_author", [])
+    )
