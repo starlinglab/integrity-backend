@@ -111,7 +111,7 @@ class Claim:
         # TODO: Parse proofmode metadata and create claim.
         return claim
 
-    def generate_update(self, organization_id):
+    def generate_update(self, organization_id, collection_id):
         """Generates a claim for the 'update' action.
 
         Returns:
@@ -126,7 +126,9 @@ class Claim:
         assertions = []
 
         creative_work = assertion_templates["stds.schema-org.CreativeWork"]
-        creative_work["data"] = {"author": config.creative_work(organization_id)}
+        creative_work["data"] = {
+            "author": config.creative_work(organization_id, collection_id, "update")
+        }
         assertions.append(creative_work)
 
         c2pa_actions = assertion_templates["c2pa.actions"]
@@ -137,7 +139,7 @@ class Claim:
 
         return claim
 
-    def generate_store(self, ipfs_cid, organization_id):
+    def generate_store(self, ipfs_cid, organization_id, collection_id):
         """Generates a claim for the 'store' action.
 
         Args:
@@ -155,7 +157,9 @@ class Claim:
         assertions = []
 
         creative_work = assertion_templates["stds.schema-org.CreativeWork"]
-        creative_work["data"] = {"author": config.creative_work(organization_id)}
+        creative_work["data"] = {
+            "author": config.creative_work(organization_id, collection_id, "store")
+        }
         assertions.append(creative_work)
 
         c2pa_actions = assertion_templates["c2pa.actions"]

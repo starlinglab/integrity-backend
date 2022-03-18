@@ -213,26 +213,42 @@ def test_generates_create_claim_with_partial_reverse_geocode(reverse_geocode_moc
 
 
 def test_generates_update_claim():
-    claim = _claim.generate_update("example")
+    claim = _claim.generate_update("some-org", "some-collection")
     assert claim["vendor"] == "starlinglab"
 
 
 def test_generates_store_claim():
     # Setup some organization-specific configuration
-    config.ORGANIZATION_CONFIG.config = {
-        "example": {
-            "creative_work_author": [
-                {
-                    "@id": "https://twitter.com/example",
-                    "@type": "Organization",
-                    "identifier": "https://example.com",
-                    "name": "example",
-                }
-            ]
-        }
+    config.ORGANIZATION_CONFIG.json_config = {
+        "organizations": [
+            {
+                "id": "example-org",
+                "collections": [
+                    {
+                        "id": "example-collection",
+                        "actions": [
+                            {
+                                "name": "store",
+                                "params": {
+                                    "creative_work_author": [
+                                        {
+                                            "@id": "https://twitter.com/example",
+                                            "@type": "Organization",
+                                            "identifier": "https://example.com",
+                                            "name": "example",
+                                        }
+                                    ]
+                                },
+                            }
+                        ],
+                    }
+                ],
+            }
+        ]
     }
+    config.ORGANIZATION_CONFIG._index_json_config()
 
-    claim = _claim.generate_store("a-made-up-cid", "example")
+    claim = _claim.generate_store("a-made-up-cid", "example-org", "example-collection")
     assertions = _claim.assertions_by_label(claim)
     assert (
         assertions["org.starlinglab.storage.ipfs"]["data"]["starling:provider"]

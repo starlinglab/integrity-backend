@@ -1,5 +1,6 @@
 import os
 from .context import asset_helper
+from .context import config
 from .context import file_util
 
 import pytest
@@ -27,3 +28,16 @@ def test_get_organization_id_from_filename():
     with pytest.raises(Exception) as exc_info:
         file_util.FileUtil.get_organization_id_from_filename("/very/bogus/nonono.jpg")
         assert "Could not extract organization" in exc_info.value
+
+
+def test_get_collection_id_from_filename():
+    assert (
+        file_util.FileUtil.get_collection_id_from_filename(
+            f"{config.INTERNAL_ASSET_STORE}/some-org/my-test-collection/some-file.jpg"
+        )
+        == "my-test-collection"
+    )
+
+    with pytest.raises(Exception) as exc_info:
+        file_util.FileUtil.get_collection_id_from_filename("/very/bogus/nonono.jpg")
+        assert "Could not extract collection" in exc_info.value
