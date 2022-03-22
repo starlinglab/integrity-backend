@@ -58,7 +58,7 @@ class AssetHelper:
 
     @staticmethod
     def from_filename(filename: str):
-        """Initializes an Asset Helper based on the data in the given JWT payload."""
+        """Initializes an Asset Helper based on the data in the given filename."""
         return AssetHelper(FileUtil.get_organization_id_from_filename(filename))
 
     def init_dirs(self):
@@ -128,6 +128,9 @@ class AssetHelper:
     def get_assets_custom_output(self):
         return self.dir_custom_output
 
+    def get_tmp_collection_dir(self, collection_id, action):
+        return os.path.join(self.dir_internal_tmp, collection_id + "-" + action)
+
     def get_tmp_file_fullpath(self, file_extension):
         return os.path.join(
             self.dir_internal_tmp, _file_util.generate_uuid() + file_extension
@@ -166,6 +169,9 @@ class AssetHelper:
         return os.path.join(
             self.dir_internal_claims, _file_util.digest_sha256(from_file) + ".json"
         )
+
+    def get_archive_dir(self, collection_id):
+        return os.path.join(self.internal_prefix, collection_id, "action-archive")
 
     def _filename_safe(self, filename):
         return filename.lower().replace(" ", "-").strip()

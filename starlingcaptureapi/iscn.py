@@ -1,4 +1,3 @@
-from .encrypted_archive import EncryptedArchive
 from . import config
 
 import logging
@@ -33,7 +32,7 @@ class Iscn:
         return True
 
     @classmethod
-    def register_archive(encrypted_archive: EncryptedArchive) -> bool:
+    def register_archive(encrypted_archive_path) -> bool:
         """Creates a registration record for this asset, signs it and registers it with ISCN.
 
         Args:
@@ -43,7 +42,7 @@ class Iscn:
         Returns:
             True if the registration succeeded; False otherwise
         """
-        # 1. Create registration record.
+        # 1. Create registration record.
         #    See discussion in https://github.com/starlinglab/starling-integrity-api/issues/53
         #    for schema details. Might need to flesh out a few more details. Output of this step
         #    is some JSON.
