@@ -40,9 +40,8 @@ def extract_file(zip_path, file_path, out_path):
     """
 
     with zipfile.ZipFile(zip_path, "r") as zipf:
-        with zipf.open(file_path) as zippedf:
-            with open(out_path, "wb") as f:
-                shutil.copyfileobj(zippedf, f)
+        with zipf.open(file_path) as zippedf, open(out_path, "wb") as f:
+            shutil.copyfileobj(zippedf, f)
 
 
 def append(zip_path, file_path, archive_path):
