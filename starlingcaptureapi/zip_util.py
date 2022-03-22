@@ -22,8 +22,6 @@ def make(filepaths: list[str], out_file: str, flat=False):
 
     with zipfile.ZipFile(out_file, "w") as zipf:
         for filepath in filepaths:
-            # This defaults to having an in-archive name that matches the given filename,
-            # which preserve the entire directory structure.
             if flat:
                 arcname = os.path.basename(filepath)
             else:
