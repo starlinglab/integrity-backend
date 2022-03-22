@@ -18,8 +18,6 @@ def make(filepaths: list[str], out_file: str, flat=False):
         any issues with file i/o
     """
 
-    # Keep default of storing files uncompressed
-
     with zipfile.ZipFile(out_file, "w") as zipf:
         for filepath in filepaths:
             if flat:
