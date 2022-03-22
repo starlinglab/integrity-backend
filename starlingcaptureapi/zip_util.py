@@ -3,7 +3,7 @@ import shutil
 import zipfile
 
 
-def make(filepaths: list[str], out_file: str, flat=False):
+def make(filepaths: list[str], out_file: str, flat: bool = False):
     """Makes a zip file containing the given list of files.
 
     Files are stored uncompressed.
