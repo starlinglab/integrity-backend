@@ -1,7 +1,4 @@
-from starlingcaptureapi.zip_util import extract_file
 from .context import zip_util
-
-from zipfile import ZipFile
 
 
 def test_zip(tmpdir):
