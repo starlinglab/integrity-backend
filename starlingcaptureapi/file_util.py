@@ -144,20 +144,6 @@ class FileUtil:
 
         raise Exception(f"Could not extract organization id from filename {filename}")
 
-    @staticmethod
-    def make_zip(filenames: list[str], out_file: str):
-        """Makes a zip file containing the given list of files.
-
-        Args:
-            filenames: list of full filenames to include in zip
-            out_file: full path to output zip file
-        """
-        with zipfile.ZipFile(out_file, "w") as zipf:
-            for filename in filenames:
-                # This defaults to having an archive name that matches the given filename,
-                # which preserve the entire directory structure.
-                zipf.write(filename, compress_type=zipfile.ZIP_DEFLATED)
-    
     def register_timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
         """Creates a opentimestamps file for the given file.
 

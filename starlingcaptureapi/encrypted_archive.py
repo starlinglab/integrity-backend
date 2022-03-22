@@ -1,6 +1,7 @@
 import os
 from .asset_helper import AssetHelper
 from .file_util import FileUtil
+from . import zip_util
 
 
 class EncryptedArchive:
@@ -35,7 +36,7 @@ class EncryptedArchive:
 
         Sketch of what this method does (some of the steps might be better in a different order):
         1. Collect all the files needed for the zip, based on the hash in the `self.meta_path` filename
--       2. Zip ALL the files from step #1
+        2. Zip ALL the files from step #1
         3. Encrypt the zip from step #2
         4. Compute CIDs for recorded content, zip and encrypted zip
         5. Set a bunch of properties with this data, so that they can be retrieved later:
@@ -45,7 +46,7 @@ class EncryptedArchive:
             self.cid : CID of the encrypted archive file
         """
         self.asset_hash = FileUtil.get_hash_from_filename(self.meta_path)
-        FileUtil.make_zip(self._asset_files, self._zip_filename)
+        zip_util.make(self._asset_files, self._zip_filename)
         # TODO: encrypt self._zip_filename
         # TODO: compute CIDs
 
@@ -56,7 +57,9 @@ class EncryptedArchive:
         directory = os.path.dirname(self.meta_path)
         [
             self.meta_path,
-            os.path.join(directory, f"{self.asset_hash}-signature.json")  # made up example, FIXME
+            os.path.join(
+                directory, f"{self.asset_hash}-signature.json"
+            )  # made up example, FIXME
             # TODO: figure out which files should go here -- do we have a set of name patterns that we expect?
             #       or should we be looking for all the files in `directory` that contain `hash` in the filenam?
         ]
