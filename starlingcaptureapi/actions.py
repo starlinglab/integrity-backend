@@ -40,8 +40,6 @@ class Actions:
             Exception if errors are encountered during processing
         """
 
-        # TODO: logging vs exceptions?
-
         asset_helper = AssetHelper(organization_id)
         file_util = FileUtil()
 
@@ -55,23 +53,21 @@ class Actions:
         zip_listing = zip_util.listing(tmp_zip)
         if len(zip_listing) > 3:
             # Should only have three: content, recorder meta, content meta
-            _logger.error(
-                "ZIP at %s has more than three files: %s", zip_path, str(zip_listing)
+            raise Exception(
+                f"ZIP at {zip_path} has more than three files: {zip_listing}"
             )
-            raise Exception("ZIP has more than three files")
 
         content_filename = next((s for s in zip_listing if "-" not in s), None)
         if content_filename is None:
-            _logger.error(
-                "ZIP at %s has no content file: %s", zip_path, str(zip_listing)
-            )
-            raise Exception("ZIP has no content file")
+            raise Exception(f"ZIP at {zip_path} has no content file: {zip_listing}")
 
         if "/" in content_filename:
-            raise Exception("Content file is not at ZIP root")
+            raise Exception(f"Content file is not at ZIP root: {content_filename}")
 
         if os.path.splitext(content_filename)[1][1:] not in asset_exts:
-            raise Exception("Content file in ZIP has wrong extension")
+            raise Exception(
+                f"Content file in ZIP has wrong extension: {content_filename}"
+            )
 
         # Verify hash
 
