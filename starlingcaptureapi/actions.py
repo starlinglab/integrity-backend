@@ -112,9 +112,9 @@ class Actions:
         enc_zip = os.path.join(archive_dir, zip_sha + ".encrypted")
         file_util.encrypt(aes_key, final_zip, enc_zip)
 
-        zip_sha = file_util.digest_sha256(enc_zip)
-        zip_md5 = file_util.digest_md5(enc_zip)
-        zip_cid = file_util.digest_cidv1(enc_zip)
+        enc_zip_sha = file_util.digest_sha256(enc_zip)
+        enc_zip_md5 = file_util.digest_md5(enc_zip)
+        enc_zip_cid = file_util.digest_cidv1(enc_zip)
 
         # TODO: step 7 and 8
 
