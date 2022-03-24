@@ -1,4 +1,3 @@
-from msilib.schema import File
 from . import config
 from .file_util import FileUtil
 

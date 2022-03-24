@@ -15,4 +15,3 @@ from starlingcaptureapi import iscn
 from starlingcaptureapi import file_util
 from starlingcaptureapi import crypto_util
 from starlingcaptureapi import zip_util
-from starlingcaptureapi import numbers
