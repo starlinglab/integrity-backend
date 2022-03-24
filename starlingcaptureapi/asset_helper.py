@@ -66,23 +66,25 @@ class AssetHelper:
 
     def init_dirs(self):
         """Creates the initial directory structure for asset management."""
-        _logger.info(f"Initializing directories for {self.org_id}")
+        _logger.info(f"Initializing internal directories for {self.org_id}")
         _file_util.create_dir(self.dir_internal_assets)
         _file_util.create_dir(self.dir_internal_claims)
         _file_util.create_dir(self.dir_internal_tmp)
         _file_util.create_dir(self.dir_internal_create)
         _file_util.create_dir(self.dir_internal_create_proofmode)
+
+        self._init_collection_dirs()
+
+        _logger.info(f"Initializing legacy action directories for {self.org_id}")
         _file_util.create_dir(self.dir_add)
-        _file_util.create_dir(self.dir_update)
         _file_util.create_dir(self.dir_store)
         _file_util.create_dir(self.dir_custom)
         _file_util.create_dir(self.dir_create_output)
         _file_util.create_dir(self.dir_create_proofmode_output)
         _file_util.create_dir(self.dir_add_output)
-        _file_util.create_dir(self.dir_update_output)
         _file_util.create_dir(self.dir_store_output)
         _file_util.create_dir(self.dir_custom_output)
-        self._init_collection_dirs()
+
 
     def get_assets_internal(self):
         return self.dir_internal_assets
@@ -102,9 +104,6 @@ class AssetHelper:
     def get_assets_add(self):
         return self.dir_add
 
-    def get_assets_update(self):
-        return self.dir_update
-
     def get_assets_store(self):
         return self.dir_store
 
@@ -123,9 +122,6 @@ class AssetHelper:
         return self._get_path_with_subfolders(
             self.dir_create_proofmode_output, subfolders=subfolders
         )
-
-    def get_assets_update_output(self):
-        return self.dir_update_output
 
     def get_assets_store_output(self):
         return self.dir_store_output
@@ -172,6 +168,19 @@ class AssetHelper:
             self.dir_internal_claims, _file_util.digest_sha256(from_file) + ".json"
         )
 
+    def _shared_collection_prefix(self, collection_id: str):
+        return os.path.join(self.shared_prefix, collection_id)
+
+    def path_for(self, collection_id: str, action: str, output: bool = False):
+        """Retuns a full directory path for the given collection and action.
+
+        Appends `-output` if output=True.
+        """
+        return os.path.join(
+            self._shared_collection_prefix(collection_id),
+            f"{action}-output" if output else action,
+        )
+
     def _filename_safe(self, filename):
         return filename.lower().replace(" ", "-").strip()
 
@@ -190,12 +199,15 @@ class AssetHelper:
             return
 
         for collection in collections:
-            id = collection["id"]
-            if not self._is_filename_safe(id):
+            coll_id = collection["id"]
+            if not self._is_filename_safe(coll_id):
                 raise ValueError(
-                    f"Collection {id} for org {self.org_id} is not filename safe"
+                    f"Collection {coll_id} for org {self.org_id} is not filename safe"
                 )
-            _file_util.create_dir(os.path.join(self.internal_prefix, id))
+            for action in collection.get("actions", []):
+                action_name = action.get("name")
+                _file_util.create_dir(self.path_for(coll_id, action_name))
+                _file_util.create_dir(self.path_for(coll_id, action_name, output=True))
 
     def _is_filename_safe(self, filename):
         return self._filename_safe(filename) == filename

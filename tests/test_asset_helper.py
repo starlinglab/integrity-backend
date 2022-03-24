@@ -30,3 +30,15 @@ def test_create_output_works_without_subfolders(monkeypatch, tmp_path):
     assert helper.get_assets_create_output().endswith(
         "/shared_dir/example/create-output"
     )
+
+
+def test_path_for(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "SHARED_FILE_SYSTEM", tmp_path / "shared_dir")
+
+    helper = asset_helper.AssetHelper("some-org")
+    assert helper.path_for("my-collection", "update").endswith(
+        "/shared_dir/some-org/my-collection/update"
+    )
+    assert helper.path_for("my-collection", "update", output=True).endswith(
+        "/shared_dir/some-org/my-collection/update-output"
+    )

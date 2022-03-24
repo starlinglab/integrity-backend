@@ -21,7 +21,16 @@ _logger = logging.getLogger(__name__)
 
 
 class Actions:
-    """Actions for processing assets."""
+    """Actions for processing assets.
+
+    All actions operate on:
+        * an "asset", represented by its full path on the local filesystem
+        * some metadata, which is either provided explicitly, or can be derived
+          from the asset path
+
+    In an ideal future, all actions would be refactored to accept the exact same
+    inputs: an asset path and a metadata container.
+    """
 
     def archive(self, asset_meta_path: str):
         """Archive asset.
@@ -58,8 +67,6 @@ class Actions:
 
         # Inject create claim and read back from file.
         claim = _claim.generate_create(jwt_payload, meta)
-        time.sleep(1)
-        _logger.info("File size: %s", os.path.getsize(asset_fullpath))
         shutil.copy2(asset_fullpath, tmp_asset_file)
         _claim_tool.run_claim_inject(claim, tmp_asset_file, None)
         _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
@@ -167,7 +174,7 @@ class Actions:
         return self._update(
             asset_fullpath,
             _claim.generate_update(organization_id, collection_id),
-            asset_helper.get_assets_update_output(),
+            asset_helper.path_for(collection_id, "update", output=True),
             asset_helper,
         )
 

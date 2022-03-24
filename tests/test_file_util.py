@@ -19,7 +19,7 @@ def test_get_hash_from_filename():
 def test_get_organization_id_from_filename():
     organization_id = "my-test-organization-id"
     ah = asset_helper.AssetHelper(organization_id)
-    filename = os.path.join(ah.get_assets_update(), "some-file.jpg")
+    filename = os.path.join(ah.path_for("example", "update"), "some-file.jpg")
     assert (
         file_util.FileUtil.get_organization_id_from_filename(filename)
         == organization_id
