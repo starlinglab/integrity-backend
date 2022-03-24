@@ -34,6 +34,8 @@ OTS_CLIENT_PATH = os.environ.get("OTS_CLIENT_PATH")
 # Address of ISCN registration HTTP server to use
 ISCN_SERVER = os.environ.get("ISCN_SERVER")
 
+NUMBERS_API_KEY = os.environ.get("NUMBERS_API_KEY")
+
 
 class OrganizationConfig:
     def __init__(self, config_file):
