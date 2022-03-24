@@ -19,7 +19,7 @@ def test_get_hash_from_filename():
 def test_get_organization_id_from_filename():
     organization_id = "my-test-organization-id"
     ah = asset_helper.AssetHelper(organization_id)
-    filename = os.path.join(ah.dir_internal_create, "some-file.jpg")
+    filename = os.path.join(ah.get_assets_update(), "some-file.jpg")
     assert (
         file_util.FileUtil.get_organization_id_from_filename(filename)
         == organization_id
@@ -33,7 +33,7 @@ def test_get_organization_id_from_filename():
 def test_get_collection_id_from_filename():
     assert (
         file_util.FileUtil.get_collection_id_from_filename(
-            f"{config.INTERNAL_ASSET_STORE}/some-org/my-test-collection/some-file.jpg"
+            f"{config.SHARED_FILE_SYSTEM}/some-org/my-test-collection/some-file.jpg"
         )
         == "my-test-collection"
     )
