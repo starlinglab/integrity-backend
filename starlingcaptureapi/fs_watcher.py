@@ -1,3 +1,4 @@
+from . import config
 from .actions import Actions
 from .asset_helper import AssetHelper
 
@@ -7,6 +8,7 @@ from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
 import logging
+import multiprocessing
 import time
 import traceback
 
@@ -27,106 +29,154 @@ def caught_and_logged_exceptions(event):
 class FsWatcher:
     """Watches directories for file changes."""
 
-    def __init__(self, organization_id):
-        self.organization_id = organization_id
+    def __init__(self, org_config):
+        self.org_config = org_config
+        self.organization_id = org_config.get("id")
+        self.asset_helper = AssetHelper(self.organization_id)
+        self.observer = Observer()
+
+    @staticmethod
+    def start(org_config):
+        FsWatcher(org_config).watch()
+
+    @staticmethod
+    def init_all(
+        all_org_config: config.OrganizationConfig = config.ORGANIZATION_CONFIG,
+    ):
+        """Initialize file watcher processes for the given configuration.
+
+        Args:
+            org_config: configuration for all organizations and their actions
+
+        Returns:
+            list of un-started processes containing FsWatcher instances
+        """
+        procs = []
+        for org_id, org_config in all_org_config.config.items():
+            procs.append(
+                multiprocessing.Process(
+                    name=f"fs_watcher_{org_id}",
+                    target=FsWatcher.start,
+                    args=(org_config,),
+                )
+            )
+        return procs
 
     def watch(self):
-        """
-        Args:
-            organization_id: a string identifying the organization we are watching for
-        """
-        observer = Observer()
-        patterns = ["*.jpg", "*.jpeg"]
-        asset_helper = AssetHelper(self.organization_id)
-        observer.schedule(
-            self.AddHandler(patterns=patterns).set_org_id(self.organization_id),
-            recursive=True,
-            path=asset_helper.get_assets_add(),
-        )
-        observer.schedule(
-            self.UpdateHandler(patterns=patterns).set_org_id(self.organization_id),
-            recursive=True,
-            path=asset_helper.get_assets_update(),
-        )
-        observer.schedule(
-            self.StoreHandler(patterns=patterns).set_org_id(self.organization_id),
-            recursive=True,
-            path=asset_helper.get_assets_store(),
-        )
-        observer.schedule(
-            self.CustomHandler(patterns=patterns).set_org_id(self.organization_id),
-            recursive=True,
-            path=asset_helper.get_assets_custom(),
-        )
-        # TODO: Implement this.
-        # Watch metadata JSON files for archivals. The metadata should be written after the archival
-        # data is written, so that when the metadata JSON is written, we know that the archival data
-        # is now complete on disc.
-        # for collection in Config.ORGANIZATION_CONFIG.get(self.organization_id).get(collections, []):
-        #   observer.schedule(
-        #       self.ArchiveHandler(patterns=["*-meta.json"]).set_org_id(self.organization_id),
-        #       recursive=True,
-        #       path=asset_helper.get_assets_archive(), # TODO: or are we watching the `create` folder?
-        #   )
-        _logger.info(
-            "Starting up file system watcher for action directories of organization %s",
-            self.organization_id,
-        )
-        observer.start()
+        """Start file watching handlers."""
+        self._schedule_legacy_handlers()
+        for collection_config in self.org_config.get("collections", []):
+            collection_id = collection_config.get("id")
+            patterns = [
+                f"*.{ext}" for ext in collection_config.get("asset_extensions", [])
+            ]
+            for action in collection_config.get("actions", []):
+                name = action.get("name")
+                self._schedule(collection_id, name, patterns)
+
+        self.observer.start()
         try:
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            observer.stop()
+            self.observer.stop()
             _logger.warning("Caught keyboard interrupt. Stopping FsWatcher.")
-        observer.join()
+        self.observer.join()
 
-    class OrganizationHandler(PatternMatchingEventHandler):
-        """A base handler that knows which organization it is working for."""
+    def _schedule(self, collection_id: str, action: str, patterns: list[str]):
+        handler_class = ACTION_HANDLER.get(action)
+        path = self.asset_helper.path_for(collection_id, action)
+        _logger.info(f"Scheduling handler {handler_class} for path {path} and patterns {patterns}")
+        self.observer.schedule(
+            handler_class(patterns=patterns).set_org_id(self.organization_id),
+            recursive=True,
+            path=self.asset_helper.path_for(collection_id, action),
+        )
 
-        def set_org_id(self, organization_id):
-            """Sets the organization id for this handler.
+    def _schedule_legacy_handlers(self):
+        _logger.info(
+            "Setting up watcher handlers for legacy action directories of organization %s",
+            self.organization_id,
+        )
+        patterns = ["*.jpg", "*.jpeg"]
+        self.observer.schedule(
+            AddHandler(patterns=patterns).set_org_id(self.organization_id),
+            recursive=True,
+            path=self.asset_helper.get_assets_add(),
+        )
+        self.observer.schedule(
+            StoreHandler(patterns=patterns).set_org_id(self.organization_id),
+            recursive=True,
+            path=self.asset_helper.get_assets_store(),
+        )
+        self.observer.schedule(
+            CustomHandler(patterns=patterns).set_org_id(self.organization_id),
+            recursive=True,
+            path=self.asset_helper.get_assets_custom(),
+        )
 
-            Args:
-                organization_id: string with the unique organization id this handler is for
 
-            Returns:
-                the handler itself
-            """
-            self.organization_id = organization_id
-            return self
+class OrganizationHandler(PatternMatchingEventHandler):
+    """A base handler that knows which organization it is working for."""
 
-    class AddHandler(OrganizationHandler):
-        """Handles file changes for add action."""
+    def set_org_id(self, organization_id):
+        """Sets the organization id for this handler.
 
-        def on_created(self, event):
-            with caught_and_logged_exceptions(event):
-                _actions.add(self.organization_id, event.src_path)
+        Args:
+            organization_id: string with the unique organization id this handler is for
 
-    class UpdateHandler(OrganizationHandler):
-        """Handles file changes for update action."""
+        Returns:
+            the handler itself
+        """
+        self.organization_id = organization_id
+        return self
 
-        def on_created(self, event):
-            with caught_and_logged_exceptions(event):
-                _actions.update(self.organization_id, event.src_path)
 
-    class StoreHandler(OrganizationHandler):
-        """Handles file changes for store action."""
+class AddHandler(OrganizationHandler):
+    """Handles file changes for add action."""
 
-        def on_created(self, event):
-            with caught_and_logged_exceptions(event):
-                _actions.store(self.organization_id, event.src_path)
+    def on_created(self, event):
+        with caught_and_logged_exceptions(event):
+            _actions.add(self.organization_id, event.src_path)
 
-    class CustomHandler(OrganizationHandler):
-        """Handles file changes for custom action."""
 
-        def on_created(self, event):
-            with caught_and_logged_exceptions(event):
-                _actions.custom(self.organization_id, event.src_path)
+class UpdateHandler(OrganizationHandler):
+    """Handles file changes for update action."""
 
-    class ArchiveHandler(OrganizationHandler):
-        """Handles file changes for Archive action."""
+    def on_created(self, event):
+        with caught_and_logged_exceptions(event):
+            _actions.update(self.organization_id, event.src_path)
 
-        def on_created(self, event):
-            with caught_and_logged_exceptions(event):
-                _actions.archive(event.src_path)
+
+class StoreHandler(OrganizationHandler):
+    """Handles file changes for store action."""
+
+    def on_created(self, event):
+        with caught_and_logged_exceptions(event):
+            _actions.store(self.organization_id, event.src_path)
+
+
+class CustomHandler(OrganizationHandler):
+    """Handles file changes for custom action."""
+
+    def on_created(self, event):
+        with caught_and_logged_exceptions(event):
+            _actions.custom(self.organization_id, event.src_path)
+
+
+class ArchiveHandler(OrganizationHandler):
+    """Handles file changes for Archive action."""
+
+    def on_created(self, event):
+        with caught_and_logged_exceptions(event):
+            _actions.archive(event.src_path)
+
+
+# Mapping from action name to handler class
+ACTION_HANDLER = {
+    "add": AddHandler,
+    "archive": ArchiveHandler,
+    "custom": CustomHandler,
+    "store": StoreHandler,
+    "update": UpdateHandler,
+}
