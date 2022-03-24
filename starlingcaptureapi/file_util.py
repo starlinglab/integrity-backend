@@ -18,9 +18,9 @@ _logger = logging.getLogger(__name__)
 BUFFER_SIZE = 32 * 1024  # 32 KiB
 
 # Captures organization and collection id in a filepath like:
-# .../internal/org_id/collection_id/...some_filename.some_ext
+# .../shared_dir/org_id/collection_id/...some_filename.some_ext
 FILEPATH_REGEX = re.compile(
-    f".*{config.INTERNAL_ASSET_STORE}\\/(?P<org>.*?)\\/(?P<col>.*?)\\/.*"
+    f".*{config.SHARED_FILE_SYSTEM}\\/(?P<org>.*?)\\/(?P<col>.*?)\\/.*"
 )
 
 
@@ -120,7 +120,7 @@ class FileUtil:
 
         Args:
             filename: full filename to process, expected to be shaped like:
-                ..../internal/org_id/collection_id/...some_filename.some_ext
+                ..../shared_dir/org_id/collection_id/...some_filename.some_ext
 
         Returns:
             the extracted collection id
@@ -156,7 +156,7 @@ class FileUtil:
 
         Args:
             filename: full filename to process, expected to be shaped like:
-                ..../internal/organization_id/...some_filename.some_ext
+                ..../shared_dir/organization_id/...some_filename.some_ext
 
         Returns:
             the extracted organization id
