@@ -10,7 +10,43 @@ _logger = logging.getLogger(__name__)
 
 
 class AssetHelper:
-    """Helpers for management of assets across storage systems."""
+    """Helpers for management of asset file paths.
+
+    Directory structure overview:
+    * config.INTERNAL_ASSET_STORE:
+      - internal-only directory tree
+      - includes assets for permanent storage, and also temporary directories
+        for intermediate working files
+      - organized per organization
+    * config.SHARED_FILE_SYSTEM
+      - directory tree that is shared with external clients
+      - used for both input and output location of assets (i.e. files) that we
+        execute actions on
+      - organized by organization, by collection and by action
+      - action-specific folders might be further organized as relevant for that
+        action; for example, the output of the create action is organized by
+        author name and date
+      - some legacy action folders are still in use, which are not organized by
+        collection
+
+    Example directory trees:
+
+    assets_dir/
+    `-- hyphacoop-org
+        |-- assets
+        |-- claims
+        |-- create
+        |-- create-proofmode
+        `-- tmp
+
+    shared_dir/
+    `-- hyphacoop-org
+        |-- add  # legacy path, deprecated in favor of per-collection directories
+        |-- add-output # legacy path, deprecated in favor of per-collection directories
+        |-- mycelium-collection
+        |   |-- update
+        |   `-- update-output
+    """
 
     def __init__(self, organization_id):
         """
@@ -38,21 +74,11 @@ class AssetHelper:
             self.internal_prefix, "create-proofmode"
         )
 
-        # Shared action directories
-        self.dir_add = os.path.join(self.shared_prefix, "add")
-        self.dir_update = os.path.join(self.shared_prefix, "update")
-        self.dir_store = os.path.join(self.shared_prefix, "store")
-        self.dir_custom = os.path.join(self.shared_prefix, "custom")
-
-        # Shared output directories
+        # Legacy shared output directories (not collection-specific)
         self.dir_create_output = os.path.join(self.shared_prefix, "create-output")
         self.dir_create_proofmode_output = os.path.join(
             self.shared_prefix, "create-proofmode-output"
         )
-        self.dir_add_output = os.path.join(self.shared_prefix, "add-output")
-        self.dir_update_output = os.path.join(self.shared_prefix, "update-output")
-        self.dir_store_output = os.path.join(self.shared_prefix, "store-output")
-        self.dir_custom_output = os.path.join(self.shared_prefix, "custom-output")
 
     @staticmethod
     def from_jwt(jwt_payload: dict):
@@ -76,15 +102,15 @@ class AssetHelper:
         self._init_collection_dirs()
 
         _logger.info(f"Initializing legacy action directories for {self.org_id}")
-        _file_util.create_dir(self.dir_add)
-        _file_util.create_dir(self.dir_store)
-        _file_util.create_dir(self.dir_custom)
-        _file_util.create_dir(self.dir_create_output)
-        _file_util.create_dir(self.dir_create_proofmode_output)
-        _file_util.create_dir(self.dir_add_output)
-        _file_util.create_dir(self.dir_store_output)
-        _file_util.create_dir(self.dir_custom_output)
-
+        _file_util.create_dir(self.legacy_path_for("add"))
+        _file_util.create_dir(self.legacy_path_for("add", output=True))
+        _file_util.create_dir(self.legacy_path_for("store"))
+        _file_util.create_dir(self.legacy_path_for("store", output=True))
+        _file_util.create_dir(self.legacy_path_for("custom"))
+        _file_util.create_dir(self.legacy_path_for("custom", output=True))
+        # 'Create' files come via HTTP, there is no create folder
+        _file_util.create_dir(self.legacy_path_for("create", output=True))
+        _file_util.create_dir(self.legacy_path_for("create-proofmode", output=True))
 
     def get_assets_internal(self):
         return self.dir_internal_assets
@@ -101,18 +127,6 @@ class AssetHelper:
     def get_assets_internal_create_proofmode(self):
         return self.dir_internal_create_proofmode
 
-    def get_assets_add(self):
-        return self.dir_add
-
-    def get_assets_store(self):
-        return self.dir_store
-
-    def get_assets_custom(self):
-        return self.dir_custom
-
-    def get_assets_add_output(self):
-        return self.dir_add_output
-
     def get_assets_create_output(self, subfolders=[]):
         return self._get_path_with_subfolders(
             self.dir_create_output, subfolders=subfolders
@@ -122,12 +136,6 @@ class AssetHelper:
         return self._get_path_with_subfolders(
             self.dir_create_proofmode_output, subfolders=subfolders
         )
-
-    def get_assets_store_output(self):
-        return self.dir_store_output
-
-    def get_assets_custom_output(self):
-        return self.dir_custom_output
 
     def get_tmp_file_fullpath(self, file_extension):
         return os.path.join(
@@ -168,8 +176,15 @@ class AssetHelper:
             self.dir_internal_claims, _file_util.digest_sha256(from_file) + ".json"
         )
 
-    def _shared_collection_prefix(self, collection_id: str):
+    def _shared_collection_prefix(self, collection_id: str) -> str:
         return os.path.join(self.shared_prefix, collection_id)
+
+    def legacy_path_for(self, action: str, output: bool = False) -> str:
+        """Returns a full directory path for the given action."""
+        return os.path.join(
+            self.shared_prefix,
+            f"{action}-output" if output else action,
+        )
 
     def path_for(self, collection_id: str, action: str, output: bool = False):
         """Retuns a full directory path for the given collection and action.
