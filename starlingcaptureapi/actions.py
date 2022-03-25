@@ -155,7 +155,7 @@ class Actions:
         """
         asset_helper = AssetHelper(organization_id)
         return self._add(
-            asset_fullpath, asset_helper.get_assets_add_output(), asset_helper
+            asset_fullpath, asset_helper.legacy_path_for("add", output=True), asset_helper
         )
 
     def update(self, organization_id, asset_fullpath):
@@ -199,7 +199,7 @@ class Actions:
         return self._update(
             added_asset,
             _claim.generate_store(ipfs_cid.organization_id),
-            AssetHelper(organization_id).get_assets_store_output(),
+            AssetHelper(organization_id).legacy_path_for("store", output=True)
         )
 
     def custom(self, organization_id, asset_fullpath):
@@ -230,7 +230,7 @@ class Actions:
         return self._update(
             added_asset,
             _claim.generate_custom(custom_assertions),
-            asset_helper.get_assets_custom_output(),
+            asset_helper.legacy_path_for("custom", output=True),
             asset_helper,
         )
 

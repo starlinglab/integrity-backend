@@ -102,17 +102,17 @@ class FsWatcher:
         self.observer.schedule(
             AddHandler(patterns=patterns).set_org_id(self.organization_id),
             recursive=True,
-            path=self.asset_helper.get_assets_add(),
+            path=self.asset_helper.legacy_path_for("add"),
         )
         self.observer.schedule(
             StoreHandler(patterns=patterns).set_org_id(self.organization_id),
             recursive=True,
-            path=self.asset_helper.get_assets_store(),
+            path=self.asset_helper.legacy_path_for("store"),
         )
         self.observer.schedule(
             CustomHandler(patterns=patterns).set_org_id(self.organization_id),
             recursive=True,
-            path=self.asset_helper.get_assets_custom(),
+            path=self.asset_helper.legacy_path_for("custom")
         )
 
 
