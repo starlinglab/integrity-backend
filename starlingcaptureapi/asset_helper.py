@@ -191,6 +191,11 @@ class AssetHelper:
 
         Appends `-output` if output=True.
         """
+        # Backwards-compatibility workaround for missing collection_ids.
+        # Can be removed once legacy paths are no longer in use.
+        if collection_id is None:
+            return self.legacy_path_for(action, output=output)
+
         return os.path.join(
             self._shared_collection_prefix(collection_id),
             f"{action}-output" if output else action,
@@ -208,19 +213,17 @@ class AssetHelper:
 
     def _init_collection_dirs(self):
         _logger.info(f"Initializing collection directories for {self.org_id}")
-        collections = config.ORGANIZATION_CONFIG.get(self.org_id).get("collections")
-        if collections == None or len(collections) == 0:
+        collections_dict = config.ORGANIZATION_CONFIG.get(self.org_id).get("collections", {})
+        if len(collections_dict.keys()) == 0:
             _logger.info(f"No collections found for {self.org_id}")
             return
 
-        for collection in collections:
-            coll_id = collection["id"]
+        for coll_id, coll_config in collections_dict.items():
             if not self._is_filename_safe(coll_id):
                 raise ValueError(
                     f"Collection {coll_id} for org {self.org_id} is not filename safe"
                 )
-            for action in collection.get("actions", []):
-                action_name = action.get("name")
+            for action_name in coll_config.get("actions", {}).keys():
                 _file_util.create_dir(self.path_for(coll_id, action_name))
                 _file_util.create_dir(self.path_for(coll_id, action_name, output=True))
 

@@ -213,7 +213,7 @@ def test_generates_create_claim_with_partial_reverse_geocode(reverse_geocode_moc
 
 
 def test_generates_update_claim():
-    claim = _claim.generate_update("some-org", "some-collection")
+    claim = _claim.generate_update({"id": "some-org"}, "some-collection")
     assert claim["vendor"] == "starlinglab"
 
 
@@ -248,7 +248,11 @@ def test_generates_store_claim():
     }
     config.ORGANIZATION_CONFIG._index_json_config()
 
-    claim = _claim.generate_store("a-made-up-cid", "example-org", "example-collection")
+    claim = _claim.generate_store(
+        "a-made-up-cid",
+        config.ORGANIZATION_CONFIG.get("example-org"),
+        "example-collection",
+    )
     assertions = _claim.assertions_by_label(claim)
     assert (
         assertions["org.starlinglab.storage.ipfs"]["data"]["starling:provider"]

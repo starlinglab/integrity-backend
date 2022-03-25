@@ -1,8 +1,9 @@
 """Configuration variables."""
 
+import copy
+import dotenv
 import json
 import os
-import dotenv
 
 # Loads env variables from local .env, if it is present.
 dotenv.load_dotenv()
@@ -47,7 +48,6 @@ class OrganizationConfig:
         """
         self.json_config = {}
         self.config = {}
-        self.collections = {}
         try:
             # Disable loading of configuration from file in the test environment.
             if os.environ.get("RUN_ENV") != "test":
@@ -64,10 +64,6 @@ class OrganizationConfig:
         """Gets configuration dictionary for an org id."""
         return self.config.get(org_id)
 
-    def get_collection(self, org_id, collection_id):
-        """Returns the configuration for a collection in an org."""
-        return self.collections.get(org_id, {}).get(collection_id)
-
     def _load_config_from_file(self, config_file):
         with open(config_file, "r") as f:
             self.json_config = json.loads(f.read())
@@ -79,30 +75,29 @@ class OrganizationConfig:
     def _index_json_config(self):
         # Index by organization, collection and action id/name for ease of access
         for org in self.json_config["organizations"]:
-            self.config[org["id"]] = org
-            self.collections[org["id"]] = {}
+            indexed_config = copy.deepcopy(org)
+            indexed_config["collections"] = {}
             for coll_conf in org.get("collections", []):
-                self.collections[org["id"]][coll_conf["id"]] = {
-                    "conf": coll_conf,
-                    "actions": {
-                        action["name"]: action
-                        for action in coll_conf.get("actions", [])
-                    },
+                actions_index = {
+                    action["name"]: action for action in coll_conf.get("actions", [])
                 }
+                indexed_config["collections"][coll_conf["id"]] = {
+                    "conf": coll_conf,
+                    "actions": actions_index,
+                }
+            self.config[org["id"]] = indexed_config
 
 
 # Load Organization-specific configuration from file
 ORGANIZATION_CONFIG = OrganizationConfig(os.environ.get("ORG_CONFIG_JSON"))
 
 
-def creative_work(organization_id, collection_id, action_name):
-    coll_config = ORGANIZATION_CONFIG.get_collection(organization_id, collection_id)
-    if coll_config == None:
-        return []
-
+def get_param(org_config, collection_id, action_name, param_name):
     return (
-        coll_config.get("actions", {})
+        org_config.get("collections", {})
+        .get(collection_id, {})
+        .get("actions", {})
         .get(action_name, {})
         .get("params", {})
-        .get("creative_work_author", [])
+        .get(param_name)
     )
