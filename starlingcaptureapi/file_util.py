@@ -17,12 +17,6 @@ _logger = logging.getLogger(__name__)
 
 BUFFER_SIZE = 32 * 1024  # 32 KiB
 
-# Captures organization and collection id in a filepath like:
-# .../shared_dir/org_id/collection_id/...some_filename.some_ext
-FILEPATH_REGEX = re.compile(
-    f".*{config.SHARED_FILE_SYSTEM}\\/(?P<org>.*?)\\/(?P<col>.*?)\\/.*"
-)
-
 
 class FileUtil:
     """Manages file system and file names."""
@@ -115,26 +109,6 @@ class FileUtil:
         return self.digest("md5", file_path)
 
     @staticmethod
-    def get_collection_id_from_filename(filename: str) -> str:
-        """Extracts the collection id from the given filename.
-
-        Args:
-            filename: full filename to process, expected to be shaped like:
-                ..../shared_dir/org_id/collection_id/...some_filename.some_ext
-
-        Returns:
-            the extracted collection id
-
-        Raises:
-            Exception if couldn't find a collection id
-        """
-        match = FILEPATH_REGEX.search(filename)
-        if match and len(match.groups()) > 0:
-            return match.group('col')
-
-        raise Exception(f"Could not extract collection id from filename {filename}")
-
-    @staticmethod
     def get_hash_from_filename(filename: str) -> str:
         """Extracts the file hash from the given filename.
 
@@ -149,26 +123,6 @@ class FileUtil:
         """
         name, _ = os.path.splitext(os.path.basename(filename))
         return name.split("-")[0]
-
-    @staticmethod
-    def get_organization_id_from_filename(filename: str) -> str:
-        """Extracts the organization id from the given filename.
-
-        Args:
-            filename: full filename to process, expected to be shaped like:
-                ..../shared_dir/organization_id/...some_filename.some_ext
-
-        Returns:
-            the extracted organization id
-
-        Raises:
-            Exception if couldn't find an organization id
-        """
-        match = FILEPATH_REGEX.search(filename)
-        if match and len(match.groups()) > 0:
-            return match.group('org')
-
-        raise Exception(f"Could not extract organization id from filename {filename}")
 
     def register_timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
         """Creates a opentimestamps file for the given file.
