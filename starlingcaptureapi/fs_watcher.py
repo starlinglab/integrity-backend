@@ -29,20 +29,21 @@ def caught_and_logged_exceptions(event):
 class FsWatcher:
     """Watches directories for file changes."""
 
-    def __init__(self, org_config):
+    def __init__(self, org_config: dict, collection_id: str = None):
         self.org_config = org_config
+        self.collection_id = collection_id
         self.organization_id = org_config.get("id")
         self.asset_helper = AssetHelper(self.organization_id)
         self.observer = Observer()
 
     @staticmethod
-    def start(org_config):
+    def start(org_config: dict):
         FsWatcher(org_config).watch()
 
     @staticmethod
     def init_all(
         all_org_config: config.OrganizationConfig = config.ORGANIZATION_CONFIG,
-    ):
+    ) -> list[multiprocessing.Process]:
         """Initialize file watcher processes for the given configuration.
 
         Args:
@@ -65,14 +66,15 @@ class FsWatcher:
     def watch(self):
         """Start file watching handlers."""
         self._schedule_legacy_handlers()
-        for collection_config in self.org_config.get("collections", []):
-            collection_id = collection_config.get("id")
+        for collection_id, collection_config in self.org_config.get(
+            "collections", {}
+        ).items():
             patterns = [
-                f"*.{ext}" for ext in collection_config.get("asset_extensions", [])
+                f"*.{ext}"
+                for ext in collection_config.get("conf", {}).get("asset_extensions", [])
             ]
-            for action in collection_config.get("actions", []):
-                name = action.get("name")
-                self._schedule(collection_id, name, patterns)
+            for action_name in collection_config.get("actions", {}).keys():
+                self._schedule(collection_id, action_name, patterns)
 
         self.observer.start()
         try:
@@ -86,9 +88,13 @@ class FsWatcher:
     def _schedule(self, collection_id: str, action: str, patterns: list[str]):
         handler_class = ACTION_HANDLER.get(action)
         path = self.asset_helper.path_for(collection_id, action)
-        _logger.info(f"Scheduling handler {handler_class} for path {path} and patterns {patterns}")
+        _logger.info(
+            f"Scheduling handler {handler_class} for path {path} and patterns {patterns}"
+        )
         self.observer.schedule(
-            handler_class(patterns=patterns).set_org_id(self.organization_id),
+            handler_class(patterns=patterns).with_config(
+                self.org_config, collection_id
+            ),
             recursive=True,
             path=self.asset_helper.path_for(collection_id, action),
         )
@@ -100,35 +106,38 @@ class FsWatcher:
         )
         patterns = ["*.jpg", "*.jpeg"]
         self.observer.schedule(
-            AddHandler(patterns=patterns).set_org_id(self.organization_id),
+            AddHandler(patterns=patterns).with_config(self.org_config),
             recursive=True,
             path=self.asset_helper.legacy_path_for("add"),
         )
         self.observer.schedule(
-            StoreHandler(patterns=patterns).set_org_id(self.organization_id),
+            StoreHandler(patterns=patterns).with_config(self.org_config),
             recursive=True,
             path=self.asset_helper.legacy_path_for("store"),
         )
         self.observer.schedule(
-            CustomHandler(patterns=patterns).set_org_id(self.organization_id),
+            CustomHandler(patterns=patterns).with_config(self.org_config),
             recursive=True,
-            path=self.asset_helper.legacy_path_for("custom")
+            path=self.asset_helper.legacy_path_for("custom"),
         )
 
 
 class OrganizationHandler(PatternMatchingEventHandler):
     """A base handler that knows which organization it is working for."""
 
-    def set_org_id(self, organization_id):
-        """Sets the organization id for this handler.
+    def with_config(self, org_config: dict, collection_id: str = None):
+        """Sets the organization configuration and an optional collection id for this handler.
 
         Args:
-            organization_id: string with the unique organization id this handler is for
+            org_config: a dictionary containing the indexed configuration for this organization
+            collection_id: an optional id for the collection this handler is watching for
 
         Returns:
             the handler itself
         """
-        self.organization_id = organization_id
+        self.org_config = org_config
+        self.collection_id = collection_id
+        self.organization_id = org_config.get("id")
         return self
 
 
@@ -137,7 +146,7 @@ class AddHandler(OrganizationHandler):
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.add(self.organization_id, event.src_path)
+            _actions.add(event.src_path, self.org_config, self.collection_id)
 
 
 class UpdateHandler(OrganizationHandler):
@@ -145,7 +154,7 @@ class UpdateHandler(OrganizationHandler):
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.update(self.organization_id, event.src_path)
+            _actions.update(event.src_path, self.org_config, self.collection_id)
 
 
 class StoreHandler(OrganizationHandler):
@@ -153,7 +162,7 @@ class StoreHandler(OrganizationHandler):
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.store(self.organization_id, event.src_path)
+            _actions.store(event.src_path, self.org_config, self.collection_id)
 
 
 class CustomHandler(OrganizationHandler):
@@ -161,7 +170,7 @@ class CustomHandler(OrganizationHandler):
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.custom(self.organization_id, event.src_path)
+            _actions.custom(event.src_path, self.org_config, self.collection_id)
 
 
 class ArchiveHandler(OrganizationHandler):
@@ -169,7 +178,7 @@ class ArchiveHandler(OrganizationHandler):
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.archive(event.src_path)
+            _actions.archive(event.src_path, self.org_config, self.collection_id)
 
 
 # Mapping from action name to handler class

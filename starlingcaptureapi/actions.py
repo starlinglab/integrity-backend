@@ -25,25 +25,27 @@ class Actions:
 
     All actions operate on:
         * an "asset", represented by its full path on the local filesystem
-        * some metadata, which is either provided explicitly, or can be derived
-          from the asset path
+        * some metadata
 
     In an ideal future, all actions would be refactored to accept the exact same
-    inputs: an asset path and a metadata container.
+    inputs: an asset path and a generalized metadata container or configuration
+    object.
     """
 
-    def archive(self, asset_meta_path: str):
+    def archive(self, asset_fullpath: str, org_config: dict, collection_id: str):
         """Archive asset.
 
         Args:
-            asset_meta_fullpath: full local path to the metadata JSON file for this asset
+            asset_fullpath: the local path to the asset file
+            org_config: configuration dictionary for this organization
+            collection_id: string with the unique collection identifier this
+                asset is in; might be None for legacy configurations
 
         Raises:
             Exception if errors are encountered during processing
         """
-        archive = EncryptedArchive.make_from_meta(asset_meta_path)
+        archive = EncryptedArchive.make_from_meta(asset_fullpath)
         Iscn.register_archive(archive)
-
 
     def create(self, asset_fullpath, jwt_payload, meta):
         """Process asset with create action.
@@ -142,49 +144,57 @@ class Actions:
         )
         return internal_asset_file
 
-    def add(self, organization_id, asset_fullpath):
+    def add(self, asset_fullpath, org_config, collection_id):
         """Process asset with add action.
         The provided asset file is added to the asset management system and renamed to its internal identifier in the add-output folder.
 
         Args:
-            organization_id: string with the unique identifier for the organization this action is for
             asset_fullpath: the local path to the asset file
+            org_config: configuration dictionary for this organization
+            collection_id: string with the unique collection identifier this
+                asset is in; might be None for legacy configurations
 
         Returns:
             the local path to the asset file in the internal directory
         """
-        asset_helper = AssetHelper(organization_id)
+        asset_helper = AssetHelper(org_config.get("id"))
         return self._add(
-            asset_fullpath, asset_helper.legacy_path_for("add", output=True), asset_helper
+            asset_fullpath,
+            asset_helper.path_for(collection_id, "add", output=True),
+            asset_helper,
         )
 
-    def update(self, organization_id, asset_fullpath):
+    def update(self, asset_fullpath, org_config, collection_id):
         """Process asset with update action.
         A new asset file is generated in the update-output folder with a claim that links it to a parent asset identified by its filename.
 
         Args:
-            organization_id: string with the unique identifier for the organization this action is for
             asset_fullpath: the local path to the asset file
+            org_config: configuration dictionary for this organization
+            collection_id: string with the unique collection identifier this
+                asset is in; might be None for legacy configurations
 
         Returns:
             the local path to the asset file in the internal directory
         """
+        organization_id = org_config.get("id")
         asset_helper = AssetHelper(organization_id)
-        collection_id = FileUtil.get_collection_id_from_filename(asset_fullpath)
         return self._update(
             asset_fullpath,
-            _claim.generate_update(organization_id, collection_id),
+            _claim.generate_update(org_config, collection_id),
             asset_helper.path_for(collection_id, "update", output=True),
             asset_helper,
         )
 
-    def store(self, organization_id, asset_fullpath):
+    def store(self, asset_fullpath, org_config, collection_id):
         """Process asset with store action.
         The provided asset stored on decentralized storage, then a new asset file is generated in the store-output folder with a storage claim.
 
         Args:
-            organization_id: string with the unique identifier for the organization this action is for
             asset_fullpath: the local path to the asset file
+            org_config: configuration dictionary for this organization
+            collection_id: string with the unique collection identifier this
+                asset is in; might be None for legacy configurations
 
         Returns:
             the local path to the asset file in the internal directory
@@ -196,23 +206,27 @@ class Actions:
         ipfs_cid = _filecoin.upload(added_asset)
         _logger.info("Asset file uploaded to IPFS with CID: %s", ipfs_cid)
 
+        organization_id = org_config.get("id")
         return self._update(
             added_asset,
             _claim.generate_store(ipfs_cid.organization_id),
-            AssetHelper(organization_id).legacy_path_for("store", output=True)
+            AssetHelper(organization_id).path_for(collection_id, "store", output=True),
         )
 
-    def custom(self, organization_id, asset_fullpath):
+    def custom(self, asset_fullpath, org_config, collection_id):
         """Process asset with custom action.
         A new asset file is generated in the custom-output folder with a claim that links it to a parent asset identified by its filename.
 
         Args:
-            organization_id: string with the unique identifier for the organization this action is for
             asset_fullpath: the local path to the asset file
+            org_config: configuration dictionary for this organization
+            collection_id: string with the unique collection identifier this
+                asset is in; might be None for legacy configurations
 
         Returns:
             the local path to the asset file in the internal directory
         """
+        organization_id = org_config.get("id")
         asset_helper = AssetHelper(organization_id)
 
         # Add uploaded asset to the internal directory.
@@ -230,7 +244,7 @@ class Actions:
         return self._update(
             added_asset,
             _claim.generate_custom(custom_assertions),
-            asset_helper.legacy_path_for("custom", output=True),
+            asset_helper.path_for(collection_id, "custom", output=True),
             asset_helper,
         )
 
