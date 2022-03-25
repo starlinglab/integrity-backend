@@ -44,7 +44,7 @@ class Actions:
         Raises:
             Exception if errors are encountered during processing
         """
-        archive = EncryptedArchive.make_from_meta(asset_fullpath)
+        archive = EncryptedArchive.make_from_meta(asset_fullpath, org_config, collection_id)
         Iscn.register_archive(archive)
 
     def create(self, asset_fullpath, jwt_payload, meta):

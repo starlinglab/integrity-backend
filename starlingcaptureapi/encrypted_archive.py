@@ -7,9 +7,9 @@ from . import zip_util
 class EncryptedArchive:
     """Based on a metadata file, handles zipping, encryption and CID creation."""
 
-    def __init__(self, asset_meta_path: str):
+    def __init__(self, asset_meta_path: str, org_config: dict, collection_id: str):
         self.meta_path = asset_meta_path
-        self.asset_helper = AssetHelper.from_filename(self.meta_path)
+        self.asset_helper = AssetHelper(org_config.get("id"))
 
         self.archive_path = None
         self.asset_hash = None
@@ -18,16 +18,19 @@ class EncryptedArchive:
         self.zip_archive_cid = None
 
     @staticmethod
-    def make_from_meta(asset_meta_path):
+    def make_from_meta(asset_meta_path: str, org_config: dict, collection_id: str):
         """Creates an encrypted zip for archival, based on the given metadata file.
 
         Args:
             asset_meta_path: full local path to metadata JSON file for the asset to zip and encrypt
+            org_config: configuration dictionary for this organization
+            collection_id: string with the unique collection identifier this
+                asset is in; might be None for legacy configurations
 
         Return:
             an instance of EncryptedArchive with paths to archival files and CIDs for various things
         """
-        archive = EncryptedArchive(asset_meta_path)
+        archive = EncryptedArchive(asset_meta_path, org_config, collection_id)
         archive.make()
         return archive
 
