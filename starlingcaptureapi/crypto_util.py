@@ -1,18 +1,43 @@
 import logging
 import os
 from Crypto.Cipher import AES
+from .config import KEY_STORE
 
 _logger = logging.getLogger(__name__)
 
 
-def new_aes_key():
-    """Generates a new key for AES-256.
+def new_aes_key() -> bytes:
+    """
+    Generates a new key for AES-256.
 
     Returns:
         the key as bytes
     """
 
     return os.urandom(32)
+
+
+def get_key(name: str) -> bytes:
+    """
+    Get the bytes of a key in the keystore.
+
+    If the key doesn't exist, it will be generated.
+
+    Raises:
+        any file I/O errors
+    """
+
+    key_path = os.path.join(KEY_STORE, name)
+
+    if os.path.exists(key_path):
+        with open(key_path, "rb") as f:
+            return f.read()
+
+    os.makedirs(KEY_STORE, 0o755, exist_ok=True)
+    new_key = new_aes_key()
+    with open(key_path, "wb") as f:
+        f.write(new_key)
+    return new_key
 
 
 class AESCipher:

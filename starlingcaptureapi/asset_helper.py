@@ -85,6 +85,11 @@ class AssetHelper:
         """Initializes an Asset Helper based on the data in the given JWT payload."""
         return AssetHelper(jwt_payload["organization_id"])
 
+    @staticmethod
+    def from_filename(filename: str):
+        """Initializes an Asset Helper based on the data in the given filename."""
+        return AssetHelper(FileUtil.get_organization_id_from_filename(filename))
+
     def init_dirs(self):
         """Creates the initial directory structure for asset management."""
         _logger.info(f"Initializing internal directories for {self.org_id}")
@@ -132,6 +137,9 @@ class AssetHelper:
             self.dir_create_proofmode_output, subfolders=subfolders
         )
 
+    def get_tmp_collection_dir(self, collection_id, action):
+        return os.path.join(self.dir_internal_tmp, collection_id + "-" + action)
+
     def get_tmp_file_fullpath(self, file_extension):
         return os.path.join(
             self.dir_internal_tmp, _file_util.generate_uuid() + file_extension
@@ -171,6 +179,9 @@ class AssetHelper:
             self.dir_internal_claims, _file_util.digest_sha256(from_file) + ".json"
         )
 
+    def get_archive_dir(self, collection_id):
+        return os.path.join(self.internal_prefix, collection_id, "action-archive")
+
     def _shared_collection_prefix(self, collection_id: str) -> str:
         return os.path.join(self.shared_prefix, collection_id)
 
@@ -208,7 +219,9 @@ class AssetHelper:
 
     def _init_collection_dirs(self):
         _logger.info(f"Initializing collection directories for {self.org_id}")
-        collections_dict = config.ORGANIZATION_CONFIG.get(self.org_id).get("collections", {})
+        collections_dict = config.ORGANIZATION_CONFIG.get(self.org_id).get(
+            "collections", {}
+        )
         if len(collections_dict.keys()) == 0:
             _logger.info(f"No collections found for {self.org_id}")
             return
