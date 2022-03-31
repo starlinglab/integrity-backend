@@ -163,6 +163,10 @@ class AssetHelper:
             f"{action}-output" if output else action,
         )
 
+    def input_path_for(self, collection_id: str) -> str:
+        """Returns a full direction path for the input dir for this collection."""
+        return os.path.join(self._shared_collection_prefix(collection_id), "input")
+
     def path_for(self, collection_id: str, action: str, output: bool = False):
         """Retuns a full directory path for the given collection and action.
 
@@ -185,7 +189,9 @@ class AssetHelper:
 
     def _init_collection_dirs(self):
         _logger.info(f"Initializing collection directories for {self.org_id}")
-        collections_dict = config.ORGANIZATION_CONFIG.get(self.org_id).get("collections", {})
+        collections_dict = config.ORGANIZATION_CONFIG.get(self.org_id).get(
+            "collections", {}
+        )
         if len(collections_dict.keys()) == 0:
             _logger.info(f"No collections found for {self.org_id}")
             return
@@ -195,7 +201,10 @@ class AssetHelper:
                 raise ValueError(
                     f"Collection {coll_id} for org {self.org_id} is not filename safe"
                 )
+            _file_util.create_dir(self.input_path_for(coll_id))
             for action_name in coll_config.get("actions", {}).keys():
+                # This input path is a legacy path, and will be removed when all actions
+                # move to use the per-collection input directory
                 _file_util.create_dir(self.path_for(coll_id, action_name))
                 _file_util.create_dir(self.path_for(coll_id, action_name, output=True))
 

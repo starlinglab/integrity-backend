@@ -68,12 +68,30 @@ class FsWatcher:
         for collection_id, collection_config in self.org_config.get(
             "collections", {}
         ).items():
-            patterns = [
-                f"*.{ext}"
-                for ext in collection_config.get("conf", {}).get("asset_extensions", [])
-            ]
+            # When all actions are harmonized to watch the input directory and
+            # *.zip patterns, it might make sense to refactor the watchers to
+            # have one watcher per collection. This watcher would watch the input folder
+            # and dispatch the file for processing in parallel by all the
+            # configured actions for the collection.
             for action_name in collection_config.get("actions", {}).keys():
-                self._schedule(collection_id, action_name, patterns)
+                if action_name == "archive":
+                    self._schedule(
+                        collection_id,
+                        action_name,
+                        ["*.zip"],
+                        self.asset_helper.input_path_for(collection_id),
+                    )
+                else:
+                    # Legacy actions will eventually be all migrated to watch for *.zip
+                    # See details in https://github.com/starlinglab/starling-integrity-api/issues/79
+                    # At that point, all patterns will be *.zip, and the path to watch will be the collection input
+                    # directory, and will no longer need to be parameters passed into _schedule(...).
+                    self._schedule(
+                        collection_id,
+                        action_name,
+                        ["*.jpg", "*.jpeg"],
+                        self.asset_helper.path_for(collection_id, action_name),
+                    )
 
         self.observer.start()
         try:
@@ -84,7 +102,9 @@ class FsWatcher:
             _logger.warning("Caught keyboard interrupt. Stopping FsWatcher.")
         self.observer.join()
 
-    def _schedule(self, collection_id: str, action: str, patterns: list[str]):
+    def _schedule(
+        self, collection_id: str, action: str, patterns: list[str], path: str
+    ):
         handler_class = ACTION_HANDLER.get(action)
         if handler_class is None:
             raise ValueError(f"Could not find handler class for action {action}")
@@ -98,7 +118,7 @@ class FsWatcher:
                 self.org_config, collection_id
             ),
             recursive=True,
-            path=self.asset_helper.path_for(collection_id, action),
+            path=path,
         )
 
 
