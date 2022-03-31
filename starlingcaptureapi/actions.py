@@ -49,7 +49,6 @@ class Actions:
         tmp_zip = shutil.copy2(zip_path, tmp_dir)
 
         # Verify zip contents are valid and expected
-
         zip_listing = zip_util.listing(tmp_zip)
         if len(zip_listing) > 3:
             # Should only have three: content, recorder meta, content meta
@@ -70,7 +69,6 @@ class Actions:
             )
 
         # Verify hash
-
         content_sha = os.path.splitext(os.path.basename(zip_path))[0]
         zip_dir = os.path.join(tmp_dir, content_sha)
         extracted_content = os.path.join(zip_dir, content_filename)
@@ -82,12 +80,10 @@ class Actions:
             raise Exception("SHA-256 hash of content file does not match ZIP name")
 
         # Generate other hashes
-
         content_cid = file_util.digest_cidv1(extracted_content)
         content_md5 = file_util.digest_md5(extracted_content)
 
         # Register on OpenTimestamp and add that file to zip
-
         content_ots = extracted_content + ".ots"
         file_util.register_timestamp(extracted_content, content_ots)
         zip_util.append(
@@ -95,7 +91,6 @@ class Actions:
         )
 
         # Get final ZIP hashes
-
         zip_sha = file_util.digest_sha256(tmp_zip)
         zip_md5 = file_util.digest_md5(tmp_zip)
         zip_cid = file_util.digest_cidv1(tmp_zip)
@@ -108,7 +103,6 @@ class Actions:
         shutil.move(tmp_zip, final_zip)
 
         # Encrypt ZIP, and get those hashes
-
         enc_zip = os.path.join(archive_dir, zip_sha + ".encrypted")
         file_util.encrypt(aes_key, final_zip, enc_zip)
 
