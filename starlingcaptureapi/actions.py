@@ -1,11 +1,10 @@
 from .asset_helper import AssetHelper
 from .claim import Claim
 from .claim_tool import ClaimTool
-from .encrypted_archive import EncryptedArchive
 from .filecoin import Filecoin
 from .file_util import FileUtil
 from .iscn import Iscn
-from . import config
+from . import config, zip_util, crypto_util
 
 import datetime
 import json
@@ -13,6 +12,7 @@ import logging
 import os
 import shutil
 import time
+
 
 _claim = Claim()
 _claim_tool = ClaimTool()
@@ -41,11 +41,117 @@ class Actions:
             collection_id: string with the unique collection identifier this
                 asset is in; might be None for legacy configurations
 
+        Returns:
+            TODO
+
         Raises:
             Exception if errors are encountered during processing
         """
-        archive = EncryptedArchive.make_from_meta(asset_fullpath, org_config, collection_id)
-        Iscn.register_archive(archive)
+
+        zip_path = asset_fullpath
+        asset_helper = AssetHelper(org_config["id"])
+        file_util = FileUtil()
+
+        # Pull things out of the config
+        collection_config = next(
+            (c for c in org_config["collections"] if c.get("id") == collection_id), None
+        )
+        if collection_config is None:
+            raise Exception(
+                f"No collection in {org_config['id']} config with ID {collection_id}"
+            )
+        action_config = next(
+            (
+                a["params"]
+                for a in collection_config["actions"]
+                if a.get("name") == "archive"
+            ),
+            None,
+        )
+        if action_config is None:
+            raise Exception(f"No archive action in collection {collection_id}")
+
+        if action_config["encryption"]["algo"] != "aes-256-cbc":
+            raise Exception(
+                f"Encryption algo {action_config['encryption']['algo']} not implemented"
+            )
+
+        # Verify ZIP name
+        input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
+        if input_zip_sha != file_util.digest_sha256(zip_path):
+            raise Exception(
+                "SHA-256 of ZIP does not match name: " + os.path.basename(zip_path)
+            )
+
+        # Copy ZIP
+        archive_dir = asset_helper.get_archive_dir(collection_id)
+        tmp_zip = shutil.copy2(zip_path, archive_dir)
+
+        # Verify zip contents are valid and expected
+        zip_listing = zip_util.listing(tmp_zip)
+        if len(zip_listing) > 3:
+            # Should only have three: content, recorder meta, content meta
+            raise Exception(
+                f"ZIP at {zip_path} has more than three files: {zip_listing}"
+            )
+
+        content_filename = next((s for s in zip_listing if "-meta-" not in s), None)
+        if content_filename is None:
+            raise Exception(f"ZIP at {zip_path} has no content file: {zip_listing}")
+
+        if "/" in content_filename:
+            raise Exception(f"Content file is not at ZIP root: {content_filename}")
+
+        if (
+            os.path.splitext(content_filename)[1][1:]
+            not in collection_config["asset_extensions"]
+        ):
+            raise Exception(
+                f"Content file in ZIP has wrong extension: {content_filename}"
+            )
+
+        # Extract content file
+        tmp_dir = asset_helper.get_tmp_collection_dir(collection_id, "archive")
+        zip_dir = os.path.join(tmp_dir, content_sha)
+        extracted_content = os.path.join(zip_dir, content_filename)
+        file_util.create_dir(zip_dir)
+        zip_util.extract_file(tmp_zip, content_filename, extracted_content)
+
+        # Generate content hashes
+        content_sha = file_util.digest_sha256(extracted_content)
+        content_cid = file_util.digest_cidv1(extracted_content)
+        content_md5 = file_util.digest_md5(extracted_content)
+
+        # Rename to export name: SHA-256 of content file
+        final_zip = os.path.join(archive_dir, content_sha + ".zip")
+        os.rename(tmp_zip, final_zip)
+
+        # Register on OpenTimestamp and add that file to zip
+        content_ots = extracted_content + ".ots"
+        file_util.register_timestamp(extracted_content, content_ots)
+        zip_util.append(
+            final_zip,
+            content_ots,
+            "proofs/" + os.path.basename(content_ots),
+        )
+
+        # Get final ZIP hashes
+        zip_sha = file_util.digest_sha256(final_zip)
+        zip_md5 = file_util.digest_md5(final_zip)
+        zip_cid = file_util.digest_cidv1(final_zip)
+
+        # Encrypt ZIP, and get those hashes
+        aes_key = crypto_util.get_key(action_config["encryption"]["key"])
+        enc_zip = os.path.join(archive_dir, content_sha + ".encrypted")
+        file_util.encrypt(aes_key, final_zip, enc_zip)
+
+        enc_zip_sha = file_util.digest_sha256(enc_zip)
+        enc_zip_md5 = file_util.digest_md5(enc_zip)
+        enc_zip_cid = file_util.digest_cidv1(enc_zip)
+
+        # TODO: step 7 and 8
+
+        # Iscn.register_archive(path)
 
     def create(self, asset_fullpath, jwt_payload, meta):
         """Process asset with create action.
