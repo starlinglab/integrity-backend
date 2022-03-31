@@ -86,7 +86,7 @@ class Actions:
                 f"ZIP at {zip_path} has more than three files: {zip_listing}"
             )
 
-        content_filename = next((s for s in zip_listing if "-" not in s), None)
+        content_filename = next((s for s in zip_listing if "-meta-" not in s), None)
         if content_filename is None:
             raise Exception(f"ZIP at {zip_path} has no content file: {zip_listing}")
 
@@ -123,7 +123,7 @@ class Actions:
         zip_util.append(
             final_zip,
             content_ots,
-            os.path.join("proofs", os.path.basename(content_ots)),
+            "proofs/" + os.path.basename(content_ots),
         )
 
         # Get final ZIP hashes
@@ -133,7 +133,7 @@ class Actions:
 
         # Encrypt ZIP, and get those hashes
         aes_key = crypto_util.get_key(action_config["encryption"]["key"])
-        enc_zip = os.path.join(archive_dir, zip_sha + ".encrypted")
+        enc_zip = os.path.join(archive_dir, content_sha + ".encrypted")
         file_util.encrypt(aes_key, final_zip, enc_zip)
 
         enc_zip_sha = file_util.digest_sha256(enc_zip)
