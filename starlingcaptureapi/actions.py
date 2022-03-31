@@ -32,12 +32,6 @@ class Actions:
             collection_id: string with the unique collection identifier this
                 asset is in; might be None for legacy configurations
 
-            organization_id: ID of the organization
-            collection_id: ID of the collection this asset is under
-            zip_path: path to the ZIP that contains the asset and metadata
-            asset_exts: valid file extensions for the asset (no dots)
-            aes_key: 32 byte key for AES-256-CBC encryption
-
         Returns:
             TODO
 
