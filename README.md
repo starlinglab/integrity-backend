@@ -50,9 +50,9 @@ Response codes follow standard HTTP conventions:
 
 The server is configured via environment variables and a JSON file with per-organization configuration.
 
-See [config.example.json](./starlingcaptureapi/config.example.json) for an example of a valid organization configuration.
+See [config.example.json](./integritybackend/config.example.json) for an example of a valid organization configuration.
 
-See [config.py](./starlingcaptureapi/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
+See [config.py](./integritybackend/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
 
 Most importantly, you will need to provide:
 * `CLAIM_TOOL_PATH`: A path to a fully working `claim_tool` binary. The server should have permissions to execute it, and it should be correctly configured with its keys.

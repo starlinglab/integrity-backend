@@ -5,12 +5,12 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from starlingcaptureapi import asset_helper
-from starlingcaptureapi import claim
-from starlingcaptureapi import config
-from starlingcaptureapi import crypto_util
-from starlingcaptureapi import exif
-from starlingcaptureapi import file_util
-from starlingcaptureapi import geocoder
-from starlingcaptureapi import iscn
-from starlingcaptureapi import zip_util
+from integritybackend import asset_helper
+from integritybackend import claim
+from integritybackend import config
+from integritybackend import crypto_util
+from integritybackend import exif
+from integritybackend import file_util
+from integritybackend import geocoder
+from integritybackend import iscn
+from integritybackend import zip_util

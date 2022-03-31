@@ -39,6 +39,6 @@ python_version = "3.9"
 
 [scripts]
 # Automatically formats all Python files
-autoformat = "black starlingcaptureapi"
+autoformat = "black integritybackend"
 # Starts the server
 server = "python main.py"
