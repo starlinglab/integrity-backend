@@ -67,11 +67,16 @@ class Actions:
                 f"Encryption algo {action_config['encryption']['algo']} not implemented"
             )
 
-        tmp_dir = asset_helper.get_tmp_collection_dir(collection_id, "archive")
-        os.makedirs(tmp_dir, 0o755, exist_ok=True)
+        # Verify ZIP name
+        input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
+        if input_zip_sha != file_util.digest_sha256(zip_path):
+            raise Exception(
+                "SHA-256 of ZIP does not match name: " + os.path.basename(zip_path)
+            )
 
         # Copy ZIP
-        tmp_zip = shutil.copy2(zip_path, tmp_dir)
+        archive_dir = asset_helper.get_archive_dir(collection_id)
+        tmp_zip = shutil.copy2(zip_path, archive_dir)
 
         # Verify zip contents are valid and expected
         zip_listing = zip_util.listing(tmp_zip)
@@ -96,39 +101,35 @@ class Actions:
                 f"Content file in ZIP has wrong extension: {content_filename}"
             )
 
-        # Verify hash
-        content_sha = os.path.splitext(os.path.basename(zip_path))[0]
+        # Extract content file
+        tmp_dir = asset_helper.get_tmp_collection_dir(collection_id, "archive")
         zip_dir = os.path.join(tmp_dir, content_sha)
         extracted_content = os.path.join(zip_dir, content_filename)
-
         file_util.create_dir(zip_dir)
         zip_util.extract_file(tmp_zip, content_filename, extracted_content)
 
-        if content_sha != file_util.digest_sha256(extracted_content):
-            raise Exception("SHA-256 hash of content file does not match ZIP name")
-
-        # Generate other hashes
+        # Generate content hashes
+        content_sha = file_util.digest_sha256(extracted_content)
         content_cid = file_util.digest_cidv1(extracted_content)
         content_md5 = file_util.digest_md5(extracted_content)
+
+        # Rename to export name: SHA-256 of content file
+        final_zip = os.path.join(archive_dir, content_sha + ".zip")
+        os.rename(tmp_zip, final_zip)
 
         # Register on OpenTimestamp and add that file to zip
         content_ots = extracted_content + ".ots"
         file_util.register_timestamp(extracted_content, content_ots)
         zip_util.append(
-            tmp_zip, content_ots, os.path.join("proofs", os.path.basename(content_ots))
+            final_zip,
+            content_ots,
+            os.path.join("proofs", os.path.basename(content_ots)),
         )
 
         # Get final ZIP hashes
-        zip_sha = file_util.digest_sha256(tmp_zip)
-        zip_md5 = file_util.digest_md5(tmp_zip)
-        zip_cid = file_util.digest_cidv1(tmp_zip)
-
-        # Move ZIP to storage
-        # TODO: name is ZIP hash, not asset hash right?
-
-        archive_dir = asset_helper.get_archive_dir(collection_id)
-        final_zip = os.path.join(archive_dir, zip_sha + ".zip")
-        shutil.move(tmp_zip, final_zip)
+        zip_sha = file_util.digest_sha256(final_zip)
+        zip_md5 = file_util.digest_md5(final_zip)
+        zip_cid = file_util.digest_cidv1(final_zip)
 
         # Encrypt ZIP, and get those hashes
         aes_key = crypto_util.get_key(action_config["encryption"]["key"])
