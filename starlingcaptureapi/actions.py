@@ -23,10 +23,15 @@ _logger = logging.getLogger(__name__)
 class Actions:
     """Actions for processing assets."""
 
-    def archive(self, organization_id, collection_id, zip_path, asset_exts, aes_key):
+    def archive(self, asset_fullpath: str, org_config: dict, collection_id: str):
         """Archive asset.
 
         Args:
+            asset_fullpath: the local path to the asset file
+            org_config: configuration dictionary for this organization
+            collection_id: string with the unique collection identifier this
+                asset is in; might be None for legacy configurations
+
             organization_id: ID of the organization
             collection_id: ID of the collection this asset is under
             zip_path: path to the ZIP that contains the asset and metadata
@@ -40,10 +45,36 @@ class Actions:
             Exception if errors are encountered during processing
         """
 
-        asset_helper = AssetHelper(organization_id)
+        zip_path = asset_fullpath
+        asset_helper = AssetHelper(org_config["id"])
         file_util = FileUtil()
 
+        # Pull things out of the config
+        collection_config = next(
+            (c for c in org_config["collections"] if c.get("id") == collection_id), None
+        )
+        if collection_config is None:
+            raise Exception(
+                f"No collection in {org_config['id']} config with ID {collection_id}"
+            )
+        action_config = next(
+            (
+                a["params"]
+                for a in collection_config["actions"]
+                if a.get("name") == "archive"
+            ),
+            None,
+        )
+        if action_config is None:
+            raise Exception(f"No archive action in collection {collection_id}")
+
+        if action_config["encryption"]["algo"] != "aes-256-cbc":
+            raise Exception(
+                f"Encryption algo {action_config['encryption']['algo']} not implemented"
+            )
+
         tmp_dir = asset_helper.get_tmp_collection_dir(collection_id, "archive")
+        os.makedirs(tmp_dir, 0o755, exist_ok=True)
 
         # Copy ZIP
         tmp_zip = shutil.copy2(zip_path, tmp_dir)
@@ -63,7 +94,10 @@ class Actions:
         if "/" in content_filename:
             raise Exception(f"Content file is not at ZIP root: {content_filename}")
 
-        if os.path.splitext(content_filename)[1][1:] not in asset_exts:
+        if (
+            os.path.splitext(content_filename)[1][1:]
+            not in collection_config["asset_extensions"]
+        ):
             raise Exception(
                 f"Content file in ZIP has wrong extension: {content_filename}"
             )
@@ -103,6 +137,7 @@ class Actions:
         shutil.move(tmp_zip, final_zip)
 
         # Encrypt ZIP, and get those hashes
+        aes_key = None  # TODO
         enc_zip = os.path.join(archive_dir, zip_sha + ".encrypted")
         file_util.encrypt(aes_key, final_zip, enc_zip)
 
