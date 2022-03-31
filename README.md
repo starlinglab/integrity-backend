@@ -1,4 +1,4 @@
-# Starling Integrity API <!-- omit in toc -->
+# Starling Integrity Backend <!-- omit in toc -->
 
 - [Overview](#overview)
 - [Configuration](#configuration)
@@ -12,7 +12,7 @@
 
 ## Overview
 
-The Starling Integrity API provides HTTP endpoints for creating integrity attestations based on incoming data.
+The Starling Integrity Backend provides HTTP endpoints for creating integrity attestations based on incoming data.
 
 It depends on a binary of Adobe's `claim_tool`, which is planned to be open-sourced.
 
