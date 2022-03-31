@@ -1,8 +1,9 @@
 """Configuration variables."""
 
+import copy
+import dotenv
 import json
 import os
-import dotenv
 
 # Loads env variables from local .env, if it is present.
 dotenv.load_dotenv()
@@ -36,6 +37,8 @@ ISCN_SERVER = os.environ.get("ISCN_SERVER")
 
 NUMBERS_API_KEY = os.environ.get("NUMBERS_API_KEY")
 
+KEY_STORE = os.environ.get("KEY_STORE")
+
 
 class OrganizationConfig:
     def __init__(self, config_file):
@@ -47,6 +50,7 @@ class OrganizationConfig:
         Raises:
             Exception if configuration loading fails
         """
+        self.json_config = {}
         self.config = {}
         try:
             # Disable loading of configuration from file in the test environment.
@@ -66,20 +70,38 @@ class OrganizationConfig:
 
     def _load_config_from_file(self, config_file):
         with open(config_file, "r") as f:
-            json_config = json.loads(f.read())
-            for org in json_config["organizations"]:
-                self.config[org["id"]] = org
+            self.json_config = json.loads(f.read())
+        self._index_json_config()
+
         # Use print because this will likely happen before logging is configured
-        print(f"Loaded configuration for organizations: {self.all_orgs()}")
+        print(f"Loaded configuration for organizations: {list(self.all_orgs())}")
+
+    def _index_json_config(self):
+        # Index by organization, collection and action id/name for ease of access
+        for org in self.json_config["organizations"]:
+            indexed_config = copy.deepcopy(org)
+            indexed_config["collections"] = {}
+            for coll_conf in org.get("collections", []):
+                actions_index = {
+                    action["name"]: action for action in coll_conf.get("actions", [])
+                }
+                indexed_config["collections"][coll_conf["id"]] = {
+                    "conf": coll_conf,
+                    "actions": actions_index,
+                }
+            self.config[org["id"]] = indexed_config
 
 
 # Load Organization-specific configuration from file
 ORGANIZATION_CONFIG = OrganizationConfig(os.environ.get("ORG_CONFIG_JSON"))
 
 
-def creative_work(organization_id):
-    org_config = ORGANIZATION_CONFIG.get(organization_id)
-    if org_config:
-        return org_config.get("creative_work_author", [])
-    else:
-        return []
+def get_param(org_config, collection_id, action_name, param_name):
+    return (
+        org_config.get("collections", {})
+        .get(collection_id, {})
+        .get("actions", {})
+        .get(action_name, {})
+        .get("params", {})
+        .get(param_name)
+    )

@@ -124,26 +124,6 @@ class FileUtil:
         name, _ = os.path.splitext(os.path.basename(filename))
         return name.split("-")[0]
 
-    @staticmethod
-    def get_organization_id_from_filename(filename: str) -> str:
-        """Extracts the organization id from the given filename.
-
-        Args:
-            filename: full filename to process, expected to be shaped like:
-                ..../internal/organization_id/...some_filename.some_ext
-
-        Returns:
-            the extracted organization id
-
-        Raises:
-            Exception if couldn't find an organization id
-        """
-        match = re.search(f".*{config.INTERNAL_ASSET_STORE}\\/(.*?)\\/.*", filename)
-        if match and len(match.groups()) > 0:
-            return match.group(1)
-
-        raise Exception(f"Could not extract organization id from filename {filename}")
-
     def register_timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
         """Creates a opentimestamps file for the given file.
 

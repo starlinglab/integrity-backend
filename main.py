@@ -71,11 +71,8 @@ def start_api_server():
     web.run_app(app)
 
 
-def start_fs_watcher(org_id):
-    FsWatcher(org_id).watch()
-
-
 if __name__ == "__main__":
+
     signal.signal(signal.SIGINT, signal_handler)
     configure_logging()
 
@@ -85,13 +82,7 @@ if __name__ == "__main__":
 
     # Start up processes for services.
 
-    # Start up a file watcher for each organization
-    for org_id in config.ORGANIZATION_CONFIG.all_orgs():
-        _procs.append(
-            multiprocessing.Process(
-                name=f"fs_watcher_{org_id}", target=start_fs_watcher, args=(org_id,)
-            )
-        )
+    _procs = FsWatcher.init_all(config.ORGANIZATION_CONFIG)
 
     proc_api_server = multiprocessing.Process(
         name="api_server", target=start_api_server
