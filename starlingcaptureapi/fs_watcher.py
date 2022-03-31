@@ -65,16 +65,33 @@ class FsWatcher:
 
     def watch(self):
         """Start file watching handlers."""
-        self._schedule_legacy_handlers()
         for collection_id, collection_config in self.org_config.get(
             "collections", {}
         ).items():
-            patterns = [
-                f"*.{ext}"
-                for ext in collection_config.get("conf", {}).get("asset_extensions", [])
-            ]
+            # When all actions are harmonized to watch the input directory and
+            # *.zip patterns, it might make sense to refactor the watchers to
+            # have one watcher per collection. This watcher would watch the input folder
+            # and dispatch the file for processing in parallel by all the
+            # configured actions for the collection.
             for action_name in collection_config.get("actions", {}).keys():
-                self._schedule(collection_id, action_name, patterns)
+                if action_name == "archive":
+                    self._schedule(
+                        collection_id,
+                        action_name,
+                        ["*.zip"],
+                        self.asset_helper.input_path_for(collection_id),
+                    )
+                else:
+                    # Legacy actions will eventually be all migrated to watch for *.zip
+                    # See details in https://github.com/starlinglab/starling-integrity-api/issues/79
+                    # At that point, all patterns will be *.zip, and the path to watch will be the collection input
+                    # directory, and will no longer need to be parameters passed into _schedule(...).
+                    self._schedule(
+                        collection_id,
+                        action_name,
+                        ["*.jpg", "*.jpeg"],
+                        self.asset_helper.path_for(collection_id, action_name),
+                    )
 
         self.observer.start()
         try:
@@ -85,40 +102,23 @@ class FsWatcher:
             _logger.warning("Caught keyboard interrupt. Stopping FsWatcher.")
         self.observer.join()
 
-    def _schedule(self, collection_id: str, action: str, patterns: list[str]):
+    def _schedule(
+        self, collection_id: str, action: str, patterns: list[str], path: str
+    ):
         handler_class = ACTION_HANDLER.get(action)
+        if handler_class is None:
+            raise ValueError(f"Could not find handler class for action {action}")
+
         path = self.asset_helper.path_for(collection_id, action)
         _logger.info(
-            f"Scheduling handler {handler_class} for path {path} and patterns {patterns}"
+            f"Scheduling handler {handler_class.__name__} for path {path} and patterns {patterns}"
         )
         self.observer.schedule(
             handler_class(patterns=patterns).with_config(
                 self.org_config, collection_id
             ),
             recursive=True,
-            path=self.asset_helper.path_for(collection_id, action),
-        )
-
-    def _schedule_legacy_handlers(self):
-        _logger.info(
-            "Setting up watcher handlers for legacy action directories of organization %s",
-            self.organization_id,
-        )
-        patterns = ["*.jpg", "*.jpeg"]
-        self.observer.schedule(
-            AddHandler(patterns=patterns).with_config(self.org_config),
-            recursive=True,
-            path=self.asset_helper.legacy_path_for("add"),
-        )
-        self.observer.schedule(
-            StoreHandler(patterns=patterns).with_config(self.org_config),
-            recursive=True,
-            path=self.asset_helper.legacy_path_for("store"),
-        )
-        self.observer.schedule(
-            CustomHandler(patterns=patterns).with_config(self.org_config),
-            recursive=True,
-            path=self.asset_helper.legacy_path_for("custom"),
+            path=path,
         )
 
 
@@ -141,36 +141,36 @@ class OrganizationHandler(PatternMatchingEventHandler):
         return self
 
 
-class AddHandler(OrganizationHandler):
+class C2paAddHandler(OrganizationHandler):
     """Handles file changes for add action."""
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.add(event.src_path, self.org_config, self.collection_id)
+            _actions.c2pa_add(event.src_path, self.org_config, self.collection_id)
 
 
-class UpdateHandler(OrganizationHandler):
+class C2paUpdateHandler(OrganizationHandler):
     """Handles file changes for update action."""
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.update(event.src_path, self.org_config, self.collection_id)
+            _actions.c2pa_update(event.src_path, self.org_config, self.collection_id)
 
 
-class StoreHandler(OrganizationHandler):
+class C2paStoreHandler(OrganizationHandler):
     """Handles file changes for store action."""
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.store(event.src_path, self.org_config, self.collection_id)
+            _actions.c2pa_store(event.src_path, self.org_config, self.collection_id)
 
 
-class CustomHandler(OrganizationHandler):
+class C2paCustomHandler(OrganizationHandler):
     """Handles file changes for custom action."""
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.custom(event.src_path, self.org_config, self.collection_id)
+            _actions.c2pa_custom(event.src_path, self.org_config, self.collection_id)
 
 
 class ArchiveHandler(OrganizationHandler):
@@ -183,9 +183,9 @@ class ArchiveHandler(OrganizationHandler):
 
 # Mapping from action name to handler class
 ACTION_HANDLER = {
-    "add": AddHandler,
+    "c2pa-add": C2paAddHandler,
     "archive": ArchiveHandler,
-    "custom": CustomHandler,
-    "store": StoreHandler,
-    "update": UpdateHandler,
+    "c2pa-custom": C2paCustomHandler,
+    "c2pa-store": C2paStoreHandler,
+    "c2pa-update": C2paUpdateHandler,
 }

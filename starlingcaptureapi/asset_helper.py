@@ -102,30 +102,12 @@ class AssetHelper:
         self._init_collection_dirs()
 
         _logger.info(f"Initializing legacy action directories for {self.org_id}")
-        _file_util.create_dir(self.legacy_path_for("add"))
-        _file_util.create_dir(self.legacy_path_for("add", output=True))
-        _file_util.create_dir(self.legacy_path_for("store"))
-        _file_util.create_dir(self.legacy_path_for("store", output=True))
-        _file_util.create_dir(self.legacy_path_for("custom"))
-        _file_util.create_dir(self.legacy_path_for("custom", output=True))
-        # 'Create' files come via HTTP, there is no create folder
+        # 'Create' files come via HTTP, there are no "input" create folders
         _file_util.create_dir(self.legacy_path_for("create", output=True))
         _file_util.create_dir(self.legacy_path_for("create-proofmode", output=True))
 
     def get_assets_internal(self):
         return self.dir_internal_assets
-
-    def get_claims_internal(self):
-        return self.dir_internal_claims
-
-    def get_assets_internal_tmp(self):
-        return self.dir_internal_tmp
-
-    def get_assets_internal_create(self):
-        return self.dir_internal_create
-
-    def get_assets_internal_create_proofmode(self):
-        return self.dir_internal_create_proofmode
 
     def get_assets_create_output(self, subfolders=[]):
         return self._get_path_with_subfolders(
@@ -192,16 +174,15 @@ class AssetHelper:
             f"{action}-output" if output else action,
         )
 
+    def input_path_for(self, collection_id: str) -> str:
+        """Returns a full direction path for the input dir for this collection."""
+        return os.path.join(self._shared_collection_prefix(collection_id), "input")
+
     def path_for(self, collection_id: str, action: str, output: bool = False):
         """Retuns a full directory path for the given collection and action.
 
         Appends `-output` if output=True.
         """
-        # Backwards-compatibility workaround for missing collection_ids.
-        # Can be removed once legacy paths are no longer in use.
-        if collection_id is None:
-            return self.legacy_path_for(action, output=output)
-
         return os.path.join(
             self._shared_collection_prefix(collection_id),
             f"{action}-output" if output else action,
@@ -231,7 +212,10 @@ class AssetHelper:
                 raise ValueError(
                     f"Collection {coll_id} for org {self.org_id} is not filename safe"
                 )
+            _file_util.create_dir(self.input_path_for(coll_id))
             for action_name in coll_config.get("actions", {}).keys():
+                # This input path is a legacy path, and will be removed when all actions
+                # move to use the per-collection input directory
                 _file_util.create_dir(self.path_for(coll_id, action_name))
                 _file_util.create_dir(self.path_for(coll_id, action_name, output=True))
 

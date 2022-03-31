@@ -2,7 +2,6 @@ from .asset_helper import AssetHelper
 from .claim import Claim
 from .claim_tool import ClaimTool
 from .filecoin import Filecoin
-from .file_util import FileUtil
 from .iscn import Iscn
 from . import config, zip_util, crypto_util
 
@@ -39,7 +38,7 @@ class Actions:
             asset_fullpath: the local path to the asset file
             org_config: configuration dictionary for this organization
             collection_id: string with the unique collection identifier this
-                asset is in; might be None for legacy configurations
+                asset is in
 
         Returns:
             TODO
@@ -250,7 +249,7 @@ class Actions:
         )
         return internal_asset_file
 
-    def add(self, asset_fullpath, org_config, collection_id):
+    def c2pa_add(self, asset_fullpath, org_config, collection_id):
         """Process asset with add action.
         The provided asset file is added to the asset management system and renamed to its internal identifier in the add-output folder.
 
@@ -258,7 +257,7 @@ class Actions:
             asset_fullpath: the local path to the asset file
             org_config: configuration dictionary for this organization
             collection_id: string with the unique collection identifier this
-                asset is in; might be None for legacy configurations
+                asset is in
 
         Returns:
             the local path to the asset file in the internal directory
@@ -266,11 +265,11 @@ class Actions:
         asset_helper = AssetHelper(org_config.get("id"))
         return self._add(
             asset_fullpath,
-            asset_helper.path_for(collection_id, "add", output=True),
+            asset_helper.path_for(collection_id, "c2pa-add", output=True),
             asset_helper,
         )
 
-    def update(self, asset_fullpath, org_config, collection_id):
+    def c2pa_update(self, asset_fullpath, org_config, collection_id):
         """Process asset with update action.
         A new asset file is generated in the update-output folder with a claim that links it to a parent asset identified by its filename.
 
@@ -278,7 +277,7 @@ class Actions:
             asset_fullpath: the local path to the asset file
             org_config: configuration dictionary for this organization
             collection_id: string with the unique collection identifier this
-                asset is in; might be None for legacy configurations
+                asset is in
 
         Returns:
             the local path to the asset file in the internal directory
@@ -288,11 +287,11 @@ class Actions:
         return self._update(
             asset_fullpath,
             _claim.generate_update(org_config, collection_id),
-            asset_helper.path_for(collection_id, "update", output=True),
+            asset_helper.path_for(collection_id, "c2pa-update", output=True),
             asset_helper,
         )
 
-    def store(self, asset_fullpath, org_config, collection_id):
+    def c2pa_store(self, asset_fullpath, org_config, collection_id):
         """Process asset with store action.
         The provided asset stored on decentralized storage, then a new asset file is generated in the store-output folder with a storage claim.
 
@@ -300,7 +299,7 @@ class Actions:
             asset_fullpath: the local path to the asset file
             org_config: configuration dictionary for this organization
             collection_id: string with the unique collection identifier this
-                asset is in; might be None for legacy configurations
+                asset is in
 
         Returns:
             the local path to the asset file in the internal directory
@@ -316,10 +315,10 @@ class Actions:
         return self._update(
             added_asset,
             _claim.generate_store(ipfs_cid.organization_id),
-            AssetHelper(organization_id).path_for(collection_id, "store", output=True),
+            AssetHelper(organization_id).path_for(collection_id, "c2pa-store", output=True),
         )
 
-    def custom(self, asset_fullpath, org_config, collection_id):
+    def c2pa_custom(self, asset_fullpath, org_config, collection_id):
         """Process asset with custom action.
         A new asset file is generated in the custom-output folder with a claim that links it to a parent asset identified by its filename.
 
@@ -327,7 +326,7 @@ class Actions:
             asset_fullpath: the local path to the asset file
             org_config: configuration dictionary for this organization
             collection_id: string with the unique collection identifier this
-                asset is in; might be None for legacy configurations
+                asset is in
 
         Returns:
             the local path to the asset file in the internal directory
@@ -339,7 +338,7 @@ class Actions:
         added_asset = self._add(asset_fullpath, None)
 
         # Parse file name to get the search key.
-        file_name, file_extension = os.path.splitext(os.path.basename(added_asset))
+        file_name, _ = os.path.splitext(os.path.basename(added_asset))
 
         # Find custom assertions for file.
         custom_assertions = self._load_custom_assertions().get(file_name)
@@ -350,7 +349,7 @@ class Actions:
         return self._update(
             added_asset,
             _claim.generate_custom(custom_assertions),
-            asset_helper.path_for(collection_id, "custom", output=True),
+            asset_helper.path_for(collection_id, "c2pa-custom", output=True),
             asset_helper,
         )
 
