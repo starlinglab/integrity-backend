@@ -3,7 +3,6 @@ from .claim import Claim
 from .claim_tool import ClaimTool
 from .encrypted_archive import EncryptedArchive
 from .filecoin import Filecoin
-from .file_util import FileUtil
 from .iscn import Iscn
 from . import config
 
@@ -39,7 +38,7 @@ class Actions:
             asset_fullpath: the local path to the asset file
             org_config: configuration dictionary for this organization
             collection_id: string with the unique collection identifier this
-                asset is in; might be None for legacy configurations
+                asset is in
 
         Raises:
             Exception if errors are encountered during processing
@@ -152,7 +151,7 @@ class Actions:
             asset_fullpath: the local path to the asset file
             org_config: configuration dictionary for this organization
             collection_id: string with the unique collection identifier this
-                asset is in; might be None for legacy configurations
+                asset is in
 
         Returns:
             the local path to the asset file in the internal directory
@@ -172,7 +171,7 @@ class Actions:
             asset_fullpath: the local path to the asset file
             org_config: configuration dictionary for this organization
             collection_id: string with the unique collection identifier this
-                asset is in; might be None for legacy configurations
+                asset is in
 
         Returns:
             the local path to the asset file in the internal directory
@@ -194,7 +193,7 @@ class Actions:
             asset_fullpath: the local path to the asset file
             org_config: configuration dictionary for this organization
             collection_id: string with the unique collection identifier this
-                asset is in; might be None for legacy configurations
+                asset is in
 
         Returns:
             the local path to the asset file in the internal directory
@@ -221,7 +220,7 @@ class Actions:
             asset_fullpath: the local path to the asset file
             org_config: configuration dictionary for this organization
             collection_id: string with the unique collection identifier this
-                asset is in; might be None for legacy configurations
+                asset is in
 
         Returns:
             the local path to the asset file in the internal directory
@@ -233,7 +232,7 @@ class Actions:
         added_asset = self._add(asset_fullpath, None)
 
         # Parse file name to get the search key.
-        file_name, file_extension = os.path.splitext(os.path.basename(added_asset))
+        file_name, _ = os.path.splitext(os.path.basename(added_asset))
 
         # Find custom assertions for file.
         custom_assertions = self._load_custom_assertions().get(file_name)

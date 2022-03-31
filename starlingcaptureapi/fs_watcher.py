@@ -65,7 +65,6 @@ class FsWatcher:
 
     def watch(self):
         """Start file watching handlers."""
-        self._schedule_legacy_handlers()
         for collection_id, collection_config in self.org_config.get(
             "collections", {}
         ).items():
@@ -100,28 +99,6 @@ class FsWatcher:
             ),
             recursive=True,
             path=self.asset_helper.path_for(collection_id, action),
-        )
-
-    def _schedule_legacy_handlers(self):
-        _logger.info(
-            "Setting up watcher handlers for legacy action directories of organization %s",
-            self.organization_id,
-        )
-        patterns = ["*.jpg", "*.jpeg"]
-        self.observer.schedule(
-            C2paAddHandler(patterns=patterns).with_config(self.org_config),
-            recursive=True,
-            path=self.asset_helper.legacy_path_for("add"),
-        )
-        self.observer.schedule(
-            C2paStoreHandler(patterns=patterns).with_config(self.org_config),
-            recursive=True,
-            path=self.asset_helper.legacy_path_for("store"),
-        )
-        self.observer.schedule(
-            C2paCustomHandler(patterns=patterns).with_config(self.org_config),
-            recursive=True,
-            path=self.asset_helper.legacy_path_for("custom"),
         )
 
 
