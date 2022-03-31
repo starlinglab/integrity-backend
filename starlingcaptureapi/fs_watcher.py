@@ -87,9 +87,12 @@ class FsWatcher:
 
     def _schedule(self, collection_id: str, action: str, patterns: list[str]):
         handler_class = ACTION_HANDLER.get(action)
+        if handler_class is None:
+            raise ValueError(f"Could not find handler class for action {action}")
+
         path = self.asset_helper.path_for(collection_id, action)
         _logger.info(
-            f"Scheduling handler {handler_class} for path {path} and patterns {patterns}"
+            f"Scheduling handler {handler_class.__name__} for path {path} and patterns {patterns}"
         )
         self.observer.schedule(
             handler_class(patterns=patterns).with_config(
@@ -106,17 +109,17 @@ class FsWatcher:
         )
         patterns = ["*.jpg", "*.jpeg"]
         self.observer.schedule(
-            AddHandler(patterns=patterns).with_config(self.org_config),
+            C2paAddHandler(patterns=patterns).with_config(self.org_config),
             recursive=True,
             path=self.asset_helper.legacy_path_for("add"),
         )
         self.observer.schedule(
-            StoreHandler(patterns=patterns).with_config(self.org_config),
+            C2paStoreHandler(patterns=patterns).with_config(self.org_config),
             recursive=True,
             path=self.asset_helper.legacy_path_for("store"),
         )
         self.observer.schedule(
-            CustomHandler(patterns=patterns).with_config(self.org_config),
+            C2paCustomHandler(patterns=patterns).with_config(self.org_config),
             recursive=True,
             path=self.asset_helper.legacy_path_for("custom"),
         )
@@ -141,36 +144,36 @@ class OrganizationHandler(PatternMatchingEventHandler):
         return self
 
 
-class AddHandler(OrganizationHandler):
+class C2paAddHandler(OrganizationHandler):
     """Handles file changes for add action."""
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.add(event.src_path, self.org_config, self.collection_id)
+            _actions.c2pa_add(event.src_path, self.org_config, self.collection_id)
 
 
-class UpdateHandler(OrganizationHandler):
+class C2paUpdateHandler(OrganizationHandler):
     """Handles file changes for update action."""
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.update(event.src_path, self.org_config, self.collection_id)
+            _actions.c2pa_update(event.src_path, self.org_config, self.collection_id)
 
 
-class StoreHandler(OrganizationHandler):
+class C2paStoreHandler(OrganizationHandler):
     """Handles file changes for store action."""
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.store(event.src_path, self.org_config, self.collection_id)
+            _actions.c2pa_store(event.src_path, self.org_config, self.collection_id)
 
 
-class CustomHandler(OrganizationHandler):
+class C2paCustomHandler(OrganizationHandler):
     """Handles file changes for custom action."""
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.custom(event.src_path, self.org_config, self.collection_id)
+            _actions.c2pa_custom(event.src_path, self.org_config, self.collection_id)
 
 
 class ArchiveHandler(OrganizationHandler):
@@ -183,9 +186,9 @@ class ArchiveHandler(OrganizationHandler):
 
 # Mapping from action name to handler class
 ACTION_HANDLER = {
-    "add": AddHandler,
+    "c2pa-add": C2paAddHandler,
     "archive": ArchiveHandler,
-    "custom": CustomHandler,
-    "store": StoreHandler,
-    "update": UpdateHandler,
+    "c2pa-custom": C2paCustomHandler,
+    "c2pa-store": C2paStoreHandler,
+    "c2pa-update": C2paUpdateHandler,
 }

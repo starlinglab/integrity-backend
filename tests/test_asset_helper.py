@@ -36,9 +36,9 @@ def test_path_for(monkeypatch, tmp_path):
     monkeypatch.setattr(config, "SHARED_FILE_SYSTEM", tmp_path / "shared_dir")
 
     helper = asset_helper.AssetHelper("some-org")
-    assert helper.path_for("my-collection", "update").endswith(
-        "/shared_dir/some-org/my-collection/update"
+    assert helper.path_for("my-collection", "c2pa-update").endswith(
+        "/shared_dir/some-org/my-collection/c2pa-update"
     )
-    assert helper.path_for("my-collection", "update", output=True).endswith(
-        "/shared_dir/some-org/my-collection/update-output"
+    assert helper.path_for("my-collection", "c2pa-update", output=True).endswith(
+        "/shared_dir/some-org/my-collection/c2pa-update-output"
     )
