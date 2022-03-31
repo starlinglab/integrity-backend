@@ -4,7 +4,7 @@
       "id": "hyphacoop",
       "collections": [
         {
-          "id": "hypha-capture-test",
+          "id": "example-collection-hypha-capture",
           "asset_extensions": ["jpg", "jpeg"],
           "actions": [
             {
