@@ -4,7 +4,7 @@ from .claim_tool import ClaimTool
 from .filecoin import Filecoin
 from .file_util import FileUtil
 from .iscn import Iscn
-from . import config, zip_util
+from . import config, zip_util, crypto_util
 
 import datetime
 import json
@@ -137,7 +137,7 @@ class Actions:
         shutil.move(tmp_zip, final_zip)
 
         # Encrypt ZIP, and get those hashes
-        aes_key = None  # TODO
+        aes_key = crypto_util.get_key(action_config["encryption"]["key"])
         enc_zip = os.path.join(archive_dir, zip_sha + ".encrypted")
         file_util.encrypt(aes_key, final_zip, enc_zip)
 
