@@ -9,9 +9,9 @@ import sys
 import time
 
 
-from starlingcaptureapi import config, handlers
-from starlingcaptureapi.asset_helper import AssetHelper
-from starlingcaptureapi.fs_watcher import FsWatcher
+from integritybackend import config, handlers
+from integritybackend.asset_helper import AssetHelper
+from integritybackend.fs_watcher import FsWatcher
 
 
 _logger = logging.getLogger(__name__)
