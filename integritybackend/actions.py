@@ -54,12 +54,13 @@ class Actions:
 
         # Pull things out of the config
         collection_config = next(
-            (c for c in org_config["collections"] if c.get("id") == collection_id), None
+            (c for c in org_config["collections"] if org_config["collections"][c]['conf']['id'] == collection_id), None
         )
         if collection_config is None:
             raise Exception(
                 f"No collection in {org_config['id']} config with ID {collection_id}"
             )
+        collection_config=org_config["collections"][collection_config]['conf']
         action_config = next(
             (
                 a["params"]
