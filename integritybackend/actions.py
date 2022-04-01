@@ -112,8 +112,9 @@ class Actions:
             )
 
         # Extract content file
+        bundle_sha = os.path.splitext(content_filename)[0]
         tmp_dir = asset_helper.get_tmp_collection_dir(collection_id, "archive")
-        zip_dir = os.path.join(tmp_dir, content_sha)
+        zip_dir = os.path.join(tmp_dir, bundle_sha)
         extracted_content = os.path.join(zip_dir, content_filename)
         file_util.create_dir(zip_dir)
         zip_util.extract_file(tmp_zip, content_filename, extracted_content)
