@@ -28,12 +28,12 @@ def test_create_output_works_without_subfolders(monkeypatch, tmp_path):
 
 
 def test_path_for(monkeypatch, tmp_path):
-    monkeypatch.setattr(config, "SHARED_FILE_SYSTEM", tmp_path / "shared_dir")
+    monkeypatch.setattr(config, "INTERNAL_ASSET_STORE", tmp_path / "assets_dir")
 
     helper = asset_helper.AssetHelper("some-org")
     assert helper.path_for("my-collection", "c2pa-update").endswith(
-        "/shared_dir/some-org/my-collection/c2pa-update"
+        "/assets_dir/some-org/my-collection/action-c2pa-update"
     )
     assert helper.path_for("my-collection", "c2pa-update", output=True).endswith(
-        "/shared_dir/some-org/my-collection/c2pa-update-output"
+        "/assets_dir/some-org/my-collection/action-c2pa-update-output"
     )
