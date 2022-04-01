@@ -221,7 +221,7 @@ class FileUtil:
                 dec.write(cipher.decrypt(prev_data))
 
     @staticmethod
-    def digest_cidv1(self, file_path):
+    def digest_cidv1(file_path):
         """Generates the CIDv1 of a file, as determined by ipfs add.
 
         Args:
