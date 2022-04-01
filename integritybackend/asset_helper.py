@@ -15,14 +15,18 @@ class AssetHelper:
     Directory structure overview:
     * config.INTERNAL_ASSET_STORE:
       - internal-only directory tree
+      - used for both input and output location of assets (i.e. files) that we
+        execute actions on
+      - organized by organization, by collection and by action
       - includes assets for permanent storage, and also temporary directories
         for intermediate working files
-      - organized per organization
+      - some legacy action folders are still in use, which are not organized by
+        collection
     * config.SHARED_FILE_SYSTEM
       - directory tree that is shared with external clients
       - used for both input and output location of assets (i.e. files) that we
         execute actions on
-      - organized by organization, by collection and by action
+      - organized per organization
       - action-specific folders might be further organized as relevant for that
         action; for example, the output of the create action is organized by
         author name and date
@@ -31,21 +35,21 @@ class AssetHelper:
 
     Example directory trees:
 
-    assets_dir/
+    assets_dir
     `-- hyphacoop-org
-        |-- assets
-        |-- claims
-        |-- create
-        |-- create-proofmode
-        `-- tmp
+        |-- tmp
+        |-- assets (legacy)
+        |-- claims (legacy)
+        |-- create (legacy)
+        |-- create-proofmode (legacy)
+        `-- mycelium-collection
+            |-- input
+            `-- action-archive
 
-    shared_dir/
+    shared_dir
     `-- hyphacoop-org
         |-- add  # legacy path, deprecated in favor of per-collection directories
         |-- add-output # legacy path, deprecated in favor of per-collection directories
-        |-- mycelium-collection
-        |   |-- update
-        |   `-- update-output
     """
 
     def __init__(self, organization_id):
@@ -164,8 +168,8 @@ class AssetHelper:
     def get_archive_dir(self, collection_id):
         return os.path.join(self.internal_prefix, collection_id, "action-archive")
 
-    def _shared_collection_prefix(self, collection_id: str) -> str:
-        return os.path.join(self.shared_prefix, collection_id)
+    def _collection_prefix(self, collection_id: str) -> str:
+        return os.path.join(self.internal_prefix, collection_id)
 
     def legacy_path_for(self, action: str, output: bool = False) -> str:
         """Returns a full directory path for the given action."""
@@ -176,7 +180,7 @@ class AssetHelper:
 
     def input_path_for(self, collection_id: str) -> str:
         """Returns a full direction path for the input dir for this collection."""
-        return os.path.join(self._shared_collection_prefix(collection_id), "input")
+        return os.path.join(self._collection_prefix(collection_id), "input")
 
     def path_for(self, collection_id: str, action: str, output: bool = False):
         """Retuns a full directory path for the given collection and action.
@@ -184,8 +188,8 @@ class AssetHelper:
         Appends `-output` if output=True.
         """
         return os.path.join(
-            self._shared_collection_prefix(collection_id),
-            f"{action}-output" if output else action,
+            self._collection_prefix(collection_id),
+            f"action-{action}-output" if output else f"action-{action}",
         )
 
     def _filename_safe(self, filename):
