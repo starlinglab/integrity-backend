@@ -109,7 +109,6 @@ class FsWatcher:
         if handler_class is None:
             raise ValueError(f"Could not find handler class for action {action}")
 
-        path = self.asset_helper.path_for(collection_id, action)
         _logger.info(
             f"Scheduling handler {handler_class.__name__} for path {path} and patterns {patterns}"
         )
