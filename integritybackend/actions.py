@@ -1,6 +1,7 @@
 from .asset_helper import AssetHelper
 from .claim import Claim
 from .claim_tool import ClaimTool
+from .file_util import FileUtil
 from .filecoin import Filecoin
 from .iscn import Iscn
 from . import config, zip_util, crypto_util
