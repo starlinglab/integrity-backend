@@ -65,7 +65,7 @@ class OrganizationConfig:
         return self.config.keys()
 
     def get(self, org_id):
-        """Gets configuration dictionary for an org id."""
+        """Gets configuration dictionary for an org."""
         if org_id in self.config:
             return self.config.get(org_id)
         else:
@@ -80,7 +80,7 @@ class OrganizationConfig:
             raise Exception(f"No collections defined in {org_id}")
 
     def get_collection(self, org_id, collection_id):
-        """Gets specific collection."""
+        """Gets specific collection for an org."""
         org_collections = self.get_collections(org_id)
         collection_config = next(
             (
@@ -91,29 +91,29 @@ class OrganizationConfig:
             None,
         )
         if collection_config is None:
-            raise Exception(f"No collection in {org_id} config with ID {collection_id}")
+            raise Exception(f"No collection in {org_id} with ID {collection_id}")
         return collection_config.get("conf")
 
     def get_actions(self, org_id, collection_id):
-        """Gets action array for an org id and collection id pair."""
+        """Gets action array for a collection."""
         collection_conf = self.get_collection(org_id, collection_id)
         org_dict = self.get(org_id)
         if "actions" in collection_conf:
             return collection_conf.get("actions")
         else:
             raise Exception(
-                f"No actions defined in {org_id} collection {collection_id}"
+                f"No actions defined for {org_id}/{collection_id}"
             )
 
     def get_action(self, org_id, collection_id, action):
-        """Gets specific action."""
+        """Gets specific action for a collection."""
         collection_conf = self.get_actions(org_id, collection_id)
         action_config = next(
             (c for c in collection_conf if c.get("name") == action), None
         )
         if action_config is None:
             raise Exception(
-                f"No collection in {org_id} config with ID {collection_id} for action {action}"
+                f"No action in {org_id}/{collection_id} with action {action}"
             )
         return action_config.get("params")
 
