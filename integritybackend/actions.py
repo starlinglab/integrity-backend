@@ -61,6 +61,11 @@ class Actions:
             org_id, collection_id, "archive"
         )
 
+        if action_config["encryption"]["algo"] != "aes-256-cbc":
+            raise Exception(
+                f"Encryption algo {action_config['encryption']['algo']} not implemented"
+            )
+
         # Verify ZIP name
         input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
         if input_zip_sha != file_util.digest_sha256(zip_path):
