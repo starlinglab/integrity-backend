@@ -66,7 +66,56 @@ class OrganizationConfig:
 
     def get(self, org_id):
         """Gets configuration dictionary for an org id."""
-        return self.config.get(org_id)
+        if org_id in self.config:
+            return self.config.get(org_id)
+        else:
+            raise Exception(f"No organization with ID {org_id}")
+
+    def get_collections(self, org_id):
+        """Gets collection array for an org id."""
+        org_dict = self.get(org_id)
+        if "collections" in org_dict:
+            return org_dict.get("collections")
+        else:
+            raise Exception(f"No collections defined in {org_id}")
+
+    def get_collection(self, org_id, collection_id):
+        """Gets specific collection."""
+        org_collections = self.get_collections(org_id)
+        collection_config = next(
+            (
+                c
+                for c in org_collections.values()
+                if c.get("conf").get("id") == collection_id
+            ),
+            None,
+        )
+        if collection_config is None:
+            raise Exception(f"No collection in {org_id} config with ID {collection_id}")
+        return collection_config.get("conf")
+
+    def get_actions(self, org_id, collection_id):
+        """Gets action array for an org id and collection id pair."""
+        collection_conf = self.get_collection(org_id, collection_id)
+        org_dict = self.get(org_id)
+        if "actions" in collection_conf:
+            return collection_conf.get("actions")
+        else:
+            raise Exception(
+                f"No actions defined in {org_id} collection {collection_id}"
+            )
+
+    def get_action(self, org_id, collection_id, action):
+        """Gets specific action."""
+        collection_conf = self.get_actions(org_id, collection_id)
+        action_config = next(
+            (c for c in collection_conf if c.get("name") == action), None
+        )
+        if action_config is None:
+            raise Exception(
+                f"No collection in {org_id} config with ID {collection_id} for action {action}"
+            )
+        return action_config.get("params")
 
     def _load_config_from_file(self, config_file):
         with open(config_file, "r") as f:

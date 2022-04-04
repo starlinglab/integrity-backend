@@ -52,30 +52,14 @@ class Actions:
         asset_helper = AssetHelper(org_config["id"])
         file_util = FileUtil()
 
-        # Pull things out of the config
-        collection_config = next(
-            (c for c in org_config["collections"] if org_config["collections"][c]['conf']['id'] == collection_id), None
-        )
-        if collection_config is None:
-            raise Exception(
-                f"No collection in {org_config['id']} config with ID {collection_id}"
-            )
-        collection_config=org_config["collections"][collection_config]['conf']
-        action_config = next(
-            (
-                a["params"]
-                for a in collection_config["actions"]
-                if a.get("name") == "archive"
-            ),
-            None,
-        )
-        if action_config is None:
-            raise Exception(f"No archive action in collection {collection_id}")
+        org_id = org_config["id"]
 
-        if action_config["encryption"]["algo"] != "aes-256-cbc":
-            raise Exception(
-                f"Encryption algo {action_config['encryption']['algo']} not implemented"
-            )
+        collection_config = config.ORGANIZATION_CONFIG.get_collection(
+            org_id, collection_id
+        )
+        action_config = config.ORGANIZATION_CONFIG.get_action(
+            org_id, collection_id, "archive"
+        )
 
         # Verify ZIP name
         input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
@@ -318,7 +302,9 @@ class Actions:
         return self._update(
             added_asset,
             _claim.generate_store(ipfs_cid.organization_id),
-            AssetHelper(organization_id).path_for(collection_id, "c2pa-store", output=True),
+            AssetHelper(organization_id).path_for(
+                collection_id, "c2pa-store", output=True
+            ),
         )
 
     def c2pa_custom(self, asset_fullpath, org_config, collection_id):
