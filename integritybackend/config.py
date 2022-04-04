@@ -119,17 +119,17 @@ class OrganizationConfig:
         else:
             return []
 
-    def get_action(self, org_id, collection_id, action):
+    def get_action(self, org_id, collection_id, action_name):
         """Gets specific action for a collection."""
         collection_conf = self.get_actions(org_id, collection_id)
-        action_config = next(
-            (c for c in collection_conf if c.get("name") == action), None
+        action = next(
+            (c for c in collection_conf if c.get("name") == action_name), None
         )
-        if action_config is None:
+        if action is None:
             raise Exception(
-                f"No action in {org_id}/{collection_id} with action {action}"
+                f"No action in {org_id}/{collection_id} with action {action_name}"
             )
-        return action_config
+        return action
 
     def _load_config_from_file(self, config_file):
         with open(config_file, "r") as f:
