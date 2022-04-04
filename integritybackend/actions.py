@@ -57,9 +57,11 @@ class Actions:
         collection_config = config.ORGANIZATION_CONFIG.get_collection(
             org_id, collection_id
         )
-        action_config = config.ORGANIZATION_CONFIG.get_action(
+        action = config.ORGANIZATION_CONFIG.get_action(
             org_id, collection_id, "archive"
         )
+
+        action_config = action.get('params')
 
         if action_config["encryption"]["algo"] != "aes-256-cbc":
             raise Exception(

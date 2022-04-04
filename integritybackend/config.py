@@ -72,9 +72,24 @@ class OrganizationConfig:
         else:
             raise Exception(f"No organization with ID {org_id}")
 
+    def get_org(self, org_id):
+        """Gets configuration dictionary for an org."""
+        org_config = next(
+            (
+                c
+                for c in self.json_config.get("organizations")
+                if c.get("id") == org_id
+            ),
+            None,
+        )        
+        if org_config == None:
+            raise Exception(f"No organization with ID {org_id}")            
+        else:
+            return org_config           
+
     def get_collections(self, org_id):
         """Gets collection array for an org id."""
-        org_dict = self.get(org_id)
+        org_dict = self.get_org(org_id)
         if "collections" in org_dict:
             return org_dict.get("collections")
         else:
@@ -86,14 +101,14 @@ class OrganizationConfig:
         collection_config = next(
             (
                 c
-                for c in org_collections.values()
-                if c.get("conf").get("id") == collection_id
+                for c in org_collections
+                if c.get("id") == collection_id
             ),
             None,
         )
         if collection_config is None:
             raise Exception(f"No collection in {org_id} with ID {collection_id}")
-        return collection_config.get("conf")
+        return collection_config
 
     def get_actions(self, org_id, collection_id):
         """Gets action array for a collection."""
@@ -116,7 +131,7 @@ class OrganizationConfig:
             raise Exception(
                 f"No action in {org_id}/{collection_id} with action {action}"
             )
-        return action_config.get("params")
+        return action_config
 
     def _load_config_from_file(self, config_file):
         with open(config_file, "r") as f:
