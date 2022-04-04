@@ -93,7 +93,7 @@ class OrganizationConfig:
         if "collections" in org_dict:
             return org_dict.get("collections")
         else:
-            raise Exception(f"No collections defined in {org_id}")
+            return []
 
     def get_collection(self, org_id, collection_id):
         """Gets specific collection for an org."""
@@ -117,9 +117,7 @@ class OrganizationConfig:
         if "actions" in collection_conf:
             return collection_conf.get("actions")
         else:
-            raise Exception(
-                f"No actions defined for {org_id}/{collection_id}"
-            )
+            return []
 
     def get_action(self, org_id, collection_id, action):
         """Gets specific action for a collection."""
