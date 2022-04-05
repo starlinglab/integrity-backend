@@ -3,11 +3,14 @@ from .crypto_util import AESCipher
 
 from Crypto.Cipher import AES
 from hashlib import sha256, md5
+from datetime import datetime, timezone
 
 import errno
+import json
 import logging
 import os
 import re
+import requests
 import subprocess
 import uuid
 import zipfile
@@ -158,6 +161,65 @@ class FileUtil:
                 f"'ots stamp' failed with code {proc.returncode} and output:\n\n{proc.stderr.decode()}"
             )
 
+    @staticmethod
+    def authsign_sign(data_hash):
+        """
+        Sign the provided hash with authsign.
+        Args:
+            data_hash: hash of data as a hexadecimal string
+        Raises:
+            Any errors with the request
+        Returns:
+            The response as a string
+        """
+
+        dt = datetime.now()
+        if isinstance(dt, datetime):
+            # Convert to ISO format string
+            dt = (
+                dt.astimezone(timezone.utc)
+                .replace(tzinfo=None)
+                .isoformat(timespec="seconds")
+                + "Z"
+            )
+
+        headers = {} 
+        if config.AUTHSIGN_TOKEN != "":
+            headers={"Authorization": f"bearer {config.AUTHSIGN_TOKEN}"}
+                        
+        r = requests.post(
+            config.AUTHSIGN_URL + "/sign",
+            headers=headers,
+            json={"hash": data_hash, "created": dt},
+        )
+        #print(r.text)
+        r.raise_for_status()
+
+        return r.text
+
+    def authsign_verify(resp):
+        """
+        Verify the provided signed JSON with authsign.
+        Args:
+            resp: Python object or JSON string
+        Raises:
+            any unexpected server responses
+        Returns:
+            bool indicating whether the verification was successful or not
+        """
+
+        if not isinstance(resp, str):
+            resp = json.dumps(resp)
+
+        r = requests.post(config.AUTHSIGN_URL + "/verify", data=resp)
+        if r.status_code == 200:
+            return True
+        elif r.status_code == 400:
+            return False
+
+        # Unexpected status code
+        r.raise_for_status()
+        
     def encrypt(self, key, file_path, enc_file_path):
         """Writes an encrypted version of the file to disk.
 
@@ -221,7 +283,7 @@ class FileUtil:
                 dec.write(cipher.decrypt(prev_data))
 
     @staticmethod
-    def digest_cidv1(self, file_path):
+    def digest_cidv1(file_path):
         """Generates the CIDv1 of a file, as determined by ipfs add.
 
         Args:

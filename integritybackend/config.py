@@ -36,6 +36,10 @@ OTS_CLIENT_PATH = os.environ.get("OTS_CLIENT_PATH")
 ISCN_SERVER = os.environ.get("ISCN_SERVER")
 
 NUMBERS_API_KEY = os.environ.get("NUMBERS_API_KEY")
+NUMBERS_API_URL = os.environ.get("NUMBERS_API_URL")
+
+AUTHSIGN_URL = os.environ.get("AUTHSIGN_URL")
+AUTHSIGN_TOKEN = os.environ.get("AUTHSIGN_TOKEN","")
 
 KEY_STORE = os.environ.get("KEY_STORE")
 
@@ -65,8 +69,70 @@ class OrganizationConfig:
         return self.config.keys()
 
     def get(self, org_id):
-        """Gets configuration dictionary for an org id."""
-        return self.config.get(org_id)
+        """Gets configuration dictionary for an org."""
+        if org_id in self.config:
+            return self.config.get(org_id)
+        else:
+            raise Exception(f"No organization with ID {org_id}")
+
+    def get_org(self, org_id):
+        """Gets configuration dictionary for an org."""
+        org_config = next(
+            (
+                c
+                for c in self.json_config.get("organizations")
+                if c.get("id") == org_id
+            ),
+            None,
+        )        
+        if org_config == None:
+            raise Exception(f"No organization with ID {org_id}")            
+        else:
+            return org_config           
+
+    def get_collections(self, org_id):
+        """Gets collection array for an org id."""
+        org_dict = self.get_org(org_id)
+        if "collections" in org_dict:
+            return org_dict.get("collections")
+        else:
+            return []
+
+    def get_collection(self, org_id, collection_id):
+        """Gets specific collection for an org."""
+        org_collections = self.get_collections(org_id)
+        collection_config = next(
+            (
+                c
+                for c in org_collections
+                if c.get("id") == collection_id
+            ),
+            None,
+        )
+        if collection_config is None:
+            raise Exception(f"No collection in {org_id} with ID {collection_id}")
+        return collection_config
+
+    def get_actions(self, org_id, collection_id):
+        """Gets action array for a collection."""
+        collection_conf = self.get_collection(org_id, collection_id)
+        org_dict = self.get(org_id)
+        if "actions" in collection_conf:
+            return collection_conf.get("actions")
+        else:
+            return []
+
+    def get_action(self, org_id, collection_id, action_name):
+        """Gets specific action for a collection."""
+        collection_conf = self.get_actions(org_id, collection_id)
+        action = next(
+            (c for c in collection_conf if c.get("name") == action_name), None
+        )
+        if action is None:
+            raise Exception(
+                f"No action in {org_id}/{collection_id} with action {action_name}"
+            )
+        return action
 
     def _load_config_from_file(self, config_file):
         with open(config_file, "r") as f:

@@ -8,8 +8,7 @@ _logger = logging.getLogger(__name__)
 
 file_util = FileUtil()
 
-_COMMIT_URL = "https://node.numbersprotocol.io/version-test/api/1.1/wf/commit"
-
+_COMMIT_URL = config.NUMBERS_API_URL + "/commit"
 
 def commit(asset, asset_tree, author):
     """Register a commit to the integrity blockchain.
