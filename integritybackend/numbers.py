@@ -8,7 +8,7 @@ _logger = logging.getLogger(__name__)
 
 file_util = FileUtil()
 
-_COMMIT_URL_MAINNET = "https://node.numbersprotocol.io/api/1.1/wf"
+_COMMIT_URL_MAINNET = "https://node.numbersprotocol.io/api/1.1/wf/commit"
 _COMMIT_URL_TESTNET = "https://node.numbersprotocol.io/version-test/api/1.1/wf/commit"
 if (config.NUMBERS_API_NETWORK == "main"):
     _COMMIT_URL = _COMMIT_URL_MAINNET
