@@ -1,14 +1,15 @@
 from datetime import datetime, timezone
+
 import copy
 import json
-import logging
 import os
 
 from . import config
 from .exif import Exif
 from .geocoder import Geocoder
+from .log_helper import LogHelper
 
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 
 
 def _load_template(filename):

@@ -1,5 +1,6 @@
 from . import config
 from .crypto_util import AESCipher
+from .log_helper import LogHelper
 
 from Crypto.Cipher import AES
 from hashlib import sha256, md5
@@ -7,7 +8,6 @@ from datetime import datetime, timezone
 
 import errno
 import json
-import logging
 import os
 import re
 import requests
@@ -15,7 +15,7 @@ import subprocess
 import uuid
 import zipfile
 
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 
 
 BUFFER_SIZE = 32 * 1024  # 32 KiB

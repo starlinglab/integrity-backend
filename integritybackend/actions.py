@@ -4,11 +4,12 @@ from .claim_tool import ClaimTool
 from .file_util import FileUtil
 from .filecoin import Filecoin
 from .iscn import Iscn
+from .log_helper import LogHelper
+from .numbers import Numbers
 from . import config, zip_util, crypto_util
 
 import datetime
 import json
-import logging
 import os
 import shutil
 import time
@@ -17,7 +18,7 @@ import time
 _claim = Claim()
 _claim_tool = ClaimTool()
 _filecoin = Filecoin()
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 
 
 class Actions:
@@ -140,7 +141,7 @@ class Actions:
         os.rename(tmp_zip, archive_zip)
         _logger.info(f"Archive zip generated: {archive_zip}")
 
-        # Encrypt ZIP, and get those hashes
+        # Encrypt archive ZIP
         aes_key = crypto_util.get_key(action_params["encryption"]["key"])
         tmp_encrypted_zip = os.path.join(archive_dir, zip_sha + ".encrypted")
         file_util.encrypt(aes_key, archive_zip, tmp_encrypted_zip)
@@ -150,12 +151,13 @@ class Actions:
         enc_zip_md5 = file_util.digest_md5(tmp_encrypted_zip)
         enc_zip_cid = file_util.digest_cidv1(tmp_encrypted_zip)
 
-        # Rename encrypted zip to SHA-256 of itself
+        # Rename encrypted ZIP to SHA-256 of itself
         encrypted_zip = os.path.join(archive_dir, enc_zip_sha + ".encrypted")
         os.rename(tmp_encrypted_zip, encrypted_zip)
         _logger.info(f"Encrypted zip generated: {encrypted_zip}")
 
-        # TODO: step 7 and 8
+        # TODO: Register encrypted ZIP on Numbers Protocol
+        # TODO: Register encrypted ZIP on ISCN
         # Iscn.register_archive(path)
 
     def create(self, asset_fullpath, jwt_payload, meta):

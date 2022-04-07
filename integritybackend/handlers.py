@@ -1,14 +1,15 @@
 from contextlib import contextmanager
 
 from .actions import Actions
+from .log_helper import LogHelper
 from .multipart import Multipart
 
 from aiohttp import web
 
-import logging
 import traceback
 
-_logger = logging.getLogger(__name__)
+
+_logger = LogHelper.getLogger()
 
 
 async def create(request):

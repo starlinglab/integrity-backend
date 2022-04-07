@@ -1,19 +1,19 @@
 from . import config
 from .actions import Actions
 from .asset_helper import AssetHelper
+from .log_helper import LogHelper
 
 from contextlib import contextmanager
 
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-import logging
 import multiprocessing
 import time
 import traceback
 
 _actions = Actions()
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 
 
 @contextmanager
@@ -68,7 +68,7 @@ class FsWatcher:
         for collection_id, collection_config in self.org_config.get(
             "collections", {}
         ).items():
-            # When all actions are harmonized to watch the input directory and
+            # When all actions are harmonized to watch the input directory and
             # *.zip patterns, it might make sense to refactor the watchers to
             # have one watcher per collection. This watcher would watch the input folder
             # and dispatch the file for processing in parallel by all the

@@ -1,12 +1,11 @@
-import logging
-
-from .file_util import FileUtil
 from . import config
+from .file_util import FileUtil
+from .log_helper import LogHelper
 
 import os
 
 _file_util = FileUtil()
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 
 
 class AssetHelper:
