@@ -1,9 +1,9 @@
 from . import config
+from .log_helper import LogHelper
 
-import logging
 import requests
 
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 _REGISTER = f"{config.ISCN_SERVER}/iscn/new/"
 
 

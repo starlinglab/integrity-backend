@@ -1,12 +1,11 @@
-import logging
-
-from .file_util import FileUtil
 from . import config
+from .file_util import FileUtil
+from .log_helper import LogHelper
 
 import os
 
 _file_util = FileUtil()
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 
 
 class AssetHelper:
@@ -123,9 +122,6 @@ class AssetHelper:
             self.dir_create_proofmode_output, subfolders=subfolders
         )
 
-    def get_tmp_collection_dir(self, collection_id, action):
-        return os.path.join(self.dir_internal_tmp, collection_id + "-" + action)
-
     def get_tmp_file_fullpath(self, file_extension):
         return os.path.join(
             self.dir_internal_tmp, _file_util.generate_uuid() + file_extension
@@ -165,32 +161,35 @@ class AssetHelper:
             self.dir_internal_claims, _file_util.digest_sha256(from_file) + ".json"
         )
 
-    def get_archive_dir(self, collection_id):
-        return os.path.join(self.internal_prefix, collection_id, "action-archive")
-
-    def _collection_prefix(self, collection_id: str) -> str:
-        return os.path.join(self.internal_prefix, collection_id)
-
-    def legacy_path_for(self, action: str, output: bool = False) -> str:
+    def legacy_path_for(self, action_name: str, output: bool = False) -> str:
         """Returns a full directory path for the given action."""
         return os.path.join(
             self.shared_prefix,
-            f"{action}-output" if output else action,
+            f"{action_name}-output" if output else action_name,
         )
 
     def input_path_for(self, collection_id: str) -> str:
         """Returns a full direction path for the input dir for this collection."""
         return os.path.join(self._collection_prefix(collection_id), "input")
 
-    def path_for(self, collection_id: str, action: str, output: bool = False):
+    def path_for(self, collection_id: str, action_name: str, output: bool = False):
         """Retuns a full directory path for the given collection and action.
 
         Appends `-output` if output=True.
         """
         return os.path.join(
             self._collection_prefix(collection_id),
-            f"action-{action}-output" if output else f"action-{action}",
+            f"action-{action_name}-output" if output else f"action-{action_name}",
         )
+
+    def get_action_dir(self, collection_id, action_name):
+        return os.path.join(self.internal_prefix, collection_id, f"action-{action_name}")
+
+    def get_tmp_action_dir(self, collection_id, action_name):
+        return os.path.join(self.dir_internal_tmp, collection_id, f"action-{action_name}")
+
+    def _collection_prefix(self, collection_id: str) -> str:
+        return os.path.join(self.internal_prefix, collection_id)
 
     def _filename_safe(self, filename):
         return filename.lower().replace(" ", "-").strip()

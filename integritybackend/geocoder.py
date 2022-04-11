@@ -1,8 +1,7 @@
 import geocoder
-import logging
+from .log_helper import LogHelper
 
-
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 
 
 class Geocoder:

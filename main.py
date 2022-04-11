@@ -1,7 +1,6 @@
 from aiohttp import web
 from aiohttp_jwt import JWTMiddleware
 
-import logging
 import multiprocessing
 import os
 import signal
@@ -12,9 +11,10 @@ import time
 from integritybackend import config, handlers
 from integritybackend.asset_helper import AssetHelper
 from integritybackend.fs_watcher import FsWatcher
+from integritybackend.log_helper import LogHelper
 
 
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 _procs = list()
 
 
@@ -47,17 +47,7 @@ def kill_processes(procs):
             _logger.info("Process %s [%s] is terminated" % (proc.pid, proc.name))
 
 
-def configure_logging():
-    logging.basicConfig(
-        stream=sys.stdout,
-        level=logging.INFO,
-        format="[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s: %(message)s",
-        datefmt="%Y-%m-%dT%H:%M:%S%z",
-    )
-
-
 def start_api_server():
-    configure_logging()
     app = web.Application(
         middlewares=[
             JWTMiddleware(
@@ -72,18 +62,14 @@ def start_api_server():
 
 
 if __name__ == "__main__":
-
     signal.signal(signal.SIGINT, signal_handler)
-    configure_logging()
 
     # Configure asset directories.
     for org_id in config.ORGANIZATION_CONFIG.all_orgs():
         AssetHelper(org_id).init_dirs()
 
     # Start up processes for services.
-
     _procs = FsWatcher.init_all(config.ORGANIZATION_CONFIG)
-
     proc_api_server = multiprocessing.Process(
         name="api_server", target=start_api_server
     )

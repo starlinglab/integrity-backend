@@ -1,10 +1,10 @@
 from .asset_helper import AssetHelper
+from .log_helper import LogHelper
 
 import json
-import logging
 import shutil
 
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 
 
 class Multipart:

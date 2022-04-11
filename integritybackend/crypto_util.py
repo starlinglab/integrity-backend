@@ -1,9 +1,9 @@
-import logging
 import os
 from Crypto.Cipher import AES
 from .config import KEY_STORE
+from .log_helper import LogHelper
 
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 
 
 def new_aes_key() -> bytes:

@@ -1,10 +1,10 @@
 from . import config
+from .log_helper import LogHelper
 
 import json
-import logging
 import subprocess
 
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 
 
 class ClaimTool:
