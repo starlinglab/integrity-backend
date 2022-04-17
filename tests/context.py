@@ -13,4 +13,5 @@ from integritybackend import exif
 from integritybackend import file_util
 from integritybackend import geocoder
 from integritybackend import iscn
+from integritybackend import numbers
 from integritybackend import zip_util

@@ -21,6 +21,11 @@ geocoder = "~=1.38"
 # For date parsing and manipulation
 python-dateutil = "~=2.8"
 pycryptodome = "~=3.14.1"
+# For MIME types
+python-magic = "~=0.4.25"
+# For Ethereum signature
+web3 = "~=5.22.0"
+eth-account = "~=0.5.5"
 
 [dev-packages]
 ### Development-only packages ###
