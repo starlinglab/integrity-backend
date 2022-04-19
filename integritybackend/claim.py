@@ -45,8 +45,8 @@ class Claim:
 
         Args:
             jwt_payload: a dictionary with the data we got from the request's JWT payload
-            data: dictionary with the 'meta' and 'signature' sections of the request
-                  'meta' is required
+            data: dictionary with the 'meta', 'meta_raw' and 'signature'
+                  sections of the request
 
         Returns:
             a dictionary containing the 'create' claim data

@@ -6,7 +6,7 @@ from .filecoin import Filecoin
 from .iscn import Iscn
 from .log_helper import LogHelper
 from .numbers import Numbers
-from . import config, zip_util, crypto_util
+from . import config, zip_util, crypto_util, signature
 
 import datetime
 import json
@@ -55,13 +55,9 @@ class Actions:
         asset_helper = AssetHelper(org_id)
         file_util = FileUtil()
 
-        collection = config.ORGANIZATION_CONFIG.get_collection(
-            org_id, collection_id
-        )
-        action = config.ORGANIZATION_CONFIG.get_action(
-            org_id, collection_id, "archive"
-        )
-        action_params = action.get('params')
+        collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
+        action = config.ORGANIZATION_CONFIG.get_action(org_id, collection_id, "archive")
+        action_params = action.get("params")
         if action_params["encryption"]["algo"] != "aes-256-cbc":
             raise Exception(
                 f"Encryption algo {action_params['encryption']['algo']} not implemented"
@@ -70,9 +66,7 @@ class Actions:
         # Verify ZIP name
         input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
         if input_zip_sha != file_util.digest_sha256(zip_path):
-            raise Exception(
-                f"SHA-256 of ZIP does not match file name: {zip_path}"
-            )
+            raise Exception(f"SHA-256 of ZIP does not match file name: {zip_path}")
 
         # Copy ZIP
         archive_dir = asset_helper.get_action_dir(collection_id, "archive")
@@ -99,9 +93,13 @@ class Actions:
             )
         content_sha_unverified = os.path.splitext(content_filename)[0]
         if f"{content_sha_unverified}-meta-content.json" not in zip_listing:
-            raise Exception(f"ZIP at {zip_path} has no content metadata file: {zip_listing}")
+            raise Exception(
+                f"ZIP at {zip_path} has no content metadata file: {zip_listing}"
+            )
         if f"{content_sha_unverified}-meta-recorder.json" not in zip_listing:
-            raise Exception(f"ZIP at {zip_path} has no recorder metadata file: {zip_listing}")
+            raise Exception(
+                f"ZIP at {zip_path} has no recorder metadata file: {zip_listing}"
+            )
 
         # Extract content file
         tmp_dir = asset_helper.get_tmp_action_dir(collection_id, "archive")
@@ -160,14 +158,15 @@ class Actions:
         # TODO: Register encrypted ZIP on ISCN
         # Iscn.register_archive(path)
 
-    def create(self, asset_fullpath, jwt_payload, meta):
+    def create(self, asset_fullpath, jwt_payload, data):
         """Process asset with create action.
         A new asset file is generated in the create-output folder with an original creation claim.
 
         Args:
             asset_fullpath: the local path to the asset file
             jwt_payload: a JWT payload containing metadata
-            meta: dictionary with the 'meta' section of the incoming multipart request
+            data: dictionary with the 'meta', 'meta_raw', and 'signature'
+                  sections of the request
 
         Returns:
             the local path to the asset file in the internal directory
@@ -175,13 +174,23 @@ class Actions:
         Raises:
             Exception if errors are encountered during processing
         """
+
+        if data.get("meta") is None:
+            raise ValueError("Meta must be present, but got None!")
+
+        # First verify the data
+        if not signature.verify_create_hashes(asset_fullpath, data):
+            raise Exception("Hashes did not match actual asset hash")
+        if not signature.verify_all(data["meta_raw"], data["signature"]):
+            raise Exception("Not all signatures verified")
+
         asset_helper = AssetHelper.from_jwt(jwt_payload)
         # Create temporary files to work with.
         tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
         tmp_claim_file = asset_helper.get_tmp_file_fullpath(".json")
 
         # Inject create claim and read back from file.
-        claim = _claim.generate_create(jwt_payload, meta)
+        claim = _claim.generate_create(jwt_payload, data)
         shutil.copy2(asset_fullpath, tmp_asset_file)
         _claim_tool.run_claim_inject(claim, tmp_asset_file, None)
         _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)

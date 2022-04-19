@@ -9,6 +9,7 @@ _logger = LogHelper.getLogger()
 
 class Multipart:
     """Handles incoming multi-part requests."""
+
     def __init__(self, request):
         self.request = request
         self.asset_helper = AssetHelper.from_jwt(self.request.get("jwt_payload"))
@@ -43,9 +44,12 @@ class Multipart:
                     part, self.request.path
                 )
             elif part.name == "meta":
-                multipart_data["meta"] = await part.json()
+                multipart_data["meta_raw"] = await part.text()
+                multipart_data["meta"] = json.loads(multipart_data["meta_raw"])
                 if asset_file is not None:
-                    await self._write_json(multipart_data["meta"], asset_file, "meta")
+                    await self._write_json(
+                        multipart_data["meta_raw"], asset_file, "meta", raw=True
+                    )
             elif part.name == "signature":
                 multipart_data["signature"] = await part.json()
                 if asset_file is not None:
@@ -78,12 +82,17 @@ class Multipart:
         _logger.info("New file added to the assets creation directory: " + create_file)
         return create_file
 
-    async def _write_json(self, json_data, asset_file, metadata_tag):
-        json_file = self.asset_helper.get_create_metadata_fullpath(asset_file, metadata_tag)
+    async def _write_json(self, json_data, asset_file, metadata_tag, raw=False):
+        json_file = self.asset_helper.get_create_metadata_fullpath(
+            asset_file, metadata_tag
+        )
         # Mode "a" will append if a file with the same name already exists.
         with open(json_file, "a") as f:
-            f.write(json.dumps(json_data))
-            f.write("\n")
+            if raw:
+                f.write(json_data)
+            else:
+                f.write(json.dumps(json_data))
+                f.write("\n")
         _logger.info(
             "New metadata added to the assets creation directory: " + json_file
         )
