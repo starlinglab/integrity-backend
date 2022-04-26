@@ -1,10 +1,8 @@
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import ECC
 from Crypto.Signature import DSS
-from Crypto.Util.asn1 import DerSequence
 from eth_account import Account
 from eth_account.messages import encode_defunct
-from eth_keys.validation import ValidationError
 from eth_keys.datatypes import PublicKey
 
 from .file_util import FileUtil
@@ -125,24 +123,8 @@ def _verify_zion(meta_raw: str, signature: dict) -> bool:
         # Result is ethereum address
 
         message = encode_defunct(text=meta_raw)
-
-        # Signature is DER-encoded but recover_message wants the individual numbers
-        # So decode the DER and extract the numbers
-        #
-        # DER decode from https://www.pycryptodome.org/en/latest/src/util/asn1.html#Crypto.Util.asn1.DerSequence
-
-        # TODO: the signature might look different then this code expects!
-        # This hasn't been tested yet
-
-        seq_der = DerSequence()
-        seq_der.decode(bytes.fromhex(signature["signature"]))
-        # Signature contains r and s, part of an elliptic curve sig
-        r = hex(seq_der[0])
-        s = hex(seq_der[1])
-        v = 28  # Not included in sig, but constant
-
         # Ethereum address the signature belongs to
-        addr = Account.recover_message(message, vrs=(v, r, s))
+        addr = Account.recover_message(message, signature=signature["signature"])
         # Signer's Ethereum address
         pk = PublicKey.from_compressed_bytes(
             bytes.fromhex(signature["publicKey"][-66:])
