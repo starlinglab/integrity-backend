@@ -1,4 +1,4 @@
-# Starling Integrity API <!-- omit in toc -->
+# Starling Integrity Backend <!-- omit in toc -->
 
 - [Overview](#overview)
 - [Configuration](#configuration)
@@ -12,9 +12,13 @@
 
 ## Overview
 
-The Starling Integrity API provides HTTP endpoints for creating integrity attestations based on incoming data.
+The Starling Integrity Backend provides HTTP endpoints for creating integrity attestations based on incoming data.
 
 It depends on a binary of Adobe's `claim_tool`, which is planned to be open-sourced.
+
+Other required binaries:
+- `ots` from [opentimestamps-client](https://github.com/opentimestamps/opentimestamps-client)
+- `ipfs` from [ipfs.io](https://ipfs.io)
 
 ## Configuration
 
@@ -23,6 +27,7 @@ The server is configured entirely via environment variables. See [config.py](./s
 Most importantly, you will need to provide:
 * `CLAIM_TOOL_PATH`: A path to a fully working `claim_tool` binary. The server should have permissions to execute it, and it should be correctly configured with its keys.
 * `IMAGES_DIR`: A path to a directory to store images. The server will need write access to this directory. This will be the persistent storage for the received images with their attestations.
+* `ISCN_SERVER`: The instance of the ISCN server to send registration requests to. Typically, this will be `http://localhost:3000` if you are using the sample server at https://github.com/likecoin/iscn-js/tree/master/sample/server in its default configuration.
 
 ## Development
 
@@ -102,16 +107,16 @@ curl -X POST http://localhost:8080/assets/create \
      -F "file=@<image_filename>>"
 ```
 
-Sample JWT from [jwt-payload.json.example](jwt-payload.json.example):
+Sample JWT from [jwt-payload.example.json](jwt-payload.example.json) and `JWT_SECRET="super-seekret"`:
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3IiOnsidHlwZSI6IlBlcnNvbiIsImlkZW50aWZpZXIiOiJodHRwczovL2h5cGhhLmNvb3AiLCJuYW1lIjoiQmVuZWRpY3QgTGF1In0sInR3aXR0ZXIiOnsidHlwZSI6Ik9yZ2FuaXphdGlvbiIsImlkZW50aWZpZXIiOiJodHRwczovL2h5cGhhLmNvb3AiLCJuYW1lIjoiSHlwaGFDb29wIn0sImNvcHlyaWdodCI6IkNvcHlyaWdodCAoQykgMjAyMSBIeXBoYSBXb3JrZXIgQ28tb3BlcmF0aXZlLiBBbGwgUmlnaHRzIFJlc2VydmVkLiJ9.sv7dZ6zbpRXn2O3r3fqy4WOPs4alUUJwDyqpk5ajtKA
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmdhbml6YXRpb25faWQiOiJoeXBoYWNvb3AiLCJhdXRob3IiOnsidHlwZSI6IlBlcnNvbiIsImlkZW50aWZpZXIiOiJodHRwczovL2h5cGhhLmNvb3AiLCJuYW1lIjoiQmVuZWRpY3QgTGF1In0sInR3aXR0ZXIiOnsidHlwZSI6Ik9yZ2FuaXphdGlvbiIsImlkZW50aWZpZXIiOiJodHRwczovL2h5cGhhLmNvb3AiLCJuYW1lIjoiSHlwaGFDb29wIn0sImNvcHlyaWdodCI6IkNvcHlyaWdodCAoQykgMjAyMSBIeXBoYSBXb3JrZXIgQ28tb3BlcmF0aXZlLiBBbGwgUmlnaHRzIFJlc2VydmVkLiJ9.9l-NgzCgdDvPavxr3RHs6bpfE10_PocK_FxztBKX2vg
 ```
 
 ### Specifying custom assertions
 
 If you want to create a claim with manually created assertions, specify a dictionary where the key is the SHA-256 of the parent file, and the value is a list of custom assertions, then specify the path to your dictionary file in the `CUSTOM_ASSERTIONS_DICTIONARY` environment variable in your local `.env` file.
 
-See [custom-assertions.json.example.json](custom-assertions.json.example.json) for an example.
+See [custom-assertions.example.json](custom-assertions.example.json) for an example.
 
 ## License
 

@@ -11,11 +11,9 @@ import time
 
 from starlingcaptureapi import config, handlers
 from starlingcaptureapi.asset_helper import AssetHelper
-from starlingcaptureapi.claim import Claim
 from starlingcaptureapi.fs_watcher import FsWatcher
 
 
-_asset_helper = AssetHelper()
 _logger = logging.getLogger(__name__)
 _procs = list()
 
@@ -73,9 +71,8 @@ def start_api_server():
     web.run_app(app)
 
 
-def start_fs_watcher():
-    configure_logging()
-    FsWatcher().watch()
+def start_fs_watcher(org_id):
+    FsWatcher(org_id).watch()
 
 
 if __name__ == "__main__":
@@ -83,18 +80,23 @@ if __name__ == "__main__":
     configure_logging()
 
     # Configure asset directories.
-    _asset_helper.init_dirs()
-    _asset_helper.log_dirs()
+    for org_id in config.ORGANIZATION_CONFIG.all_orgs():
+        AssetHelper(org_id).init_dirs()
 
     # Start up processes for services.
-    proc_fs_watcher = multiprocessing.Process(
-        name="proc_fs_watcher", target=start_fs_watcher
-    )
-    _procs.append(proc_fs_watcher)
+
+    # Start up a file watcher for each organization
+    for org_id in config.ORGANIZATION_CONFIG.all_orgs():
+        _procs.append(
+            multiprocessing.Process(
+                name=f"fs_watcher_{org_id}", target=start_fs_watcher, args=(org_id,)
+            )
+        )
+
     proc_api_server = multiprocessing.Process(
-        name="proc_api_server", target=start_api_server
+        name="api_server", target=start_api_server
     )
     _procs.append(proc_api_server)
 
-    proc_fs_watcher.start()
-    proc_api_server.start()
+    for proc in _procs:
+        proc.start()
