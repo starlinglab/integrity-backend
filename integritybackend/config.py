@@ -39,9 +39,11 @@ NUMBERS_API_KEY = os.environ.get("NUMBERS_API_KEY")
 NUMBERS_API_URL = os.environ.get("NUMBERS_API_URL")
 
 AUTHSIGN_URL = os.environ.get("AUTHSIGN_URL")
-AUTHSIGN_TOKEN = os.environ.get("AUTHSIGN_TOKEN","")
+AUTHSIGN_TOKEN = os.environ.get("AUTHSIGN_TOKEN", "")
 
 KEY_STORE = os.environ.get("KEY_STORE")
+
+INTEGRITY_RECORDER_ID_JSON = os.environ.get("INTEGRITY_RECORDER_ID_JSON")
 
 
 class OrganizationConfig:
@@ -78,17 +80,13 @@ class OrganizationConfig:
     def get_org(self, org_id):
         """Gets configuration dictionary for an org."""
         org_config = next(
-            (
-                c
-                for c in self.json_config.get("organizations")
-                if c.get("id") == org_id
-            ),
+            (c for c in self.json_config.get("organizations") if c.get("id") == org_id),
             None,
-        )        
+        )
         if org_config == None:
-            raise Exception(f"No organization with ID {org_id}")            
+            raise Exception(f"No organization with ID {org_id}")
         else:
-            return org_config           
+            return org_config
 
     def get_collections(self, org_id):
         """Gets collection array for an org id."""
@@ -102,11 +100,7 @@ class OrganizationConfig:
         """Gets specific collection for an org."""
         org_collections = self.get_collections(org_id)
         collection_config = next(
-            (
-                c
-                for c in org_collections
-                if c.get("id") == collection_id
-            ),
+            (c for c in org_collections if c.get("id") == collection_id),
             None,
         )
         if collection_config is None:

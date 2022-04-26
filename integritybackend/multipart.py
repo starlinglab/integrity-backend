@@ -1,10 +1,50 @@
 from .asset_helper import AssetHelper
 from .log_helper import LogHelper
+from . import config
 
 import json
 import shutil
+import base64
+from datetime import datetime, timezone
 
 _logger = LogHelper.getLogger()
+
+
+global_meta_recorder = None
+
+
+def get_meta_recorder() -> dict:
+    global global_meta_recorder
+
+    if global_meta_recorder is not None:
+        return global_meta_recorder
+
+    with open(config.INTEGRITY_RECORDER_ID_JSON, "r") as f:
+        global_meta_recorder = json.load(f)
+
+    # Alter to match
+    # https://github.com/starlinglab/integrity-schema/blob/076fb516b3389cc536e8c21eef2e4df804adb3f5/integrity-backend/input-starling-capture-examples/3e11cc57daf3bad8375935cad4878123acc8d769551ff90f1b1bb0dc597-meta-recorder.json
+
+    service = next(
+        (
+            s
+            for s in global_meta_recorder["recorderMetadata"]
+            if s["service"] == "integrity-backend"
+        ),
+        None,
+    )
+    if service is None:
+        global_meta_recorder = None
+        raise Exception("No recorder metadata found for integrity-backend")
+    service["service"] = "api"
+    service["info"].append(
+        {
+            "type": "external",
+            "values": {"name": ""},
+        }
+    )
+
+    return global_meta_recorder
 
 
 class Multipart:
@@ -30,7 +70,29 @@ class Multipart:
         Returns:
             a dictionary with metadata about the multipart sections encountered
         """
+
         multipart_data = {}
+
+        # https://github.com/starlinglab/integrity-schema/blob/076fb516b3389cc536e8c21eef2e4df804adb3f5/integrity-backend/input-starling-capture-examples/3e11cc57daf3bad8375935cad4878123acc8d769551ff90f1b1bb0dc597-meta-content.json
+        meta_content = {
+            "contentMetadata": {
+                "name": "Authenticated content",
+                "description": "Content captured with Starling Capture application",
+                "author": {
+                    "type": "Organization",
+                    "identifier": "https://starlinglab.org",
+                    "name": "Starling Lab",
+                },
+                "extras": {},
+                "private": {
+                    "providerToken": self.request.get("jwt_payload"),
+                },
+            },
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+        }
+        meta_recorder = get_meta_recorder()
+        meta_recorder["timestamp"] = datetime.utcnow().isoformat() + "Z"
+
         reader = await self.request.multipart()
         part = None
         asset_file = None
@@ -46,18 +108,51 @@ class Multipart:
             elif part.name == "meta":
                 multipart_data["meta_raw"] = await part.text()
                 multipart_data["meta"] = json.loads(multipart_data["meta_raw"])
-                if asset_file is not None:
-                    await self._write_json(
-                        multipart_data["meta_raw"], asset_file, "meta", raw=True
+                meta_content["contentMetadata"]["mime"] = multipart_data["meta"][
+                    "proof"
+                ]["mimeType"]
+                meta_content["contentMetadata"]["dateCreated"] = (
+                    datetime.fromtimestamp(
+                        multipart_data["meta"]["proof"]["timestamp"] / 1000,
+                        timezone.utc,
                     )
+                    .replace(tzinfo=None)
+                    .isoformat()
+                    + "Z"
+                )
+                meta_content["contentMetadata"]["private"][
+                    "meta"
+                ] = base64.standard_b64encode(
+                    multipart_data["meta_raw"].encode()
+                ).decode()
             elif part.name == "signature":
                 multipart_data["signature"] = await part.json()
-                if asset_file is not None:
-                    await self._write_json(
-                        multipart_data["signature"], asset_file, "signature"
-                    )
+                meta_content["contentMetadata"]["private"][
+                    "signature"
+                ] = multipart_data["signature"]
+            elif part.name == "caption":
+                meta_content["contentMetadata"]["extras"]["caption"] = await part.text()
+            elif part.name == "target_provider":
+                meta_content["contentMetadata"]["private"][
+                    "targetProvider"
+                ] = await part.text()
+            elif part.name == "tag":
+                service = next(
+                    (
+                        s
+                        for s in meta_recorder["recorderMetadata"]
+                        if s["service"] == "integrity-backend"
+                    ),
+                )
+                info = next((i for i in service["info"] if i["type"] == "external"))
+                info["values"]["name"] = await part.text()
             else:
                 _logger.warning("Ignoring multipart part %s", part.name)
+
+        if asset_file is not None:
+            await self._write_json(meta_content, asset_file, "meta-content")
+            await self._write_json(meta_recorder, asset_file, "meta-recorder")
+
         return multipart_data
 
     async def _write_file(self, part, request_path):
@@ -82,17 +177,14 @@ class Multipart:
         _logger.info("New file added to the assets creation directory: " + create_file)
         return create_file
 
-    async def _write_json(self, json_data, asset_file, metadata_tag, raw=False):
+    async def _write_json(self, json_data, asset_file, metadata_tag):
         json_file = self.asset_helper.get_create_metadata_fullpath(
             asset_file, metadata_tag
         )
         # Mode "a" will append if a file with the same name already exists.
         with open(json_file, "a") as f:
-            if raw:
-                f.write(json_data)
-            else:
-                f.write(json.dumps(json_data))
-                f.write("\n")
+            f.write(json.dumps(json_data))
+            f.write("\n")
         _logger.info(
             "New metadata added to the assets creation directory: " + json_file
         )
