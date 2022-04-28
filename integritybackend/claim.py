@@ -97,11 +97,11 @@ class Claim:
 
         return claim
 
-    def generate_create_proofmode(self, jwt_payload, meta_proofmode):
-        """Generates a claim for the 'create_proofmode' action.
+    def generate_c2pa_proofmode(self, action_params: dict, meta_proofmode: dict):
+        """Generates a claim for the 'c2pa_proofmode' action.
 
         Args:
-            jwt_payload: a dictionary with the data we got from the request's JWT payload
+            action_params: a dictionary with the params from this action's config
             meta_proofmode: dictionary with the metadata from a proofmode bundle
 
         Returns:

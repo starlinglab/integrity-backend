@@ -8,11 +8,12 @@ from .log_helper import LogHelper
 from .numbers import Numbers
 from . import config, zip_util, crypto_util
 
-import datetime
+from datetime import datetime, timezone
 import json
 import os
 import shutil
 import time
+from zipfile import ZipFile
 
 
 _claim = Claim()
@@ -55,13 +56,9 @@ class Actions:
         asset_helper = AssetHelper(org_id)
         file_util = FileUtil()
 
-        collection = config.ORGANIZATION_CONFIG.get_collection(
-            org_id, collection_id
-        )
-        action = config.ORGANIZATION_CONFIG.get_action(
-            org_id, collection_id, "archive"
-        )
-        action_params = action.get('params')
+        collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
+        action = config.ORGANIZATION_CONFIG.get_action(org_id, collection_id, "archive")
+        action_params = action.get("params")
         if action_params["encryption"]["algo"] != "aes-256-cbc":
             raise Exception(
                 f"Encryption algo {action_params['encryption']['algo']} not implemented"
@@ -70,9 +67,7 @@ class Actions:
         # Verify ZIP name
         input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
         if input_zip_sha != file_util.digest_sha256(zip_path):
-            raise Exception(
-                f"SHA-256 of ZIP does not match file name: {zip_path}"
-            )
+            raise Exception(f"SHA-256 of ZIP does not match file name: {zip_path}")
 
         # Copy ZIP
         archive_dir = asset_helper.get_action_dir(collection_id, "archive")
@@ -99,9 +94,13 @@ class Actions:
             )
         content_sha_unverified = os.path.splitext(content_filename)[0]
         if f"{content_sha_unverified}-meta-content.json" not in zip_listing:
-            raise Exception(f"ZIP at {zip_path} has no content metadata file: {zip_listing}")
+            raise Exception(
+                f"ZIP at {zip_path} has no content metadata file: {zip_listing}"
+            )
         if f"{content_sha_unverified}-meta-recorder.json" not in zip_listing:
-            raise Exception(f"ZIP at {zip_path} has no recorder metadata file: {zip_listing}")
+            raise Exception(
+                f"ZIP at {zip_path} has no recorder metadata file: {zip_listing}"
+            )
 
         # Extract content file
         tmp_dir = asset_helper.get_tmp_action_dir(collection_id, "archive")
@@ -207,55 +206,94 @@ class Actions:
         )
         return internal_asset_file
 
-    def create_proofmode(self, asset_fullpath, jwt_payload):
-        """Process proofmode bundled asset with create action.
-        A new asset file is generated in the create-proofmode-output folder with an original creation claim.
+    def c2pa_proofmode(self, zip_path: str, org_config: dict, collection_id: str):
+        """C2PA-inject jpegs in a asset zip from proofmode.
 
         Args:
-            asset_fullpath: the local path to the proofmode bundled asset file
-            jwt_payload: a JWT payload containing metadata
+            zip_path: path to asset zip (will be copied, not altered)
+            org_config: configuration dictionary for this organization
+            collection_id: string with the unique collection identifier this
+                asset is in
 
         Returns:
-            the local path to the asset file in the internal directory
+            TODO
 
         Raises:
             Exception if errors are encountered during processing
         """
-        asset_helper = AssetHelper.from_jwt(jwt_payload)
-        # Create temporary files to work with.
-        tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
-        tmp_claim_file = asset_helper.get_tmp_file_fullpath(".json")
 
+        # TODO: change function to take just org_id as param
+        org_id = org_config["id"]
+
+        asset_helper = AssetHelper(org_id)
+        file_util = FileUtil()
+
+        collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
+        action = config.ORGANIZATION_CONFIG.get_action(org_id, collection_id, "archive")
+        action_dir = asset_helper.get_action_dir(collection_id, "c2pa_proofmode")
+        shared_output_dir_root = os.path.join(
+            asset_helper.shared_prefix, collection_id, "c2pa_proofmode_output"
+        )
+
+        # Copy zip
+        tmp_dir = asset_helper.get_tmp_action_dir(collection_id, "c2pa_proofmode")
+        tmp_zip = shutil.copy2(zip_path, tmp_dir)
+        zip_name = os.path.splitext(os.path.basename(tmp_zip))[0]
+        tmp_img_dir = os.path.join(
+            tmp_dir, zip_name + "-imgs"
+        )  # Where extracted JPEGs are stored
+
+        with ZipFile(tmp_zip) as zipf:
+            # Get photographer ID
+            # For now take phone number from meta-content.json
+            # TODO: get name instead
+            meta_content = next(
+                (s for s in zipf.namelist() if s.endswith("-meta-content.json")), None
+            )
+            if meta_content is None:
+                raise Exception("meta-content.json not found in zip")
+            with zipf.open(meta_content) as meta_content_f:
+                photographer_id = json.load(meta_content_f)["private"]["signal"][
+                    "source"
+                ]
+                if photographer_id[0] == "+":
+                    # Make it filename-safe by removing leading plus
+                    photographer_id = photographer_id[1:]
+
+            # Open content zip and extract all JPEGs
+            content_zip = next((s for s in zipf.namelist() if s.endswith(".zip")), None)
+            if content_zip is None:
+                raise Exception("content zip not found in zip")
+            os.mkdir(tmp_img_dir)
+            with ZipFile(zipf.open(content_zip)) as content_zip_f:
+                for file_path in content_zip_f.namelist():
+                    if os.path.splitext(file_path)[1].lower() in [".jpg", ".jpeg"]:
+                        content_zip_f.extract(file_path, tmp_img_dir)
+
+        # C2PA-inject all JPEGs
         # TODO: Unzip bundle, store asset file, and create dictionary for claim creation.
         meta_proofmode = None
+        claim = _claim.generate_c2pa_proofmode(action["params"], meta_proofmode)
+        for file in os.listdir(tmp_img_dir):
+            _claim_tool.run_claim_inject(claim, os.path.join(tmp_img_dir, file), None)
 
-        # Inject create claim and read back from file.
-        claim = _claim.generate_create_proofmode(jwt_payload, meta_proofmode)
-        shutil.copy2(asset_fullpath, tmp_asset_file)
-        _claim_tool.run_claim_inject(claim, tmp_asset_file, None)
-        _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
+        # Copy extracted jpegs folder into action_dir
+        action_img_dir = shutil.copy2(tmp_img_dir, action_dir)
 
-        # Copy the C2PA-injected asset to both the internal and shared asset directories.
-        internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
-        shutil.move(tmp_asset_file, internal_asset_file)
-        subfolders = [
-            jwt_payload.get("author", {}).get("name"),
-            datetime.datetime.now().strftime("%Y-%m-%d"),
-        ]
-        shutil.copy2(
-            internal_asset_file,
-            asset_helper.get_assets_create_proofmode_output(subfolders),
+        # Atomically move to shared folder under photographer ID and date
+        shared_dir = os.path.join(
+            shared_output_dir_root,
+            photographer_id,
+            datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         )
-        _logger.info("New asset file added: %s", internal_asset_file)
-        internal_claim_file = asset_helper.get_internal_claim_fullpath(
-            internal_asset_file
+        os.rename(
+            action_img_dir, os.path.join(shared_dir, os.path.basename(action_img_dir))
         )
-        shutil.move(tmp_claim_file, internal_claim_file)
-        _logger.info(
-            "New claim file added to the internal claims directory: %s",
-            internal_claim_file,
-        )
-        return internal_asset_file
+
+        # Move from tmp to action_dir
+        shutil.move(tmp_img_dir, action_dir)
+        # Now everything is clean: tmp is empty, the files are in the action dir,
+        # and the files were atomically moved into the shared filesystem
 
     def c2pa_add(self, asset_fullpath, org_config, collection_id):
         """Process asset with add action.
