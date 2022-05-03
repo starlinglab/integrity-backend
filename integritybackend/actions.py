@@ -70,7 +70,7 @@ class Actions:
             raise Exception(f"SHA-256 of ZIP does not match file name: {zip_path}")
 
         # Copy ZIP
-        archive_dir = asset_helper.get_action_dir(collection_id, "archive")
+        archive_dir = asset_helper.path_for_action(collection_id, "archive")
         tmp_zip = shutil.copy2(zip_path, archive_dir)
 
         # Verify ZIP contents are valid and expected
@@ -103,7 +103,7 @@ class Actions:
             )
 
         # Extract content file
-        tmp_dir = asset_helper.get_tmp_action_dir(collection_id, "archive")
+        tmp_dir = asset_helper.path_for_action_tmp(collection_id, "archive")
         zip_dir = os.path.join(tmp_dir, content_sha_unverified)
         extracted_content = os.path.join(zip_dir, content_filename)
         file_util.create_dir(zip_dir)
@@ -159,7 +159,7 @@ class Actions:
         # TODO: Register encrypted ZIP on ISCN
         # Iscn.register_archive(path)
 
-    def create(self, asset_fullpath, jwt_payload, meta):
+    def c2pa_starling_capture(self, asset_fullpath, jwt_payload, meta):
         """Process asset with create action.
         A new asset file is generated in the create-output folder with an original creation claim.
 
@@ -224,19 +224,18 @@ class Actions:
 
         # TODO: change function to take just org_id as param
         org_id = org_config["id"]
+        action_name = "c2pa-proofmode"
 
         asset_helper = AssetHelper(org_id)
         file_util = FileUtil()
 
         collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
         action = config.ORGANIZATION_CONFIG.get_action(org_id, collection_id, "archive")
-        action_dir = asset_helper.get_action_dir(collection_id, "c2pa-proofmode")
-        shared_output_dir_root = os.path.join(
-            asset_helper.shared_prefix, collection_id, "c2pa-proofmode-output"
-        )
+        action_dir = asset_helper.path_for_action(collection_id, action_name)
+        shared_output_dir_root = asset_helper.path_for_action_output(collection_id, action_name)
 
         # Copy zip
-        tmp_dir = asset_helper.get_tmp_action_dir(collection_id, "c2pa_proofmode")
+        tmp_dir = asset_helper.path_for_action_tmp(collection_id, action_name)
         tmp_zip = shutil.copy2(zip_path, tmp_dir)
         zip_name = os.path.splitext(os.path.basename(tmp_zip))[0]
         tmp_img_dir = os.path.join(
@@ -295,185 +294,185 @@ class Actions:
         # Now everything is clean: tmp is empty, the files are in the action dir,
         # and the files were atomically moved into the shared filesystem
 
-    def c2pa_add(self, asset_fullpath, org_config, collection_id):
-        """Process asset with add action.
-        The provided asset file is added to the asset management system and renamed to its internal identifier in the add-output folder.
+    # def c2pa_add(self, asset_fullpath, org_config, collection_id):
+    #     """Process asset with add action.
+    #     The provided asset file is added to the asset management system and renamed to its internal identifier in the add-output folder.
 
-        Args:
-            asset_fullpath: the local path to the asset file
-            org_config: configuration dictionary for this organization
-            collection_id: string with the unique collection identifier this
-                asset is in
+    #     Args:
+    #         asset_fullpath: the local path to the asset file
+    #         org_config: configuration dictionary for this organization
+    #         collection_id: string with the unique collection identifier this
+    #             asset is in
 
-        Returns:
-            the local path to the asset file in the internal directory
-        """
-        asset_helper = AssetHelper(org_config.get("id"))
-        return self._add(
-            asset_fullpath,
-            asset_helper.path_for(collection_id, "c2pa-add", output=True),
-            asset_helper,
-        )
+    #     Returns:
+    #         the local path to the asset file in the internal directory
+    #     """
+    #     asset_helper = AssetHelper(org_config.get("id"))
+    #     return self._add(
+    #         asset_fullpath,
+    #         asset_helper.path_for(collection_id, "c2pa-add", output=True),
+    #         asset_helper,
+    #     )
 
-    def c2pa_update(self, asset_fullpath, org_config, collection_id):
-        """Process asset with update action.
-        A new asset file is generated in the update-output folder with a claim that links it to a parent asset identified by its filename.
+    # def c2pa_update(self, asset_fullpath, org_config, collection_id):
+    #     """Process asset with update action.
+    #     A new asset file is generated in the update-output folder with a claim that links it to a parent asset identified by its filename.
 
-        Args:
-            asset_fullpath: the local path to the asset file
-            org_config: configuration dictionary for this organization
-            collection_id: string with the unique collection identifier this
-                asset is in
+    #     Args:
+    #         asset_fullpath: the local path to the asset file
+    #         org_config: configuration dictionary for this organization
+    #         collection_id: string with the unique collection identifier this
+    #             asset is in
 
-        Returns:
-            the local path to the asset file in the internal directory
-        """
-        organization_id = org_config.get("id")
-        asset_helper = AssetHelper(organization_id)
-        return self._update(
-            asset_fullpath,
-            _claim.generate_update(org_config, collection_id),
-            asset_helper.path_for(collection_id, "c2pa-update", output=True),
-            asset_helper,
-        )
+    #     Returns:
+    #         the local path to the asset file in the internal directory
+    #     """
+    #     organization_id = org_config.get("id")
+    #     asset_helper = AssetHelper(organization_id)
+    #     return self._update(
+    #         asset_fullpath,
+    #         _claim.generate_update(org_config, collection_id),
+    #         asset_helper.path_for(collection_id, "c2pa-update", output=True),
+    #         asset_helper,
+    #     )
 
-    def c2pa_store(self, asset_fullpath, org_config, collection_id):
-        """Process asset with store action.
-        The provided asset stored on decentralized storage, then a new asset file is generated in the store-output folder with a storage claim.
+    # def c2pa_store(self, asset_fullpath, org_config, collection_id):
+    #     """Process asset with store action.
+    #     The provided asset stored on decentralized storage, then a new asset file is generated in the store-output folder with a storage claim.
 
-        Args:
-            asset_fullpath: the local path to the asset file
-            org_config: configuration dictionary for this organization
-            collection_id: string with the unique collection identifier this
-                asset is in
+    #     Args:
+    #         asset_fullpath: the local path to the asset file
+    #         org_config: configuration dictionary for this organization
+    #         collection_id: string with the unique collection identifier this
+    #             asset is in
 
-        Returns:
-            the local path to the asset file in the internal directory
-        """
-        # Add uploaded asset to the internal directory.
-        added_asset = self._add(asset_fullpath, None)
+    #     Returns:
+    #         the local path to the asset file in the internal directory
+    #     """
+    #     # Add uploaded asset to the internal directory.
+    #     added_asset = self._add(asset_fullpath, None)
 
-        # Store asset to IPFS and Filecoin.
-        ipfs_cid = _filecoin.upload(added_asset)
-        _logger.info("Asset file uploaded to IPFS with CID: %s", ipfs_cid)
+    #     # Store asset to IPFS and Filecoin.
+    #     ipfs_cid = _filecoin.upload(added_asset)
+    #     _logger.info("Asset file uploaded to IPFS with CID: %s", ipfs_cid)
 
-        organization_id = org_config.get("id")
-        return self._update(
-            added_asset,
-            _claim.generate_store(ipfs_cid.organization_id),
-            AssetHelper(organization_id).path_for(
-                collection_id, "c2pa-store", output=True
-            ),
-        )
+    #     organization_id = org_config.get("id")
+    #     return self._update(
+    #         added_asset,
+    #         _claim.generate_store(ipfs_cid.organization_id),
+    #         AssetHelper(organization_id).path_for(
+    #             collection_id, "c2pa-store", output=True
+    #         ),
+    #     )
 
-    def c2pa_custom(self, asset_fullpath, org_config, collection_id):
-        """Process asset with custom action.
-        A new asset file is generated in the custom-output folder with a claim that links it to a parent asset identified by its filename.
+    # def c2pa_custom(self, asset_fullpath, org_config, collection_id):
+    #     """Process asset with custom action.
+    #     A new asset file is generated in the custom-output folder with a claim that links it to a parent asset identified by its filename.
 
-        Args:
-            asset_fullpath: the local path to the asset file
-            org_config: configuration dictionary for this organization
-            collection_id: string with the unique collection identifier this
-                asset is in
+    #     Args:
+    #         asset_fullpath: the local path to the asset file
+    #         org_config: configuration dictionary for this organization
+    #         collection_id: string with the unique collection identifier this
+    #             asset is in
 
-        Returns:
-            the local path to the asset file in the internal directory
-        """
-        organization_id = org_config.get("id")
-        asset_helper = AssetHelper(organization_id)
+    #     Returns:
+    #         the local path to the asset file in the internal directory
+    #     """
+    #     organization_id = org_config.get("id")
+    #     asset_helper = AssetHelper(organization_id)
 
-        # Add uploaded asset to the internal directory.
-        added_asset = self._add(asset_fullpath, None)
+    #     # Add uploaded asset to the internal directory.
+    #     added_asset = self._add(asset_fullpath, None)
 
-        # Parse file name to get the search key.
-        file_name, _ = os.path.splitext(os.path.basename(added_asset))
+    #     # Parse file name to get the search key.
+    #     file_name, _ = os.path.splitext(os.path.basename(added_asset))
 
-        # Find custom assertions for file.
-        custom_assertions = self._load_custom_assertions().get(file_name)
-        if custom_assertions is None:
-            _logger.warning("Could not find custom assertions for asset")
-        else:
-            _logger.info("Found custom assertions for asset")
-        return self._update(
-            added_asset,
-            _claim.generate_custom(custom_assertions),
-            asset_helper.path_for(collection_id, "c2pa-custom", output=True),
-            asset_helper,
-        )
+    #     # Find custom assertions for file.
+    #     custom_assertions = self._load_custom_assertions().get(file_name)
+    #     if custom_assertions is None:
+    #         _logger.warning("Could not find custom assertions for asset")
+    #     else:
+    #         _logger.info("Found custom assertions for asset")
+    #     return self._update(
+    #         added_asset,
+    #         _claim.generate_custom(custom_assertions),
+    #         asset_helper.path_for(collection_id, "c2pa-custom", output=True),
+    #         asset_helper,
+    #     )
 
-    def _add(self, asset_fullpath, output_dir, asset_helper):
-        # Create temporary files to work with.
-        tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
-        time.sleep(1)
-        _logger.info("File size: %s", os.path.getsize(asset_fullpath))
-        shutil.copy2(asset_fullpath, tmp_asset_file)
+    # def _add(self, asset_fullpath, output_dir, asset_helper):
+    #     # Create temporary files to work with.
+    #     tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
+    #     time.sleep(1)
+    #     _logger.info("File size: %s", os.path.getsize(asset_fullpath))
+    #     shutil.copy2(asset_fullpath, tmp_asset_file)
 
-        # Copy asset to both the internal and shared asset directories.
-        internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
-        shutil.move(tmp_asset_file, internal_asset_file)
-        if output_dir is not None:
-            shutil.copy2(internal_asset_file, output_dir)
-        _logger.info("New asset file added: %s", internal_asset_file)
+    #     # Copy asset to both the internal and shared asset directories.
+    #     internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
+    #     shutil.move(tmp_asset_file, internal_asset_file)
+    #     if output_dir is not None:
+    #         shutil.copy2(internal_asset_file, output_dir)
+    #     _logger.info("New asset file added: %s", internal_asset_file)
 
-        return internal_asset_file
+    #     return internal_asset_file
 
-    def _update(self, asset_fullpath, claim, output_dir, asset_helper):
-        # Create temporary files to work with.
-        tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
-        tmp_claim_file = asset_helper.get_tmp_file_fullpath(".json")
+    # def _update(self, asset_fullpath, claim, output_dir, asset_helper):
+    #     # Create temporary files to work with.
+    #     tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
+    #     tmp_claim_file = asset_helper.get_tmp_file_fullpath(".json")
 
-        # Parse file name to get internal name for parent file.
-        file_name, file_extension = os.path.splitext(os.path.basename(asset_fullpath))
-        parent_file = os.path.join(
-            asset_helper.get_assets_internal(),
-            file_name.partition("_")[0].partition("-")[0] + file_extension,
-        )
+    #     # Parse file name to get internal name for parent file.
+    #     file_name, file_extension = os.path.splitext(os.path.basename(asset_fullpath))
+    #     parent_file = os.path.join(
+    #         asset_helper.get_assets_internal(), # removed
+    #         file_name.partition("_")[0].partition("-")[0] + file_extension,
+    #     )
 
-        # Inject update claim and read back from file.
-        time.sleep(1)
-        _logger.info("File size: %s", os.path.getsize(asset_fullpath))
-        shutil.copy2(asset_fullpath, tmp_asset_file)
-        _logger.info("Searching for parent file: %s", parent_file)
-        if not os.path.isfile(parent_file):
-            raise Exception(f"Expected {parent_file} to be a file, but it isn't")
+    #     # Inject update claim and read back from file.
+    #     time.sleep(1)
+    #     _logger.info("File size: %s", os.path.getsize(asset_fullpath))
+    #     shutil.copy2(asset_fullpath, tmp_asset_file)
+    #     _logger.info("Searching for parent file: %s", parent_file)
+    #     if not os.path.isfile(parent_file):
+    #         raise Exception(f"Expected {parent_file} to be a file, but it isn't")
 
-        _logger.info("_update() action found parent file for asset: %s", parent_file)
-        _claim_tool.run_claim_inject(claim, tmp_asset_file, parent_file)
-        _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
-        # Copy the C2PA-injected asset to both the internal and shared asset directories.
-        internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
-        shutil.move(tmp_asset_file, internal_asset_file)
-        if output_dir is not None:
-            shutil.copy2(internal_asset_file, output_dir)
-        _logger.info("New asset file added: %s", internal_asset_file)
-        internal_claim_file = asset_helper.get_internal_claim_fullpath(
-            internal_asset_file
-        )
-        shutil.move(tmp_claim_file, internal_claim_file)
-        _logger.info(
-            "New claim file added to the internal claims directory: %s",
-            internal_claim_file,
-        )
-        return internal_asset_file
+    #     _logger.info("_update() action found parent file for asset: %s", parent_file)
+    #     _claim_tool.run_claim_inject(claim, tmp_asset_file, parent_file)
+    #     _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
+    #     # Copy the C2PA-injected asset to both the internal and shared asset directories.
+    #     internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
+    #     shutil.move(tmp_asset_file, internal_asset_file)
+    #     if output_dir is not None:
+    #         shutil.copy2(internal_asset_file, output_dir)
+    #     _logger.info("New asset file added: %s", internal_asset_file)
+    #     internal_claim_file = asset_helper.get_internal_claim_fullpath(
+    #         internal_asset_file
+    #     )
+    #     shutil.move(tmp_claim_file, internal_claim_file)
+    #     _logger.info(
+    #         "New claim file added to the internal claims directory: %s",
+    #         internal_claim_file,
+    #     )
+    #     return internal_asset_file
 
-    def _load_custom_assertions(self):
-        """Loads custom assertions from file.
+    # def _load_custom_assertions(self):
+    #     """Loads custom assertions from file.
 
-        Return:
-            a dictionary with custom assertions mapped to asset name
-        """
-        custom_assertions_dictionary = {}
-        custom_assertions_path = config.CUSTOM_ASSERTIONS_DICTIONARY
-        try:
-            with open(custom_assertions_path, "r") as f:
-                custom_assertions_dictionary = json.load(f)
-                _logger.info(
-                    "Successfully loaded custom assertions dictionary: %s",
-                    custom_assertions_path,
-                )
-        except Exception as err:
-            _logger.info(
-                "No custom assertions dictionary found: %s",
-                custom_assertions_path,
-            )
-        return custom_assertions_dictionary
+    #     Return:
+    #         a dictionary with custom assertions mapped to asset name
+    #     """
+    #     custom_assertions_dictionary = {}
+    #     custom_assertions_path = config.CUSTOM_ASSERTIONS_DICTIONARY
+    #     try:
+    #         with open(custom_assertions_path, "r") as f:
+    #             custom_assertions_dictionary = json.load(f)
+    #             _logger.info(
+    #                 "Successfully loaded custom assertions dictionary: %s",
+    #                 custom_assertions_path,
+    #             )
+    #     except Exception as err:
+    #         _logger.info(
+    #             "No custom assertions dictionary found: %s",
+    #             custom_assertions_path,
+    #         )
+    #     return custom_assertions_dictionary

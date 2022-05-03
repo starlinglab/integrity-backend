@@ -74,24 +74,12 @@ class FsWatcher:
             # and dispatch the file for processing in parallel by all the
             # configured actions for the collection.
             for action_name in collection_config.get("actions", {}).keys():
-                # if action_name == "archive":
                 self._schedule(
                     collection_id,
                     action_name,
                     ["*.zip"],
-                    self.asset_helper.input_path_for(collection_id),
+                    self.asset_helper.path_for_input(collection_id),
                 )
-                # else:
-                    # Legacy actions will eventually be all migrated to watch for *.zip
-                    # See details in https://github.com/starlinglab/starling-integrity-api/issues/79
-                    # At that point, all patterns will be *.zip, and the path to watch will be the collection input
-                    # directory, and will no longer need to be parameters passed into _schedule(...).
-                    # self._schedule(
-                    #     collection_id,
-                    #     action_name,
-                    #     ["*.jpg", "*.jpeg"],
-                    #     self.asset_helper.path_for(collection_id, action_name),
-                    # )
 
         self.observer.start()
         try:
