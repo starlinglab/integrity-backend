@@ -22,8 +22,9 @@ def get_meta_recorder() -> dict:
     with open(config.INTEGRITY_RECORDER_ID_JSON, "r") as f:
         global_meta_recorder = json.load(f)
 
-    # Alter to match
-    # https://github.com/starlinglab/integrity-schema/blob/076fb516b3389cc536e8c21eef2e4df804adb3f5/integrity-backend/input-starling-capture-examples/3e11cc57daf3bad8375935cad4878123acc8d769551ff90f1b1bb0dc597-meta-recorder.json
+    # Alter to match:
+    # https://github.com/starlinglab/integrity-schema/blob/c9248b63f2e6235d4cfe6592c29a171932050110/integrity-backend/input-starling-capture-examples/3e11cc57daf3bad8375935cad4878123acc8d769551ff90f1b1bb0dc597-meta-recorder.json
+    # Just add external values dict
 
     service = next(
         (
@@ -36,14 +37,13 @@ def get_meta_recorder() -> dict:
     if service is None:
         global_meta_recorder = None
         raise Exception("No recorder metadata found for integrity-backend")
-    service["service"] = "api"
+
     service["info"].append(
         {
             "type": "external",
             "values": {"name": ""},
         }
     )
-
     return global_meta_recorder
 
 
