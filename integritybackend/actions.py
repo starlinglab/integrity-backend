@@ -25,20 +25,21 @@ _logger = LogHelper.getLogger()
 class Actions:
     """Actions for processing assets.
 
-    All actions operate on:
-        * an "asset", represented by its full path on the local filesystem
-        * some metadata
+    All actions operate on a ZIP file containing three files:
 
-    In an ideal future, all actions would be refactored to accept the exact same
-    inputs: an asset path and a generalized metadata container or configuration
-    object.
+    1. sha256(asset).ext: the asset file with `ext` matching one of the collection's `asset_extensions`
+    2. sha256(asset)-meta-content.json: the metadata associated with the asset file
+    3. sha256(asset)-meta-recorder.json: the metadata associated with the recorder of the asset
     """
 
-    def archive(self, asset_fullpath: str, org_config: dict, collection_id: str):
+    def archive(self, zip_path: str, org_config: dict, collection_id: str):
+        return
+
+    def archive2(self, zip_path: str, org_config: dict, collection_id: str):
         """Archive asset.
 
         Args:
-            asset_fullpath: the local path to the asset file
+            zip_path: path to asset zip (will be copied, not altered)
             org_config: configuration dictionary for this organization
             collection_id: string with the unique collection identifier this
                 asset is in
@@ -52,7 +53,6 @@ class Actions:
         # TODO: change function to take just org_id as param
         org_id = org_config["id"]
 
-        zip_path = asset_fullpath
         asset_helper = AssetHelper(org_id)
         file_util = FileUtil()
 
@@ -221,26 +221,30 @@ class Actions:
         Raises:
             Exception if errors are encountered during processing
         """
-
         # TODO: change function to take just org_id as param
-        org_id = org_config["id"]
         action_name = "c2pa-proofmode"
-
+        org_id = org_config["id"]
         asset_helper = AssetHelper(org_id)
         file_util = FileUtil()
 
         collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
-        action = config.ORGANIZATION_CONFIG.get_action(org_id, collection_id, "archive")
+        action = config.ORGANIZATION_CONFIG.get_action(org_id, collection_id, action_name)
+        action_params = action.get("params")
         action_dir = asset_helper.path_for_action(collection_id, action_name)
-        shared_output_dir_root = asset_helper.path_for_action_output(collection_id, action_name)
+        action_output_dir = asset_helper.path_for_action_output(collection_id, action_name)
+        action_tmp_dir = asset_helper.path_for_action_tmp(collection_id, action_name)
 
         # Copy zip
-        tmp_dir = asset_helper.path_for_action_tmp(collection_id, action_name)
-        tmp_zip = shutil.copy2(zip_path, tmp_dir)
+        tmp_zip = shutil.copy2(zip_path, action_tmp_dir)
         zip_name = os.path.splitext(os.path.basename(tmp_zip))[0]
+
+        # Paths for extracted JPEGs
         tmp_img_dir = os.path.join(
-            tmp_dir, zip_name + "-imgs"
-        )  # Where extracted JPEGs are stored
+            action_tmp_dir, zip_name + "-imgs"
+        )
+        action_img_dir = os.path.join(
+            action_dir, zip_name + "-imgs"
+        )
 
         with ZipFile(tmp_zip) as zipf:
             # Get photographer ID
@@ -263,7 +267,7 @@ class Actions:
             content_zip = next((s for s in zipf.namelist() if s.endswith(".zip")), None)
             if content_zip is None:
                 raise Exception("content zip not found in zip")
-            os.mkdir(tmp_img_dir)
+            file_util.create_dir(tmp_img_dir)
             with ZipFile(zipf.open(content_zip)) as content_zip_f:
                 for file_path in content_zip_f.namelist():
                     if os.path.splitext(file_path)[1].lower() in [".jpg", ".jpeg"]:
@@ -277,22 +281,16 @@ class Actions:
             _claim_tool.run_claim_inject(claim, os.path.join(tmp_img_dir, file), None)
 
         # Copy extracted jpegs folder into action_dir
-        action_img_dir = shutil.copy2(tmp_img_dir, action_dir)
+        shutil.copytree(tmp_img_dir, action_img_dir, dirs_exist_ok=True)
 
         # Atomically move to shared folder under photographer ID and date
         shared_dir = os.path.join(
-            shared_output_dir_root,
+            action_output_dir,
             photographer_id,
             datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         )
-        os.rename(
-            action_img_dir, os.path.join(shared_dir, os.path.basename(action_img_dir))
-        )
 
-        # Move from tmp to action_dir
-        shutil.move(tmp_img_dir, action_dir)
-        # Now everything is clean: tmp is empty, the files are in the action dir,
-        # and the files were atomically moved into the shared filesystem
+        shutil.move(tmp_img_dir, shared_dir)
 
     # def c2pa_add(self, asset_fullpath, org_config, collection_id):
     #     """Process asset with add action.
