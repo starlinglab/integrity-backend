@@ -230,9 +230,9 @@ class Actions:
 
         collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
         action = config.ORGANIZATION_CONFIG.get_action(org_id, collection_id, "archive")
-        action_dir = asset_helper.get_action_dir(collection_id, "c2pa_proofmode")
+        action_dir = asset_helper.get_action_dir(collection_id, "c2pa-proofmode")
         shared_output_dir_root = os.path.join(
-            asset_helper.shared_prefix, collection_id, "c2pa_proofmode_output"
+            asset_helper.shared_prefix, collection_id, "c2pa-proofmode-output"
         )
 
         # Copy zip

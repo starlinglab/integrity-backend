@@ -37,18 +37,18 @@ class AssetHelper:
     assets_dir
     `-- hyphacoop-org
         |-- tmp
-        |-- assets (legacy)
-        |-- claims (legacy)
-        |-- create (legacy)
-        |-- create-proofmode (legacy)
+        # |-- assets (legacy)
+        # |-- claims (legacy)
+        # |-- create (legacy)
+        # |-- create-proofmode (legacy)
         `-- mycelium-collection
             |-- input
             `-- action-archive
 
     shared_dir
     `-- hyphacoop-org
-        |-- add  # legacy path, deprecated in favor of per-collection directories
-        |-- add-output # legacy path, deprecated in favor of per-collection directories
+        # |-- add  # legacy path, deprecated in favor of per-collection directories
+        # |-- add-output # legacy path, deprecated in favor of per-collection directories
     """
 
     def __init__(self, organization_id):
@@ -69,19 +69,19 @@ class AssetHelper:
         self.shared_prefix = os.path.join(config.SHARED_FILE_SYSTEM, organization_id)
 
         # Internal directories
-        self.dir_internal_assets = os.path.join(self.internal_prefix, "assets")
-        self.dir_internal_claims = os.path.join(self.internal_prefix, "claims")
+        # self.dir_internal_assets = os.path.join(self.internal_prefix, "assets")
+        # self.dir_internal_claims = os.path.join(self.internal_prefix, "claims")
         self.dir_internal_tmp = os.path.join(self.internal_prefix, "tmp")
-        self.dir_internal_create = os.path.join(self.internal_prefix, "create")
-        self.dir_internal_create_proofmode = os.path.join(
-            self.internal_prefix, "create-proofmode"
-        )
+        # self.dir_internal_create = os.path.join(self.internal_prefix, "create")
+        # self.dir_internal_create_proofmode = os.path.join(
+        #     self.internal_prefix, "create-proofmode"
+        # )
 
         # Legacy shared output directories (not collection-specific)
-        self.dir_create_output = os.path.join(self.shared_prefix, "create-output")
-        self.dir_create_proofmode_output = os.path.join(
-            self.shared_prefix, "create-proofmode-output"
-        )
+        # self.dir_create_output = os.path.join(self.shared_prefix, "create-output")
+        # self.dir_create_proofmode_output = os.path.join(
+        #     self.shared_prefix, "create-proofmode-output"
+        # )
 
     @staticmethod
     def from_jwt(jwt_payload: dict):
@@ -96,57 +96,57 @@ class AssetHelper:
     def init_dirs(self):
         """Creates the initial directory structure for asset management."""
         _logger.info(f"Initializing internal directories for {self.org_id}")
-        _file_util.create_dir(self.dir_internal_assets)
-        _file_util.create_dir(self.dir_internal_claims)
+        # _file_util.create_dir(self.dir_internal_assets)
+        # _file_util.create_dir(self.dir_internal_claims)
         _file_util.create_dir(self.dir_internal_tmp)
-        _file_util.create_dir(self.dir_internal_create)
-        _file_util.create_dir(self.dir_internal_create_proofmode)
+        # _file_util.create_dir(self.dir_internal_create)
+        # _file_util.create_dir(self.dir_internal_create_proofmode)
 
         self._init_collection_dirs()
 
         _logger.info(f"Initializing legacy action directories for {self.org_id}")
         # 'Create' files come via HTTP, there are no "input" create folders
-        _file_util.create_dir(self.legacy_path_for("create", output=True))
-        _file_util.create_dir(self.legacy_path_for("create-proofmode", output=True))
+        # _file_util.create_dir(self.legacy_path_for("create", output=True))
+        # _file_util.create_dir(self.legacy_path_for("create-proofmode", output=True))
 
     def get_assets_internal(self):
         return self.dir_internal_assets
 
-    def get_assets_create_output(self, subfolders=[]):
-        return self._get_path_with_subfolders(
-            self.dir_create_output, subfolders=subfolders
-        )
+    # def get_assets_create_output(self, subfolders=[]):
+    #     return self._get_path_with_subfolders(
+    #         self.dir_create_output, subfolders=subfolders
+    #     )
 
-    def get_assets_create_proofmode_output(self, subfolders=[]):
-        return self._get_path_with_subfolders(
-            self.dir_create_proofmode_output, subfolders=subfolders
-        )
+    # def get_assets_create_proofmode_output(self, subfolders=[]):
+    #     return self._get_path_with_subfolders(
+    #         self.dir_create_proofmode_output, subfolders=subfolders
+    #     )
 
     def get_tmp_file_fullpath(self, file_extension):
         return os.path.join(
             self.dir_internal_tmp, _file_util.generate_uuid() + file_extension
         )
 
-    def get_create_file_fullpath(self, from_file):
-        _, file_extension = os.path.splitext(from_file)
-        return os.path.join(
-            self.dir_internal_create,
-            _file_util.digest_sha256(from_file) + file_extension,
-        )
+    # def get_create_file_fullpath(self, from_file):
+    #     _, file_extension = os.path.splitext(from_file)
+    #     return os.path.join(
+    #         self.dir_internal_create,
+    #         _file_util.digest_sha256(from_file) + file_extension,
+    #     )
 
-    def get_create_metadata_fullpath(self, from_file, metadata_tag):
-        # TODO: shouldn't have to hash here if we can bundle this with previous func.
-        return os.path.join(
-            self.dir_internal_create,
-            _file_util.digest_sha256(from_file) + "-" + metadata_tag + ".json",
-        )
+    # def get_create_metadata_fullpath(self, from_file, metadata_tag):
+    #     # TODO: shouldn't have to hash here if we can bundle this with previous func.
+    #     return os.path.join(
+    #         self.dir_internal_create,
+    #         _file_util.digest_sha256(from_file) + "-" + metadata_tag + ".json",
+    #     )
 
-    def get_create_proofmode_file_fullpath(self, from_file):
-        _, file_extension = os.path.splitext(from_file)
-        return os.path.join(
-            self.dir_internal_create_proofmode,
-            _file_util.digest_sha256(from_file) + file_extension,
-        )
+    # def get_create_proofmode_file_fullpath(self, from_file):
+    #     _, file_extension = os.path.splitext(from_file)
+    #     return os.path.join(
+    #         self.dir_internal_create_proofmode,
+    #         _file_util.digest_sha256(from_file) + file_extension,
+    #     )
 
     def get_internal_file_fullpath(self, from_file):
         _, file_extension = os.path.splitext(from_file)
@@ -155,18 +155,18 @@ class AssetHelper:
             _file_util.digest_sha256(from_file) + file_extension,
         )
 
-    def get_internal_claim_fullpath(self, from_file):
-        # TODO: shouldn't have to hash here if we can bundle this with previous func.
-        return os.path.join(
-            self.dir_internal_claims, _file_util.digest_sha256(from_file) + ".json"
-        )
+    # def get_internal_claim_fullpath(self, from_file):
+    #     # TODO: shouldn't have to hash here if we can bundle this with previous func.
+    #     return os.path.join(
+    #         self.dir_internal_claims, _file_util.digest_sha256(from_file) + ".json"
+    #     )
 
-    def legacy_path_for(self, action_name: str, output: bool = False) -> str:
-        """Returns a full directory path for the given action."""
-        return os.path.join(
-            self.shared_prefix,
-            f"{action_name}-output" if output else action_name,
-        )
+    # def legacy_path_for(self, action_name: str, output: bool = False) -> str:
+    #     """Returns a full directory path for the given action."""
+    #     return os.path.join(
+    #         self.shared_prefix,
+    #         f"{action_name}-output" if output else action_name,
+    #     )
 
     def input_path_for(self, collection_id: str) -> str:
         """Returns a full direction path for the input dir for this collection."""
