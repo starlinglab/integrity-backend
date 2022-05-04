@@ -48,7 +48,7 @@ class AssetHelper:
                 must not contain spaces or special characters, as it will become
                 part of directory names (e.g. "starlinglab" good, not "Starling Lab")
         """
-        if not self._is_filename_safe(organization_id):
+        if not self.is_filename_safe(organization_id):
             raise ValueError(f"Organization {organization_id} is not filename safe!")
         self.org_id = organization_id
 
@@ -140,11 +140,11 @@ class AssetHelper:
         """
         return os.path.join(self.dir_internal_tmp, collection_id, f"action-{action_name}")
 
-    def _filename_safe(self, filename):
+    def filename_safe(self, filename):
         return filename.lower().replace(" ", "-").strip()
 
-    def _is_filename_safe(self, filename):
-        return self._filename_safe(filename) == filename
+    def is_filename_safe(self, filename):
+        return self.filename_safe(filename) == filename
 
     def _collection_prefix(self, collection_id: str) -> str:
         return os.path.join(self.internal_prefix, collection_id)
@@ -159,7 +159,7 @@ class AssetHelper:
             return
 
         for coll_id, coll_config in collections_dict.items():
-            if not self._is_filename_safe(coll_id):
+            if not self.is_filename_safe(coll_id):
                 raise ValueError(
                     f"Collection {coll_id} for org {self.org_id} is not filename safe"
                 )

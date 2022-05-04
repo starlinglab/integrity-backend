@@ -51,13 +51,14 @@ class Actions:
             Exception if errors are encountered during processing
         """
         # TODO: change function to take just org_id as param
+        action_name = "archive"
         org_id = org_config["id"]
 
         asset_helper = AssetHelper(org_id)
         file_util = FileUtil()
 
         collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
-        action = config.ORGANIZATION_CONFIG.get_action(org_id, collection_id, "archive")
+        action = config.ORGANIZATION_CONFIG.get_action(org_id, collection_id, action_name)
         action_params = action.get("params")
         if action_params["encryption"]["algo"] != "aes-256-cbc":
             raise Exception(
@@ -70,7 +71,7 @@ class Actions:
             raise Exception(f"SHA-256 of ZIP does not match file name: {zip_path}")
 
         # Copy ZIP
-        archive_dir = asset_helper.path_for_action(collection_id, "archive")
+        archive_dir = asset_helper.path_for_action(collection_id, action_name)
         tmp_zip = shutil.copy2(zip_path, archive_dir)
 
         # Verify ZIP contents are valid and expected
@@ -103,7 +104,7 @@ class Actions:
             )
 
         # Extract content file
-        tmp_dir = asset_helper.path_for_action_tmp(collection_id, "archive")
+        tmp_dir = asset_helper.path_for_action_tmp(collection_id, action_name)
         zip_dir = os.path.join(tmp_dir, content_sha_unverified)
         extracted_content = os.path.join(zip_dir, content_filename)
         file_util.create_dir(zip_dir)
@@ -207,16 +208,14 @@ class Actions:
         return internal_asset_file
 
     def c2pa_proofmode(self, zip_path: str, org_config: dict, collection_id: str):
-        """C2PA-inject jpegs in a asset zip from proofmode.
+        """Process a proofmode zip that bundles multiple JPEG assets with metadata,
+        and injects C2PA claims to outputted JPEG assets.
 
         Args:
             zip_path: path to asset zip (will be copied, not altered)
             org_config: configuration dictionary for this organization
             collection_id: string with the unique collection identifier this
                 asset is in
-
-        Returns:
-            TODO
 
         Raises:
             Exception if errors are encountered during processing
@@ -227,70 +226,87 @@ class Actions:
         asset_helper = AssetHelper(org_id)
         file_util = FileUtil()
 
+        # Get configs
         collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
         action = config.ORGANIZATION_CONFIG.get_action(org_id, collection_id, action_name)
         action_params = action.get("params")
+
+        # Get paths
         action_dir = asset_helper.path_for_action(collection_id, action_name)
         action_output_dir = asset_helper.path_for_action_output(collection_id, action_name)
         action_tmp_dir = asset_helper.path_for_action_tmp(collection_id, action_name)
 
-        # Copy zip
+        # Verify and copy zip
+        input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
+        if input_zip_sha != file_util.digest_sha256(zip_path):
+            raise Exception(f"SHA-256 of ZIP does not match file name: {zip_path}")
         tmp_zip = shutil.copy2(zip_path, action_tmp_dir)
-        zip_name = os.path.splitext(os.path.basename(tmp_zip))[0]
+        bundle_name = f"{input_zip_sha}-images"
 
-        # Paths for extracted JPEGs
+        # Define paths for images extracted from proofmode zip
         tmp_img_dir = os.path.join(
-            action_tmp_dir, zip_name + "-imgs"
+            action_tmp_dir, bundle_name
         )
         action_img_dir = os.path.join(
-            action_dir, zip_name + "-imgs"
+            action_dir, bundle_name
         )
 
+        meta_content = None
+        photographer_id = None
         with ZipFile(tmp_zip) as zipf:
-            # Get photographer ID
-            # For now take phone number from meta-content.json
-            # TODO: get name instead
-            meta_content = next(
+            meta_content_path = next(
                 (s for s in zipf.namelist() if s.endswith("-meta-content.json")), None
             )
-            if meta_content is None:
-                raise Exception("meta-content.json not found in zip")
-            with zipf.open(meta_content) as meta_content_f:
-                photographer_id = json.load(meta_content_f)["private"]["signal"][
-                    "source"
-                ]
-                if photographer_id[0] == "+":
-                    # Make it filename-safe by removing leading plus
-                    photographer_id = photographer_id[1:]
+            if meta_content_path is None:
+                raise Exception(f"ZIP at {zip_path} has no content metadata file")
+            with zipf.open(meta_content_path) as meta_content_f:
+                meta_content = json.load(meta_content_f)
+                photographer_id = asset_helper.filename_safe(meta_content["private"]["signal"]["sourceName"])
 
-            # Open content zip and extract all JPEGs
+            # Open content ZIP and extract all JPEGs
             content_zip = next((s for s in zipf.namelist() if s.endswith(".zip")), None)
             if content_zip is None:
-                raise Exception("content zip not found in zip")
+                raise Exception(f"ZIP at {zip_path} has no content file")
             file_util.create_dir(tmp_img_dir)
             with ZipFile(zipf.open(content_zip)) as content_zip_f:
                 for file_path in content_zip_f.namelist():
                     if os.path.splitext(file_path)[1].lower() in [".jpg", ".jpeg"]:
                         content_zip_f.extract(file_path, tmp_img_dir)
 
+        # Get list of JPEGs
+        image_filenames = []
+        for filename in os.listdir(tmp_img_dir):
+            if filename.lower().endswith(".jpg") or filename.lower().endswith(".jpeg"):
+                image_filenames.append(filename)
+        
         # C2PA-inject all JPEGs
-        # TODO: Unzip bundle, store asset file, and create dictionary for claim creation.
-        meta_proofmode = None
-        claim = _claim.generate_c2pa_proofmode(action["params"], meta_proofmode)
-        for file in os.listdir(tmp_img_dir):
-            _claim_tool.run_claim_inject(claim, os.path.join(tmp_img_dir, file), None)
+        for filename in image_filenames:
+            claim = _claim.generate_c2pa_proofmode(action_params, meta_content, filename)
+            path = os.path.join(tmp_img_dir, filename)
+            _claim_tool.run_claim_inject(claim, path, None)
 
-        # Copy extracted jpegs folder into action_dir
+        # Process C2PA-injected JPEGs
+        for filename in image_filenames:
+            # Rename each image file to .jpg
+            path = os.path.join(tmp_img_dir, filename)
+            image_path = FileUtil.change_filename_extension(path, ".jpg")
+            os.rename(path, image_path)
+
+            # Read claims (requires .jpg extension as input)
+            claim_path = FileUtil.change_filename_extension(image_path, ".json")
+            _claim_tool.run_claim_dump(image_path, claim_path)
+
+        # Copy all C2PA-injected JPEGs to action_dir
         shutil.copytree(tmp_img_dir, action_img_dir, dirs_exist_ok=True)
 
-        # Atomically move to shared folder under photographer ID and date
+        # Atomically move all C2PA-injected JPEGs to output folder under photographer ID and date
         shared_dir = os.path.join(
             action_output_dir,
             photographer_id,
-            datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            datetime.now().strftime("%Y-%m-%d"),
+            bundle_name,
         )
-
-        shutil.move(tmp_img_dir, shared_dir)
+        os.renames(tmp_img_dir, shared_dir)
 
     # def c2pa_add(self, asset_fullpath, org_config, collection_id):
     #     """Process asset with add action.
