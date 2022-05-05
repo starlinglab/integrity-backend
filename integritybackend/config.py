@@ -23,6 +23,9 @@ INTERNAL_ASSET_STORE = os.environ.get("INTERNAL_ASSET_STORE")
 # Local directory for synchronizing with a remote file system. Must exist and be readable by the server.
 SHARED_FILE_SYSTEM = os.environ.get("SHARED_FILE_SYSTEM")
 
+# Local key store for encryption keys
+KEY_STORE = os.environ.get("KEY_STORE")
+
 # Local file containing a dictionary with custom assertions mapped to asset name.
 CUSTOM_ASSERTIONS_DICTIONARY = os.environ.get("CUSTOM_ASSERTIONS_DICTIONARY")
 
@@ -37,11 +40,6 @@ ISCN_SERVER = os.environ.get("ISCN_SERVER")
 
 NUMBERS_API_KEY = os.environ.get("NUMBERS_API_KEY")
 NUMBERS_API_URL = os.environ.get("NUMBERS_API_URL")
-
-AUTHSIGN_URL = os.environ.get("AUTHSIGN_URL")
-AUTHSIGN_TOKEN = os.environ.get("AUTHSIGN_TOKEN","")
-
-KEY_STORE = os.environ.get("KEY_STORE")
 
 
 class OrganizationConfig:

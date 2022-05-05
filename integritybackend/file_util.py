@@ -175,16 +175,18 @@ class FileUtil:
                 f"'ots stamp' failed with code {proc.returncode} and output:\n\n{proc.stderr.decode()}"
             )
 
-    @staticmethod
-    def authsign_sign(data_hash):
+    def authsign_sign(self, data_hash, authsign_server_url, authsign_auth_token, authsign_file_path=None):
         """
         Sign the provided hash with authsign.
         Args:
             data_hash: hash of data as a hexadecimal string
+            authsign_server_url: URL to authsign server
+            authsign_auth_token: authorization token to authsign server
+            authsign_file_path: optional output path for authsign proof file (.authsign)
         Raises:
             Any errors with the request
         Returns:
-            The response as a string
+            The signature proof as a string
         """
 
         dt = datetime.now()
@@ -198,26 +200,33 @@ class FileUtil:
             )
 
         headers = {} 
-        if config.AUTHSIGN_TOKEN != "":
-            headers={"Authorization": f"bearer {config.AUTHSIGN_TOKEN}"}
+        if authsign_auth_token != "":
+            headers={"Authorization": f"bearer {authsign_auth_token}"}
                         
         r = requests.post(
-            config.AUTHSIGN_URL + "/sign",
+            authsign_server_url + "/sign",
             headers=headers,
             json={"hash": data_hash, "created": dt},
         )
-        #print(r.text)
         r.raise_for_status()
+        authsign_proof = r.text
 
-        return r.text
+        # Write proof to file
+        if authsign_file_path != None:
+            with open(authsign_file_path, "w") as f:
+                f.write(json.dumps(authsign_proof))
+                f.write("\n")
 
-    def authsign_verify(resp):
+        return authsign_proof
+
+    def authsign_verify(resp, authsign_server_url):
         """
         Verify the provided signed JSON with authsign.
         Args:
             resp: Python object or JSON string
+            authsign_server_url: URL to authsign server
         Raises:
-            any unexpected server responses
+            Any unexpected server responses
         Returns:
             bool indicating whether the verification was successful or not
         """
@@ -225,7 +234,7 @@ class FileUtil:
         if not isinstance(resp, str):
             resp = json.dumps(resp)
 
-        r = requests.post(config.AUTHSIGN_URL + "/verify", data=resp)
+        r = requests.post(authsign_server_url + "/verify", data=resp)
         if r.status_code == 200:
             return True
         elif r.status_code == 400:
