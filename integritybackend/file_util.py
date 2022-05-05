@@ -139,7 +139,7 @@ class FileUtil:
         Returns:
             the filename with the new extension
         """
-        return Path(filename).with_suffix(ext)
+        return str(Path(filename).with_suffix(ext))
 
     def register_timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
         """Creates a opentimestamps file for the given file.

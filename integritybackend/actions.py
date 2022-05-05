@@ -112,7 +112,7 @@ class Actions:
                 raise Exception(f"SHA-256 of content does not match file name: {zip_path}")
             content_cid = _file_util.digest_cidv1(extracted_content)
             content_md5 = _file_util.digest_md5(extracted_content)
-            _logger.info("Content verified for archival: {zip_path}")
+            _logger.info(f"Content verified for archival: {zip_path}")
 
             # Sign with authsign
             if action_params["signers"]["authsign"]["active"]:
@@ -253,7 +253,7 @@ class Actions:
         shutil.move(tmp_asset_file, internal_asset_file)
         subfolders = [
             jwt_payload.get("author", {}).get("name"),
-            datetime.datetime.now().strftime("%Y-%m-%d"),
+            datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         ]
         shutil.copy2(
             internal_asset_file, asset_helper.get_assets_create_output(subfolders)
@@ -366,7 +366,7 @@ class Actions:
             shared_dir = os.path.join(
                 action_output_dir,
                 photographer_id,
-                datetime.now().strftime("%Y-%m-%d"),
+                datetime.now(timezone.utc).strftime("%Y-%m-%d"),
                 bundle_name,
             )
             if os.path.exists(shared_dir):
