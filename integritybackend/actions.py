@@ -33,9 +33,6 @@ class Actions:
     """
 
     def archive(self, zip_path: str, org_config: dict, collection_id: str):
-        return
-
-    def archive2(self, zip_path: str, org_config: dict, collection_id: str):
         """Archive asset.
 
         Args:
@@ -155,6 +152,33 @@ class Actions:
         encrypted_zip = os.path.join(archive_dir, enc_zip_sha + ".encrypted")
         os.rename(tmp_encrypted_zip, encrypted_zip)
         _logger.info(f"Encrypted zip generated: {encrypted_zip}")
+
+        # Generate file that contains all the hashes
+        action_output_dir = asset_helper.path_for_action_output(collection_id, action_name)
+        hash_list_path = os.path.join(action_output_dir, f"{input_zip_sha}.json")
+        hash_list = {
+            "inputBundle": {
+                "sha256": input_zip_sha,
+            },
+            "content": {
+                "sha256": content_sha,
+                "md5": content_md5,
+                "cid": content_cid,
+            },
+            "archive": {
+                "sha256": zip_sha,
+                "md5": zip_md5,
+                "cid": zip_cid,
+            },
+            "archiveEncrypted": {
+                "sha256": enc_zip_sha,
+                "md5": enc_zip_md5,
+                "cid": enc_zip_cid,
+            }
+        }
+        with open(hash_list_path, "w") as f:
+            f.write(json.dumps(hash_list))
+            f.write("\n")
 
         # TODO: Register encrypted ZIP on Numbers Protocol
         # TODO: Register encrypted ZIP on ISCN
