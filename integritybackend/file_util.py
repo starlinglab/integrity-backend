@@ -5,6 +5,7 @@ from .log_helper import LogHelper
 from Crypto.Cipher import AES
 from hashlib import sha256, md5
 from datetime import datetime, timezone
+from pathlib import Path
 
 import errno
 import json
@@ -126,6 +127,19 @@ class FileUtil:
         """
         name, _ = os.path.splitext(os.path.basename(filename))
         return name.split("-")[0]
+
+    @staticmethod
+    def change_filename_extension(filename, ext: str) -> str:
+        """Changes the file extension for the given filename.
+
+        Args:
+            filename: the filename to process
+            ext: the new file extension
+
+        Returns:
+            the filename with the new extension
+        """
+        return Path(filename).with_suffix(ext)
 
     def register_timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
         """Creates a opentimestamps file for the given file.
