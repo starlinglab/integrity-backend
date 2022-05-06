@@ -114,6 +114,14 @@ class Actions:
             content_md5 = _file_util.digest_md5(extracted_content)
             _logger.info(f"Content verified for archival: {zip_path}")
 
+            # Extract metadata files
+            meta_content_filename = f"{content_sha}-meta-content.json"
+            extracted_meta_content = os.path.join(zip_dir, meta_content_filename)
+            zip_util.extract_file(tmp_zip, meta_content_filename, extracted_meta_content)
+            meta_recorder_filename = f"{content_sha}-meta-recorder.json"
+            extracted_meta_recorder = os.path.join(zip_dir, meta_recorder_filename)
+            zip_util.extract_file(tmp_zip, meta_recorder_filename, extracted_meta_recorder)
+
             # Sign with authsign
             if action_params["signers"]["authsign"]["active"]:
                 authsign_server_url = action_params["signers"]["authsign"]["server_url"]
@@ -125,9 +133,6 @@ class Actions:
                 _logger.info(f"Content signed by authsign server: {content_authsign_path}")
 
                 # Sign content metadata hash
-                meta_content_filename = f"{content_sha}-meta-content.json"
-                extracted_meta_content = os.path.join(zip_dir, meta_content_filename)
-                zip_util.extract_file(tmp_zip, meta_content_filename, extracted_meta_content)
                 meta_content_sha = _file_util.digest_sha256(extracted_meta_content)
                 meta_content_authsign_path = self._authsign_data(tmp_zip, extracted_meta_content, meta_content_sha, authsign_server_url, authsign_auth_token)
                 if meta_content_authsign_path != None:
@@ -136,9 +141,6 @@ class Actions:
                     _logger.info(f"Metadata of content signage failed")
 
                 # Sign recorder metadata hash
-                meta_recorder_filename = f"{content_sha}-meta-recorder.json"
-                extracted_meta_recorder = os.path.join(zip_dir, meta_recorder_filename)
-                zip_util.extract_file(tmp_zip, meta_recorder_filename, extracted_meta_recorder)
                 meta_recorder_sha = _file_util.digest_sha256(extracted_meta_recorder)
                 meta_recorder_authsign_path = self._authsign_data(tmp_zip, extracted_meta_recorder, meta_recorder_sha, authsign_server_url, authsign_auth_token)
                 if meta_recorder_authsign_path != None:
@@ -213,9 +215,76 @@ class Actions:
                 f.write(json.dumps(hash_list))
                 f.write("\n")
 
+            # Register encrypted ZIP on ISCN
+            if action_params["registration_policies"]["opentimestamps"]["active"]:
+                with open(extracted_meta_content) as meta_content_f:
+                    meta_content = json.load(meta_content_f)
+                    iscn_record = {
+                      "contentFingerprints": [
+                        "hash://sha256/{enc_zip_sha}",
+                        "hash://md5/{enc_zip_md5}",
+                        "ipfs://{enc_zip_cid}",
+                      ],
+                      "stakeholders": [
+                          {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": "hash://sha256/{content_sha}",
+                            "description": "The SHA-256 of the original content."
+                          },
+                          {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": "hash://md5/{content_md5}",
+                            "description": "The MD5 of the original content."
+                          },
+                          {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": "ipfs://{content_cid}",
+                            "description": "The CID of the original content."
+                          },
+                          {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": "hash://sha256/{zip_sha}",
+                            "description": "The SHA-256 of the unencrypted archive."
+                          },
+                          {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": "hash://md5/{zip_md5}",
+                            "description": "The MD5 of the unencrypted archive."
+                          },
+                          {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": "ipfs://{zip_cid}",
+                            "description": "The CID of the unencrypted archive."
+                          },
+                      ],
+                      "type": "Record",
+                      "name": meta_content["name"],
+                      "description": meta_content["description"],
+                      "usageInfo": "",
+                      "keywords": [],
+                      "datePublished": meta_content["dateCreated"],
+                      "url": "",
+                      "contentMetadata":
+                      {
+                        "@context": "https://schema.org",
+                        "@type": "CreativeWork",
+                        "name": meta_content["name"],
+                        "description": meta_content["description"],
+                        "datePublished": meta_content["dateCreated"],
+                        "version": 1,
+                        "author": meta_content["author"],
+                        "keywords": meta_content["extras"],
+                        "conditionsOfAccess": "Encrypted with AES-256 by Starling Lab.",
+                      }
+                    }
+                    if Iscn.register(iscn_record):
+                        _logger.info(f"Content registered on iscn")
+                    else:
+                        _logger.error(f"Content registration on iscn failed")
+            else:
+                _logger.info(f"Content registration on iscn skipped")
+
             # TODO: Register encrypted ZIP on Numbers Protocol
-            # TODO: Register encrypted ZIP on ISCN
-            # Iscn.register_archive(path)
         except Exception as e:
             _logger.error(f"{action_name} failed during processing of input file: {zip_path}")
             _logger.error(str(e))
