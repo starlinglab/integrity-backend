@@ -188,6 +188,68 @@ class Actions:
             os.rename(tmp_encrypted_zip, encrypted_zip)
             _logger.info(f"Encrypted zip generated: {encrypted_zip}")
 
+            # Register encrypted ZIP on ISCN
+            if action_params["registration_policies"]["opentimestamps"]["active"]:
+                with open(extracted_meta_content) as meta_content_f:
+                    meta_content = json.load(meta_content_f)
+                    iscn_record = {
+                      "contentFingerprints": [
+                        f"hash://sha256/{enc_zip_sha}",
+                        f"hash://md5/{enc_zip_md5}",
+                        f"ipfs://{enc_zip_cid}",
+                      ],
+                      "stakeholders": [
+                          {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": f"hash://sha256/{content_sha}",
+                            "description": "The SHA-256 of the original content."
+                          },
+                          {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": f"hash://md5/{content_md5}",
+                            "description": "The MD5 of the original content."
+                          },
+                          {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": f"ipfs://{content_cid}",
+                            "description": "The CID of the original content."
+                          },
+                          {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": f"hash://sha256/{zip_sha}",
+                            "description": "The SHA-256 of the unencrypted archive."
+                          },
+                          {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": f"hash://md5/{zip_md5}",
+                            "description": "The MD5 of the unencrypted archive."
+                          },
+                          {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": f"ipfs://{zip_cid}",
+                            "description": "The CID of the unencrypted archive."
+                          },
+                      ],
+                      "type": "Record",
+                      "name": meta_content["name"],
+                      "description": meta_content["description"],
+                      "author": meta_content["author"],
+                      "usageInfo": "Encrypted with AES-256 by Starling Lab.",
+                      "keywords": [ org_id, collection_id ],
+                      "datePublished": meta_content["dateCreated"],
+                      "url": "",
+                      "recordNotes": json.dumps((meta_content["extras"]), separators=(',', ':')),
+                    }
+                    iscnId = Iscn.register(iscn_record)
+                    if iscnId is not None:
+                        _logger.info(f"Content registered on iscn: {iscnId}")
+                    else:
+                        _logger.error("Content registration on iscn failed")
+            else:
+                _logger.info("Content registration on iscn skipped")
+
+            # TODO: Register encrypted ZIP on Numbers Protocol
+
             # Generate file that contains all the hashes
             action_output_dir = asset_helper.path_for_action_output(collection_id, action_name)
             hash_list_path = os.path.join(action_output_dir, f"{input_zip_sha}.json")
@@ -209,82 +271,13 @@ class Actions:
                     "sha256": enc_zip_sha,
                     "md5": enc_zip_md5,
                     "cid": enc_zip_cid,
-                }
+                },
             }
+            if iscnId is not None:
+                hash_list["registrationRecords"] = { "iscnId": iscnId }
             with open(hash_list_path, "w") as f:
                 f.write(json.dumps(hash_list))
                 f.write("\n")
-
-            # Register encrypted ZIP on ISCN
-            if action_params["registration_policies"]["opentimestamps"]["active"]:
-                with open(extracted_meta_content) as meta_content_f:
-                    meta_content = json.load(meta_content_f)
-                    iscn_record = {
-                      "contentFingerprints": [
-                        "hash://sha256/{enc_zip_sha}",
-                        "hash://md5/{enc_zip_md5}",
-                        "ipfs://{enc_zip_cid}",
-                      ],
-                      "stakeholders": [
-                          {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": "hash://sha256/{content_sha}",
-                            "description": "The SHA-256 of the original content."
-                          },
-                          {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": "hash://md5/{content_md5}",
-                            "description": "The MD5 of the original content."
-                          },
-                          {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": "ipfs://{content_cid}",
-                            "description": "The CID of the original content."
-                          },
-                          {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": "hash://sha256/{zip_sha}",
-                            "description": "The SHA-256 of the unencrypted archive."
-                          },
-                          {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": "hash://md5/{zip_md5}",
-                            "description": "The MD5 of the unencrypted archive."
-                          },
-                          {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": "ipfs://{zip_cid}",
-                            "description": "The CID of the unencrypted archive."
-                          },
-                      ],
-                      "type": "Record",
-                      "name": meta_content["name"],
-                      "description": meta_content["description"],
-                      "usageInfo": "",
-                      "keywords": [],
-                      "datePublished": meta_content["dateCreated"],
-                      "url": "",
-                      "contentMetadata":
-                      {
-                        "@context": "https://schema.org",
-                        "@type": "CreativeWork",
-                        "name": meta_content["name"],
-                        "description": meta_content["description"],
-                        "datePublished": meta_content["dateCreated"],
-                        "version": 1,
-                        "author": meta_content["author"],
-                        "keywords": meta_content["extras"],
-                        "conditionsOfAccess": "Encrypted with AES-256 by Starling Lab.",
-                      }
-                    }
-                    if Iscn.register(iscn_record):
-                        _logger.info(f"Content registered on iscn")
-                    else:
-                        _logger.error(f"Content registration on iscn failed")
-            else:
-                _logger.info(f"Content registration on iscn skipped")
-
-            # TODO: Register encrypted ZIP on Numbers Protocol
         except Exception as e:
             _logger.error(f"{action_name} failed during processing of input file: {zip_path}")
             _logger.error(str(e))

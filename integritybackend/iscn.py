@@ -1,6 +1,7 @@
 from . import config
 from .log_helper import LogHelper
 
+import json
 import requests
 
 _logger = LogHelper.getLogger()
@@ -19,14 +20,14 @@ class Iscn:
                 ISCN schema (https://github.com/likecoin/iscn-specs/tree/master/schema)
 
         Returns:
-            True if the registration succeeded; False otherwise
+            iscnId if the registration succeeded; None otherwise
         """
         response = requests.post(_REGISTER, json={"metadata": registration})
 
         if not response.ok:
             _logger.error(
-                "ISCN registration failed: %s %s", response.status_code, response.text
+                f"ISCN registration failed: {response.status_code} {response.text}"
             )
-            return False
-        _logger.info(response.text)
-        return True
+            return None
+        _logger.info(f"ISCN registration succeeded: {response.text}")
+        return json.loads(response.text)["iscnId"]
