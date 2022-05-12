@@ -83,6 +83,7 @@ class Actions:
             if "/" in content_filename:
                 raise Exception(f"Content file is not at ZIP root: {content_filename}")
             if (
+                '*' not in collection["asset_extensions"] and
                 os.path.splitext(content_filename)[1][1:]
                 not in collection["asset_extensions"]
             ):
