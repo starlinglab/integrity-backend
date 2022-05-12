@@ -114,10 +114,11 @@ class Claim:
         assertion_templates = self.assertions_by_label(claim)
         assertions = []
 
-        author_data = action_params["creative_work_author"]
+        author_data = meta_content["author"]
         if author_data is not None:
             creative_work = assertion_templates["stds.schema-org.CreativeWork"]
             creative_work["data"] = author_data
+            author_data["credential"] = []
             assertions.append(creative_work)
 
         author_name = action_params["creative_work_author"]["name"]
@@ -130,7 +131,7 @@ class Claim:
             photo_meta["data"] = photo_meta_data
             assertions.append(photo_meta)
 
-        gps_time = date.fromtimestamp(int(meta_content["private"]["proofmode"][filename]["proofs"][0]["Location.Time"])/1000).isoformat()
+        gps_time = datetime.utcfromtimestamp(int(meta_content["private"]["proofmode"][filename]["proofs"][0]["Location.Time"])/1000).isoformat() + "Z"
         exif_data = self._make_exif_data(float(gps_lat), float(gps_lon), gps_time)
         if exif_data is not None:
             exif = assertion_templates["stds.exif"]
@@ -146,8 +147,7 @@ class Claim:
             signature["data"] = signature_data
             assertions.append(signature)
 
-        # proofmode_time = meta_content["dateCreated"]
-        proofmode_time = meta_content["private"]["proofmode"][filename]["proofs"][0]["Proof Generated"]
+        proofmode_time = meta_content["dateCreated"]
         if proofmode_time is not None:
             c2pa_actions = assertion_templates["c2pa.actions"]
             c2pa_actions["data"]["actions"][0]["when"] = proofmode_time
@@ -387,15 +387,6 @@ class Claim:
         return self._remove_keys_with_no_values(location_created)
 
     def _make_exif_data(self, lat: int, lon: int, timestamp: str):
-        """Returns the data fields for the stds.exif section of the claim
-
-        Args:
-            meta: metadata dictionary from the incoming request
-
-        Returns:
-            dictionary to use as the value of the stds.exif field
-            might be empty, if no input data is provided
-        """
         exif_data = {}
 
         (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
@@ -513,7 +504,7 @@ class Claim:
         signature_list.append(
             {
                 "starling:provider": "pgp",
-                "starling:algorithm": f"proofmode-pgp",
+                "starling:algorithm": "proofmode-pgp",
                 "starling:publicKey": pgp_pubkey,
                 "starling:signature": pgp_sig,
                 "starling:authenticatedMessage": sha256hash,
