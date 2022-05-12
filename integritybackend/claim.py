@@ -97,13 +97,15 @@ class Claim:
 
         return claim
 
-    def generate_c2pa_proofmode(self, action_params: dict, meta_content: dict, filename: str):
+    def generate_c2pa_proofmode(
+        self, action_params: dict, meta_content: dict, filename: str
+    ):
         """Generates a claim for the 'c2pa-proofmode' action.
 
         Args:
             action_params: a dictionary with the params from this action's config
             meta_content: dictionary with the metadata from a proofmode bundle
-            filename: 
+            filename:
 
         Returns:
             a dictionary containing the 'create' claim data
@@ -123,15 +125,31 @@ class Claim:
 
         author_name = action_params["creative_work_author"]["name"]
         copyright = action_params["copyright"]
-        gps_lat = meta_content["private"]["proofmode"][filename]["proofs"][0]["Location.Latitude"]
-        gps_lon = meta_content["private"]["proofmode"][filename]["proofs"][0]["Location.Longitude"]
-        photo_meta_data = self._make_photo_meta_data(author_name, copyright, gps_lat, gps_lon)
+        gps_lat = meta_content["private"]["proofmode"][filename]["proofs"][0][
+            "Location.Latitude"
+        ]
+        gps_lon = meta_content["private"]["proofmode"][filename]["proofs"][0][
+            "Location.Longitude"
+        ]
+        photo_meta_data = self._make_photo_meta_data(
+            author_name, copyright, gps_lat, gps_lon
+        )
         if photo_meta_data is not None:
             photo_meta = assertion_templates["stds.iptc.photo-metadata"]
             photo_meta["data"] = photo_meta_data
             assertions.append(photo_meta)
 
-        gps_time = datetime.utcfromtimestamp(int(meta_content["private"]["proofmode"][filename]["proofs"][0]["Location.Time"])/1000).isoformat() + "Z"
+        gps_time = (
+            datetime.utcfromtimestamp(
+                int(
+                    meta_content["private"]["proofmode"][filename]["proofs"][0][
+                        "Location.Time"
+                    ]
+                )
+                / 1000
+            ).isoformat()
+            + "Z"
+        )
         exif_data = self._make_exif_data(float(gps_lat), float(gps_lon), gps_time)
         if exif_data is not None:
             exif = assertion_templates["stds.exif"]
@@ -141,7 +159,9 @@ class Claim:
         pgp_sig = meta_content["private"]["proofmode"][filename]["pgpSignature"]
         pgp_pubkey = meta_content["private"]["proofmode"][filename]["pgpPublicKey"]
         sha256hash = meta_content["private"]["proofmode"][filename]["sha256hash"]
-        signature_data = self._make_signature_data_proofmode(pgp_sig, pgp_pubkey, sha256hash, filename)
+        signature_data = self._make_signature_data_proofmode(
+            pgp_sig, pgp_pubkey, sha256hash, filename
+        )
         if signature_data is not None:
             signature = assertion_templates["org.starlinglab.integrity"]
             signature["data"] = signature_data
@@ -270,7 +290,7 @@ class Claim:
 
     def _make_photo_meta_data(self, author_name, copyright, lat, lon):
         photo_meta_data = {
-            "dc:creator": [ author_name ],
+            "dc:creator": [author_name],
             "dc:rights": copyright,
             "Iptc4xmpExt:LocationCreated": self._get_location_created(lat, lon),
         }
@@ -497,7 +517,12 @@ class Claim:
         }
 
     def _make_signature_data_proofmode(self, pgp_sig, pgp_pubkey, sha256hash, filename):
-        if pgp_sig is None or pgp_pubkey is None or sha256hash is None or filename is None:
+        if (
+            pgp_sig is None
+            or pgp_pubkey is None
+            or sha256hash is None
+            or filename is None
+        ):
             return None
 
         signature_list = []

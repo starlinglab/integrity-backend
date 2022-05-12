@@ -53,8 +53,12 @@ class Actions:
             asset_helper = AssetHelper(org_id)
             _file_util = FileUtil()
 
-            collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
-            action = config.ORGANIZATION_CONFIG.get_action(org_id, collection_id, action_name)
+            collection = config.ORGANIZATION_CONFIG.get_collection(
+                org_id, collection_id
+            )
+            action = config.ORGANIZATION_CONFIG.get_action(
+                org_id, collection_id, action_name
+            )
             action_params = action.get("params")
             if action_params["encryption"]["algo"] != "aes-256-cbc":
                 raise Exception(
@@ -83,8 +87,8 @@ class Actions:
             if "/" in content_filename:
                 raise Exception(f"Content file is not at ZIP root: {content_filename}")
             if (
-                '*' not in collection["asset_extensions"] and
-                os.path.splitext(content_filename)[1][1:]
+                "*" not in collection["asset_extensions"]
+                and os.path.splitext(content_filename)[1][1:]
                 not in collection["asset_extensions"]
             ):
                 raise Exception(
@@ -110,7 +114,9 @@ class Actions:
             # Generate content hashes and verify
             content_sha = _file_util.digest_sha256(extracted_content)
             if content_sha != content_sha_unverified:
-                raise Exception(f"SHA-256 of content does not match file name: {zip_path}")
+                raise Exception(
+                    f"SHA-256 of content does not match file name: {zip_path}"
+                )
             content_cid = _file_util.digest_cidv1(extracted_content)
             content_md5 = _file_util.digest_md5(extracted_content)
             _logger.info(f"Content verified for archival: {zip_path}")
@@ -118,34 +124,64 @@ class Actions:
             # Extract metadata files
             meta_content_filename = f"{content_sha}-meta-content.json"
             extracted_meta_content = os.path.join(zip_dir, meta_content_filename)
-            zip_util.extract_file(tmp_zip, meta_content_filename, extracted_meta_content)
+            zip_util.extract_file(
+                tmp_zip, meta_content_filename, extracted_meta_content
+            )
             meta_recorder_filename = f"{content_sha}-meta-recorder.json"
             extracted_meta_recorder = os.path.join(zip_dir, meta_recorder_filename)
-            zip_util.extract_file(tmp_zip, meta_recorder_filename, extracted_meta_recorder)
+            zip_util.extract_file(
+                tmp_zip, meta_recorder_filename, extracted_meta_recorder
+            )
 
             # Sign with authsign
             if action_params["signers"]["authsign"]["active"]:
                 authsign_server_url = action_params["signers"]["authsign"]["server_url"]
                 authsign_auth_token = action_params["signers"]["authsign"]["auth_token"]
-                _logger.info(f"Content signing by authsign server: {authsign_server_url}")
+                _logger.info(
+                    f"Content signing by authsign server: {authsign_server_url}"
+                )
 
                 # Sign content hash
-                content_authsign_path = self._authsign_data(tmp_zip, extracted_content, content_sha, authsign_server_url, authsign_auth_token)
-                _logger.info(f"Content signed by authsign server: {content_authsign_path}")
+                content_authsign_path = self._authsign_data(
+                    tmp_zip,
+                    extracted_content,
+                    content_sha,
+                    authsign_server_url,
+                    authsign_auth_token,
+                )
+                _logger.info(
+                    f"Content signed by authsign server: {content_authsign_path}"
+                )
 
                 # Sign content metadata hash
                 meta_content_sha = _file_util.digest_sha256(extracted_meta_content)
-                meta_content_authsign_path = self._authsign_data(tmp_zip, extracted_meta_content, meta_content_sha, authsign_server_url, authsign_auth_token)
+                meta_content_authsign_path = self._authsign_data(
+                    tmp_zip,
+                    extracted_meta_content,
+                    meta_content_sha,
+                    authsign_server_url,
+                    authsign_auth_token,
+                )
                 if meta_content_authsign_path != None:
-                    _logger.info(f"Metadata of content signed by authsign server: {meta_content_authsign_path}")
+                    _logger.info(
+                        f"Metadata of content signed by authsign server: {meta_content_authsign_path}"
+                    )
                 else:
                     _logger.info(f"Metadata of content signage failed")
 
                 # Sign recorder metadata hash
                 meta_recorder_sha = _file_util.digest_sha256(extracted_meta_recorder)
-                meta_recorder_authsign_path = self._authsign_data(tmp_zip, extracted_meta_recorder, meta_recorder_sha, authsign_server_url, authsign_auth_token)
+                meta_recorder_authsign_path = self._authsign_data(
+                    tmp_zip,
+                    extracted_meta_recorder,
+                    meta_recorder_sha,
+                    authsign_server_url,
+                    authsign_auth_token,
+                )
                 if meta_recorder_authsign_path != None:
-                    _logger.info(f"Metadata of recorder signed by authsign server: {meta_recorder_authsign_path}")
+                    _logger.info(
+                        f"Metadata of recorder signed by authsign server: {meta_recorder_authsign_path}"
+                    )
                 else:
                     _logger.info(f"Metadata of recorder signage failed")
             else:
@@ -160,7 +196,9 @@ class Actions:
                     content_ots_path,
                     "proofs/" + os.path.basename(content_ots_path),
                 )
-                _logger.info(f"Content registered on opentimestamps: {content_ots_path}")
+                _logger.info(
+                    f"Content registered on opentimestamps: {content_ots_path}"
+                )
             else:
                 _logger.info(f"Content registration on opentimestamps skipped")
 
@@ -194,52 +232,54 @@ class Actions:
                 with open(extracted_meta_content) as meta_content_f:
                     meta_content = json.load(meta_content_f)
                     iscn_record = {
-                      "contentFingerprints": [
-                        f"hash://sha256/{enc_zip_sha}",
-                        f"hash://md5/{enc_zip_md5}",
-                        f"ipfs://{enc_zip_cid}",
-                      ],
-                      "stakeholders": [
-                          {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": f"hash://sha256/{content_sha}",
-                            "description": "The SHA-256 of the original content."
-                          },
-                          {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": f"hash://md5/{content_md5}",
-                            "description": "The MD5 of the original content."
-                          },
-                          {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": f"ipfs://{content_cid}",
-                            "description": "The CID of the original content."
-                          },
-                          {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": f"hash://sha256/{zip_sha}",
-                            "description": "The SHA-256 of the unencrypted archive."
-                          },
-                          {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": f"hash://md5/{zip_md5}",
-                            "description": "The MD5 of the unencrypted archive."
-                          },
-                          {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": f"ipfs://{zip_cid}",
-                            "description": "The CID of the unencrypted archive."
-                          },
-                      ],
-                      "type": "Record",
-                      "name": meta_content["name"],
-                      "description": meta_content["description"],
-                      "author": meta_content["author"],
-                      "usageInfo": "Encrypted with AES-256 by Starling Lab.",
-                      "keywords": [ org_id, collection_id ],
-                      "datePublished": meta_content["dateCreated"],
-                      "url": "",
-                      "recordNotes": json.dumps((meta_content["extras"]), separators=(',', ':')),
+                        "contentFingerprints": [
+                            f"hash://sha256/{enc_zip_sha}",
+                            f"hash://md5/{enc_zip_md5}",
+                            f"ipfs://{enc_zip_cid}",
+                        ],
+                        "stakeholders": [
+                            {
+                                "contributionType": "http://schema.org/citation",
+                                "footprint": f"hash://sha256/{content_sha}",
+                                "description": "The SHA-256 of the original content.",
+                            },
+                            {
+                                "contributionType": "http://schema.org/citation",
+                                "footprint": f"hash://md5/{content_md5}",
+                                "description": "The MD5 of the original content.",
+                            },
+                            {
+                                "contributionType": "http://schema.org/citation",
+                                "footprint": f"ipfs://{content_cid}",
+                                "description": "The CID of the original content.",
+                            },
+                            {
+                                "contributionType": "http://schema.org/citation",
+                                "footprint": f"hash://sha256/{zip_sha}",
+                                "description": "The SHA-256 of the unencrypted archive.",
+                            },
+                            {
+                                "contributionType": "http://schema.org/citation",
+                                "footprint": f"hash://md5/{zip_md5}",
+                                "description": "The MD5 of the unencrypted archive.",
+                            },
+                            {
+                                "contributionType": "http://schema.org/citation",
+                                "footprint": f"ipfs://{zip_cid}",
+                                "description": "The CID of the unencrypted archive.",
+                            },
+                        ],
+                        "type": "Record",
+                        "name": meta_content["name"],
+                        "description": meta_content["description"],
+                        "author": meta_content["author"],
+                        "usageInfo": "Encrypted with AES-256 by Starling Lab.",
+                        "keywords": [org_id, collection_id],
+                        "datePublished": meta_content["dateCreated"],
+                        "url": "",
+                        "recordNotes": json.dumps(
+                            (meta_content["extras"]), separators=(",", ":")
+                        ),
                     }
                     iscnId = Iscn.register(iscn_record)
                     if iscnId is not None:
@@ -252,7 +292,9 @@ class Actions:
             # TODO: Register encrypted ZIP on Numbers Protocol
 
             # Generate file that contains all the hashes
-            action_output_dir = asset_helper.path_for_action_output(collection_id, action_name)
+            action_output_dir = asset_helper.path_for_action_output(
+                collection_id, action_name
+            )
             hash_list_path = os.path.join(action_output_dir, f"{input_zip_sha}.json")
             hash_list = {
                 "inputBundle": {
@@ -275,12 +317,14 @@ class Actions:
                 },
             }
             if iscnId is not None:
-                hash_list["registrationRecords"] = { "iscnId": iscnId }
+                hash_list["registrationRecords"] = {"iscnId": iscnId}
             with open(hash_list_path, "w") as f:
                 f.write(json.dumps(hash_list))
                 f.write("\n")
         except Exception as e:
-            _logger.error(f"{action_name} failed during processing of input file: {zip_path}")
+            _logger.error(
+                f"{action_name} failed during processing of input file: {zip_path}"
+            )
             _logger.error(str(e))
         finally:
             self._purge_from_tmp(zip_dir, tmp_dir)
@@ -353,14 +397,22 @@ class Actions:
             _file_util = FileUtil()
 
             # Get configs
-            collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
-            action = config.ORGANIZATION_CONFIG.get_action(org_id, collection_id, action_name)
+            collection = config.ORGANIZATION_CONFIG.get_collection(
+                org_id, collection_id
+            )
+            action = config.ORGANIZATION_CONFIG.get_action(
+                org_id, collection_id, action_name
+            )
             action_params = action.get("params")
 
             # Get paths
             action_dir = asset_helper.path_for_action(collection_id, action_name)
-            action_output_dir = asset_helper.path_for_action_output(collection_id, action_name)
-            action_tmp_dir = asset_helper.path_for_action_tmp(collection_id, action_name)
+            action_output_dir = asset_helper.path_for_action_output(
+                collection_id, action_name
+            )
+            action_tmp_dir = asset_helper.path_for_action_tmp(
+                collection_id, action_name
+            )
 
             # Verify and copy zip
             input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
@@ -370,27 +422,28 @@ class Actions:
             bundle_name = f"{input_zip_sha}-images"
 
             # Define paths for images extracted from proofmode zip
-            tmp_img_dir = os.path.join(
-                action_tmp_dir, bundle_name
-            )
-            action_img_dir = os.path.join(
-                action_dir, bundle_name
-            )
+            tmp_img_dir = os.path.join(action_tmp_dir, bundle_name)
+            action_img_dir = os.path.join(action_dir, bundle_name)
 
             meta_content = None
             photographer_id = None
             with ZipFile(tmp_zip) as zipf:
                 meta_content_path = next(
-                    (s for s in zipf.namelist() if s.endswith("-meta-content.json")), None
+                    (s for s in zipf.namelist() if s.endswith("-meta-content.json")),
+                    None,
                 )
                 if meta_content_path is None:
                     raise Exception(f"ZIP at {zip_path} has no content metadata file")
                 with zipf.open(meta_content_path) as meta_content_f:
                     meta_content = json.load(meta_content_f)
-                    photographer_id = asset_helper.filename_safe(meta_content["private"]["signal"]["sourceName"])
+                    photographer_id = asset_helper.filename_safe(
+                        meta_content["private"]["signal"]["sourceName"]
+                    )
 
                 # Open content ZIP and extract all JPEGs
-                content_zip = next((s for s in zipf.namelist() if s.endswith(".zip")), None)
+                content_zip = next(
+                    (s for s in zipf.namelist() if s.endswith(".zip")), None
+                )
                 if content_zip is None:
                     raise Exception(f"ZIP at {zip_path} has no content file")
                 _file_util.create_dir(tmp_img_dir)
@@ -402,12 +455,16 @@ class Actions:
             # Get list of JPEGs
             image_filenames = []
             for filename in os.listdir(tmp_img_dir):
-                if filename.lower().endswith(".jpg") or filename.lower().endswith(".jpeg"):
+                if filename.lower().endswith(".jpg") or filename.lower().endswith(
+                    ".jpeg"
+                ):
                     image_filenames.append(filename)
-            
+
             # C2PA-inject all JPEGs
             for filename in image_filenames:
-                claim = _claim.generate_c2pa_proofmode(action_params, meta_content, filename)
+                claim = _claim.generate_c2pa_proofmode(
+                    action_params, meta_content, filename
+                )
                 path = os.path.join(tmp_img_dir, filename)
                 _claim_tool.run_claim_inject(claim, path, None)
 
@@ -436,7 +493,9 @@ class Actions:
                 shared_dir = f"{shared_dir}-{int(time.time())}"
             os.renames(tmp_img_dir, shared_dir)
         except Exception as e:
-            _logger.error(f"{action_name} failed during processing of input file: {zip_path}")
+            _logger.error(
+                f"{action_name} failed during processing of input file: {zip_path}"
+            )
             _logger.error(str(e))
         finally:
             self._purge_from_tmp(tmp_img_dir, action_tmp_dir)
@@ -625,7 +684,9 @@ class Actions:
     #         )
     #     return custom_assertions_dictionary
 
-    def _authsign_data(self, proof_zip_path, extracted_content_path, data_hash, server_url, auth_token):
+    def _authsign_data(
+        self, proof_zip_path, extracted_content_path, data_hash, server_url, auth_token
+    ):
         proof_file_path = f"{extracted_content_path}.authsign"
         try:
             _file_util.authsign_sign(data_hash, server_url, auth_token, proof_file_path)
