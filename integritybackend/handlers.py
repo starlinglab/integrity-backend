@@ -1,14 +1,15 @@
 from contextlib import contextmanager
 
 from .actions import Actions
+from .log_helper import LogHelper
 from .multipart import Multipart
 
 from aiohttp import web
 
-import logging
 import traceback
 
-_logger = logging.getLogger(__name__)
+
+_logger = LogHelper.getLogger()
 
 
 async def create(request):
@@ -23,6 +24,8 @@ async def create(request):
     return web.json_response(response, status=response.get("status_code"))
 
 
+# TODO: change for new action c2pa_proofmode
+# Maybe remove API path entirely?
 async def create_proofmode(request):
     with error_handling_and_response() as response:
         data = await Multipart(request).read()

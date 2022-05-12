@@ -1,6 +1,8 @@
 # Starling Integrity Backend <!-- omit in toc -->
 
 - [Overview](#overview)
+- [API](#api)
+  - [/create](#create)
 - [Configuration](#configuration)
 - [Development](#development)
   - [Setup](#setup)
@@ -20,9 +22,37 @@ Other required binaries:
 - `ots` from [opentimestamps-client](https://github.com/opentimestamps/opentimestamps-client)
 - `ipfs` from [ipfs.io](https://ipfs.io)
 
+## API
+
+### /create
+
+The `create` HTTP endpoint accepts inputs for creation of C2PA claims.
+* endpoint: `POST /v1/assets/create`
+* request parameters:
+  * authorization with a valid JWT, using the `Authorization: Bearer <JWT>` header
+  * `Content-Type: multipart/form-data`
+  * fields:
+    * `file`: the file for which we'll create a claim; expected to be a JPG
+    * `meta`: a C2PA-compliant `meta` section
+    * `signature`: a C2PA-compliant `signature` section
+  * see [example-create-request.sh](example-create-request.sh) for a working example request
+ * JSON response:
+   * success: `{"status": "ok", "status_code": 200}`
+   * error example: `{"status": "error", "status_code": 500, "error": "<explanatory error message>"}`
+
+Response codes follow standard HTTP conventions:
+* `202 Accepted`: the asset is uploaded and will be processed asynchronously
+* `400 Bad Request`: the request contains missing or invalid data
+* `401 Unauthorized`: the JWT is missing or invalid
+* `500 Internal Server Error`: the request failed due to a server error
+* `503 Service Unavailable`: the service is temporarily unavailable
 ## Configuration
 
-The server is configured entirely via environment variables. See [config.py](./starlingcaptureapi/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
+The server is configured via environment variables and a JSON file with per-organization configuration.
+
+See [config.example.json](./integritybackend/config.example.json) for an example of a valid organization configuration.
+
+See [config.py](./integritybackend/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
 
 Most importantly, you will need to provide:
 * `CLAIM_TOOL_PATH`: A path to a fully working `claim_tool` binary. The server should have permissions to execute it, and it should be correctly configured with its keys.

@@ -1,18 +1,22 @@
 from . import config
 from .crypto_util import AESCipher
+from .log_helper import LogHelper
 
 from Crypto.Cipher import AES
 from hashlib import sha256, md5
+from datetime import datetime, timezone
+from pathlib import Path
 
 import errno
-import logging
+import json
 import os
 import re
+import requests
 import subprocess
 import uuid
 import zipfile
 
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 
 
 BUFFER_SIZE = 32 * 1024  # 32 KiB
@@ -125,24 +129,17 @@ class FileUtil:
         return name.split("-")[0]
 
     @staticmethod
-    def get_organization_id_from_filename(filename: str) -> str:
-        """Extracts the organization id from the given filename.
+    def change_filename_extension(filename, ext: str) -> str:
+        """Changes the file extension for the given filename.
 
         Args:
-            filename: full filename to process, expected to be shaped like:
-                ..../internal/organization_id/...some_filename.some_ext
+            filename: the filename to process
+            ext: the new file extension
 
         Returns:
-            the extracted organization id
-
-        Raises:
-            Exception if couldn't find an organization id
+            the filename with the new extension
         """
-        match = re.search(f".*{config.INTERNAL_ASSET_STORE}\\/(.*?)\\/.*", filename)
-        if match and len(match.groups()) > 0:
-            return match.group(1)
-
-        raise Exception(f"Could not extract organization id from filename {filename}")
+        return str(Path(filename).with_suffix(ext))
 
     def register_timestamp(self, file_path, ts_file_path, timeout=5, min_cals=2):
         """Creates a opentimestamps file for the given file.
@@ -178,6 +175,74 @@ class FileUtil:
                 f"'ots stamp' failed with code {proc.returncode} and output:\n\n{proc.stderr.decode()}"
             )
 
+    def authsign_sign(self, data_hash, authsign_server_url, authsign_auth_token, authsign_file_path=None):
+        """
+        Sign the provided hash with authsign.
+        Args:
+            data_hash: hash of data as a hexadecimal string
+            authsign_server_url: URL to authsign server
+            authsign_auth_token: authorization token to authsign server
+            authsign_file_path: optional output path for authsign proof file (.authsign)
+        Raises:
+            Any errors with the request
+        Returns:
+            The signature proof as a string
+        """
+
+        dt = datetime.now()
+        if isinstance(dt, datetime):
+            # Convert to ISO format string
+            dt = (
+                dt.astimezone(timezone.utc)
+                .replace(tzinfo=None)
+                .isoformat(timespec="seconds")
+                + "Z"
+            )
+
+        headers = {} 
+        if authsign_auth_token != "":
+            headers={"Authorization": f"bearer {authsign_auth_token}"}
+                        
+        r = requests.post(
+            authsign_server_url + "/sign",
+            headers=headers,
+            json={"hash": data_hash, "created": dt},
+        )
+        r.raise_for_status()
+        authsign_proof = r.text
+
+        # Write proof to file
+        if authsign_file_path != None:
+            with open(authsign_file_path, "w") as f:
+                f.write(json.dumps(authsign_proof))
+                f.write("\n")
+
+        return authsign_proof
+
+    def authsign_verify(resp, authsign_server_url):
+        """
+        Verify the provided signed JSON with authsign.
+        Args:
+            resp: Python object or JSON string
+            authsign_server_url: URL to authsign server
+        Raises:
+            Any unexpected server responses
+        Returns:
+            bool indicating whether the verification was successful or not
+        """
+
+        if not isinstance(resp, str):
+            resp = json.dumps(resp)
+
+        r = requests.post(authsign_server_url + "/verify", data=resp)
+        if r.status_code == 200:
+            return True
+        elif r.status_code == 400:
+            return False
+
+        # Unexpected status code
+        r.raise_for_status()
+        
     def encrypt(self, key, file_path, enc_file_path):
         """Writes an encrypted version of the file to disk.
 
@@ -241,7 +306,7 @@ class FileUtil:
                 dec.write(cipher.decrypt(prev_data))
 
     @staticmethod
-    def digest_cidv1(self, file_path):
+    def digest_cidv1(file_path):
         """Generates the CIDv1 of a file, as determined by ipfs add.
 
         Args:

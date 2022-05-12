@@ -1,14 +1,15 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+
 import copy
 import json
-import logging
 import os
 
 from . import config
 from .exif import Exif
 from .geocoder import Geocoder
+from .log_helper import LogHelper
 
-_logger = logging.getLogger(__name__)
+_logger = LogHelper.getLogger()
 
 
 def _load_template(filename):
@@ -80,7 +81,7 @@ class Claim:
             exif["data"] = exif_data
             assertions.append(exif)
 
-        signature_data = self._make_signature_data(signature, meta)
+        signature_data = self._make_signature_data_starling_capture(signature, meta)
         if signature_data is not None:
             signature = assertion_templates["org.starlinglab.integrity"]
             signature["data"] = signature_data
@@ -96,22 +97,66 @@ class Claim:
 
         return claim
 
-    def generate_create_proofmode(self, jwt_payload, meta_proofmode):
-        """Generates a claim for the 'create_proofmode' action.
+    def generate_c2pa_proofmode(self, action_params: dict, meta_content: dict, filename: str):
+        """Generates a claim for the 'c2pa-proofmode' action.
 
         Args:
-            jwt_payload: a dictionary with the data we got from the request's JWT payload
-            meta_proofmode: dictionary with the metadata from a proofmode bundle
+            action_params: a dictionary with the params from this action's config
+            meta_content: dictionary with the metadata from a proofmode bundle
+            filename: 
 
         Returns:
             a dictionary containing the 'create' claim data
         """
         claim = copy.deepcopy(CREATE_CLAIM_TEMPLATE)
+        claim["recorder"] = "ProofMode by Guardian Project and WITNESS"
 
-        # TODO: Parse proofmode metadata and create claim.
+        assertion_templates = self.assertions_by_label(claim)
+        assertions = []
+
+        author_data = meta_content["author"]
+        if author_data is not None:
+            creative_work = assertion_templates["stds.schema-org.CreativeWork"]
+            creative_work["data"] = author_data
+            author_data["credential"] = []
+            assertions.append(creative_work)
+
+        author_name = action_params["creative_work_author"]["name"]
+        copyright = action_params["copyright"]
+        gps_lat = meta_content["private"]["proofmode"][filename]["proofs"][0]["Location.Latitude"]
+        gps_lon = meta_content["private"]["proofmode"][filename]["proofs"][0]["Location.Longitude"]
+        photo_meta_data = self._make_photo_meta_data(author_name, copyright, gps_lat, gps_lon)
+        if photo_meta_data is not None:
+            photo_meta = assertion_templates["stds.iptc.photo-metadata"]
+            photo_meta["data"] = photo_meta_data
+            assertions.append(photo_meta)
+
+        gps_time = datetime.utcfromtimestamp(int(meta_content["private"]["proofmode"][filename]["proofs"][0]["Location.Time"])/1000).isoformat() + "Z"
+        exif_data = self._make_exif_data(float(gps_lat), float(gps_lon), gps_time)
+        if exif_data is not None:
+            exif = assertion_templates["stds.exif"]
+            exif["data"] = exif_data
+            assertions.append(exif)
+
+        pgp_sig = meta_content["private"]["proofmode"][filename]["pgpSignature"]
+        pgp_pubkey = meta_content["private"]["proofmode"][filename]["pgpPublicKey"]
+        sha256hash = meta_content["private"]["proofmode"][filename]["sha256hash"]
+        signature_data = self._make_signature_data_proofmode(pgp_sig, pgp_pubkey, sha256hash, filename)
+        if signature_data is not None:
+            signature = assertion_templates["org.starlinglab.integrity"]
+            signature["data"] = signature_data
+            assertions.append(signature)
+
+        proofmode_time = meta_content["dateCreated"]
+        if proofmode_time is not None:
+            c2pa_actions = assertion_templates["c2pa.actions"]
+            c2pa_actions["data"]["actions"][0]["when"] = proofmode_time
+            assertions.append(c2pa_actions)
+
+        claim["assertions"] = assertions
         return claim
 
-    def generate_update(self, organization_id):
+    def generate_update(self, org_config, collection_id):
         """Generates a claim for the 'update' action.
 
         Returns:
@@ -126,7 +171,11 @@ class Claim:
         assertions = []
 
         creative_work = assertion_templates["stds.schema-org.CreativeWork"]
-        creative_work["data"] = {"author": config.creative_work(organization_id)}
+        creative_work["data"] = {
+            "author": config.get_param(
+                org_config, collection_id, "update", "creative_work_author"
+            )
+        }
         assertions.append(creative_work)
 
         c2pa_actions = assertion_templates["c2pa.actions"]
@@ -137,7 +186,7 @@ class Claim:
 
         return claim
 
-    def generate_store(self, ipfs_cid, organization_id):
+    def generate_store(self, ipfs_cid, org_config, collection_id):
         """Generates a claim for the 'store' action.
 
         Args:
@@ -155,7 +204,11 @@ class Claim:
         assertions = []
 
         creative_work = assertion_templates["stds.schema-org.CreativeWork"]
-        creative_work["data"] = {"author": config.creative_work(organization_id)}
+        creative_work["data"] = {
+            "author": config.get_param(
+                org_config, collection_id, "store", "creative_work_author"
+            )
+        }
         assertions.append(creative_work)
 
         c2pa_actions = assertion_templates["c2pa.actions"]
@@ -215,11 +268,10 @@ class Claim:
             assertions_by_label[assertion["label"]] = assertion
         return assertions_by_label
 
-    def _make_photo_meta_data(self, jwt_payload, meta):
-        (lat, lon) = self._get_meta_lat_lon(meta)
+    def _make_photo_meta_data(self, author_name, copyright, lat, lon):
         photo_meta_data = {
-            "dc:creator": [jwt_payload.get("author", {}).get("name")],
-            "dc:rights": jwt_payload.get("copyright"),
+            "dc:creator": [ author_name ],
+            "dc:rights": copyright,
             "Iptc4xmpExt:LocationCreated": self._get_location_created(lat, lon),
         }
 
@@ -252,6 +304,44 @@ class Claim:
             return (None, None)
 
         return (float(lat), float(lon))
+
+    # def _make_photo_meta_data(self, jwt_payload, meta):
+    #     (lat, lon) = self._get_meta_lat_lon(meta)
+    #     photo_meta_data = {
+    #         "dc:creator": [jwt_payload.get("author", {}).get("name")],
+    #         "dc:rights": jwt_payload.get("copyright"),
+    #         "Iptc4xmpExt:LocationCreated": self._get_location_created(lat, lon),
+    #     }
+
+    #     photo_meta_data = self._remove_keys_with_no_values(photo_meta_data)
+
+    #     if not photo_meta_data.keys():
+    #         return None
+
+    #     return photo_meta_data
+
+    # def _get_meta_lat_lon(self, meta):
+    #     """Extracts latitude and longitude from metadata JSON dict.
+
+    #     Args:
+    #         meta: dictionary with the 'meta' section of the request
+
+    #     Return:
+    #         (lat, lon) from the 'meta' data, returned as a pair
+    #     """
+    #     lat = self._get_value_from_meta(
+    #         meta, "Current GPS Latitude"
+    #     ) or self._get_value_from_meta(meta, "Last Known GPS Latitude")
+
+    #     lon = self._get_value_from_meta(
+    #         meta, "Current GPS Longitude"
+    #     ) or self._get_value_from_meta(meta, "Last Known GPS Longitude")
+
+    #     if lat is None or lon is None:
+    #         _logger.warning("Could not find lat or lon in 'meta'")
+    #         return (None, None)
+
+    #     return (float(lat), float(lon))
 
     def _get_exif_timestamp(self, meta):
         """Returns an EXIF-formatted version of the timestamp.
@@ -296,18 +386,7 @@ class Claim:
 
         return self._remove_keys_with_no_values(location_created)
 
-    def _make_exif_data(self, meta):
-        """Returns the data fields for the stds.exif section of the claim
-
-        Args:
-            meta: metadata dictionary from the incoming request
-
-        Returns:
-            dictionary to use as the value of the stds.exif field
-            might be empty, if no input data is provided
-        """
-        (lat, lon) = self._get_meta_lat_lon(meta)
-
+    def _make_exif_data(self, lat: int, lon: int, timestamp: str):
         exif_data = {}
 
         (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
@@ -316,13 +395,41 @@ class Claim:
         exif_data["exif:GPSLatitudeRef"] = exif_lat_ref
         exif_data["exif:GPSLongitude"] = exif_lon
         exif_data["exif:GPSLongitudeRef"] = exif_lon_ref
-        exif_data["exif:GPSTimeStamp"] = self._get_exif_timestamp(meta)
+        exif_data["exif:GPSTimeStamp"] = Exif().convert_timestamp(timestamp)
 
         exif_data = self._remove_keys_with_no_values(exif_data)
         if not exif_data.keys():
             return None
 
         return exif_data
+
+    # def _make_exif_data(self, meta):
+    #     """Returns the data fields for the stds.exif section of the claim
+
+    #     Args:
+    #         meta: metadata dictionary from the incoming request
+
+    #     Returns:
+    #         dictionary to use as the value of the stds.exif field
+    #         might be empty, if no input data is provided
+    #     """
+    #     (lat, lon) = self._get_meta_lat_lon(meta)
+
+    #     exif_data = {}
+
+    #     (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
+    #     (exif_lon, exif_lon_ref) = Exif().convert_longitude(lon)
+    #     exif_data["exif:GPSLatitude"] = exif_lat
+    #     exif_data["exif:GPSLatitudeRef"] = exif_lat_ref
+    #     exif_data["exif:GPSLongitude"] = exif_lon
+    #     exif_data["exif:GPSLongitudeRef"] = exif_lon_ref
+    #     exif_data["exif:GPSTimeStamp"] = self._get_exif_timestamp(meta)
+
+    #     exif_data = self._remove_keys_with_no_values(exif_data)
+    #     if not exif_data.keys():
+    #         return None
+
+    #     return exif_data
 
     def _make_author_data(self, jwt_payload):
         author = []
@@ -360,7 +467,7 @@ class Claim:
 
         return {"author": author}
 
-    def _make_signature_data(self, signatures, meta):
+    def _make_signature_data_starling_capture(self, signatures, meta):
         if signatures is None:
             return None
 
@@ -386,6 +493,29 @@ class Claim:
             )
         return {
             "starling:identifier": proof.get("hash"),
+            "starling:signatures": signature_list,
+        }
+
+    def _make_signature_data_proofmode(self, pgp_sig, pgp_pubkey, sha256hash, filename):
+        if pgp_sig is None or pgp_pubkey is None or sha256hash is None or filename is None:
+            return None
+
+        signature_list = []
+        signature_list.append(
+            {
+                "starling:provider": "pgp",
+                "starling:algorithm": "proofmode-pgp",
+                "starling:publicKey": pgp_pubkey,
+                "starling:signature": pgp_sig,
+                "starling:authenticatedMessage": sha256hash,
+                "starling:authenticatedMessageDescription": f"File Hash SHA256 of {filename} in ProofMode bundle",
+                "starling:authenticatedMessagePublic": {
+                    "starling:assetHash": sha256hash,
+                },
+            }
+        )
+        return {
+            "starling:identifier": sha256hash,
             "starling:signatures": signature_list,
         }
 
