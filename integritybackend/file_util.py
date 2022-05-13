@@ -175,7 +175,13 @@ class FileUtil:
                 f"'ots stamp' failed with code {proc.returncode} and output:\n\n{proc.stderr.decode()}"
             )
 
-    def authsign_sign(self, data_hash, authsign_server_url, authsign_auth_token, authsign_file_path=None):
+    def authsign_sign(
+        self,
+        data_hash,
+        authsign_server_url,
+        authsign_auth_token,
+        authsign_file_path=None,
+    ):
         """
         Sign the provided hash with authsign.
         Args:
@@ -199,10 +205,10 @@ class FileUtil:
                 + "Z"
             )
 
-        headers = {} 
+        headers = {}
         if authsign_auth_token != "":
-            headers={"Authorization": f"bearer {authsign_auth_token}"}
-                        
+            headers = {"Authorization": f"bearer {authsign_auth_token}"}
+
         r = requests.post(
             authsign_server_url + "/sign",
             headers=headers,
@@ -242,7 +248,7 @@ class FileUtil:
 
         # Unexpected status code
         r.raise_for_status()
-        
+
     def encrypt(self, key, file_path, enc_file_path):
         """Writes an encrypted version of the file to disk.
 

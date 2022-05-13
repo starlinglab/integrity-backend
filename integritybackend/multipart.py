@@ -9,6 +9,7 @@ _logger = LogHelper.getLogger()
 
 class Multipart:
     """Handles incoming multi-part requests."""
+
     def __init__(self, request):
         self.request = request
         self.asset_helper = AssetHelper.from_jwt(self.request.get("jwt_payload"))
@@ -79,7 +80,9 @@ class Multipart:
         return create_file
 
     async def _write_json(self, json_data, asset_file, metadata_tag):
-        json_file = self.asset_helper.get_create_metadata_fullpath(asset_file, metadata_tag)
+        json_file = self.asset_helper.get_create_metadata_fullpath(
+            asset_file, metadata_tag
+        )
         # Mode "a" will append if a file with the same name already exists.
         with open(json_file, "a") as f:
             f.write(json.dumps(json_data))

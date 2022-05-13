@@ -126,19 +126,20 @@ class AssetHelper:
         return os.path.join(self._collection_prefix(collection_id), "input")
 
     def path_for_action(self, collection_id: str, action_name: str):
-        """Retuns a full directory path for the given collection and action.
-        """
-        return os.path.join(self._collection_prefix(collection_id), f"action-{action_name}")
+        """Retuns a full directory path for the given collection and action."""
+        return os.path.join(
+            self._collection_prefix(collection_id), f"action-{action_name}"
+        )
 
     def path_for_action_output(self, collection_id: str, action_name: str):
-        """Retuns a full directory path for the output dir of the given collection and action.
-        """
+        """Retuns a full directory path for the output dir of the given collection and action."""
         return os.path.join(self.shared_prefix, collection_id, f"action-{action_name}")
 
     def path_for_action_tmp(self, collection_id: str, action_name: str):
-        """Retuns a full directory path for the tmp dir of the given collection and action.
-        """
-        return os.path.join(self.dir_internal_tmp, collection_id, f"action-{action_name}")
+        """Retuns a full directory path for the tmp dir of the given collection and action."""
+        return os.path.join(
+            self.dir_internal_tmp, collection_id, f"action-{action_name}"
+        )
 
     def filename_safe(self, filename):
         return filename.lower().replace(" ", "-").strip()

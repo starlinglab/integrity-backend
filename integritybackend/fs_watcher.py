@@ -127,6 +127,7 @@ class OrganizationHandler(PatternMatchingEventHandler):
         self.organization_id = org_config.get("id")
         return self
 
+
 class ArchiveHandler(OrganizationHandler):
     """Handles file changes for Archive action."""
 
@@ -134,12 +135,16 @@ class ArchiveHandler(OrganizationHandler):
         with caught_and_logged_exceptions(event):
             _actions.archive(event.src_path, self.org_config, self.collection_id)
 
+
 class C2paStarlingCaptureHandler(OrganizationHandler):
     """Handles file changes for C2PA Starling Capture action."""
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.c2pa_starling_capture(event.src_path, self.org_config, self.collection_id)
+            _actions.c2pa_starling_capture(
+                event.src_path, self.org_config, self.collection_id
+            )
+
 
 class C2paProofmodeHandler(OrganizationHandler):
     """Handles file changes for C2PA Proofmode action."""
@@ -147,6 +152,7 @@ class C2paProofmodeHandler(OrganizationHandler):
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
             _actions.c2pa_proofmode(event.src_path, self.org_config, self.collection_id)
+
 
 # class C2paAddHandler(OrganizationHandler):
 #     """Handles file changes for add action."""
