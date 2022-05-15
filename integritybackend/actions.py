@@ -230,7 +230,7 @@ class Actions:
             # Register encrypted ZIP on ISCN
             if action_params["registration_policies"]["opentimestamps"]["active"]:
                 with open(extracted_meta_content) as meta_content_f:
-                    meta_content = json.load(meta_content_f)
+                    meta_content = json.load(meta_content_f)["contentMetadata"]
                     iscn_record = {
                         "contentFingerprints": [
                             f"hash://sha256/{enc_zip_sha}",
@@ -425,7 +425,7 @@ class Actions:
                 if meta_content_path is None:
                     raise Exception(f"ZIP at {zip_path} has no content metadata file")
                 with zipf.open(meta_content_path) as meta_content_f:
-                    meta_content = json.load(meta_content_f)
+                    meta_content = json.load(meta_content_f)["contentMetadata"]
                     photographer_id = asset_helper.filename_safe(
                         meta_content["private"]["signal"]["sourceName"]
                     )
