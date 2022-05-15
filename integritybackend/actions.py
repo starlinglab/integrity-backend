@@ -426,9 +426,11 @@ class Actions:
                     raise Exception(f"ZIP at {zip_path} has no content metadata file")
                 with zipf.open(meta_content_path) as meta_content_f:
                     meta_content = json.load(meta_content_f)["contentMetadata"]
-                    photographer_id = asset_helper.filename_safe(
-                        meta_content["private"]["signal"]["sourceName"]
-                    )
+                    source_name = meta_content.get("private", {}).get("signal", {}).get("sourceName")
+                    if source_name is None:
+                        photographer_id = "default"
+                    else:
+                        photographer_id = asset_helper.filename_safe(source_name)
 
                 # Open content ZIP and extract all JPEGs
                 content_zip = next(
@@ -473,6 +475,95 @@ class Actions:
             shutil.copytree(tmp_img_dir, action_img_dir, dirs_exist_ok=True)
 
             # Atomically move all C2PA-injected JPEGs to output folder under photographer ID and date
+            shared_dir = os.path.join(
+                action_output_dir,
+                photographer_id,
+                datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                bundle_name,
+            )
+            if os.path.exists(shared_dir):
+                shared_dir = f"{shared_dir}-{int(time.time())}"
+            os.renames(tmp_img_dir, shared_dir)
+        except Exception as e:
+            _logger.error(
+                f"{action_name} failed during processing of input file: {zip_path}"
+            )
+            _logger.error(str(e))
+        finally:
+            self._purge_from_tmp(tmp_img_dir, action_tmp_dir)
+            self._purge_from_tmp(tmp_zip, action_tmp_dir)
+
+    def copy_proofmode(self, zip_path: str, org_config: dict, collection_id: str):
+        """Process a proofmode zip that bundles multiple assets with metadata,
+        and extracts them to the output folder.
+
+        Args:
+            zip_path: path to asset zip (will be copied, not altered)
+            org_config: configuration dictionary for this organization
+            collection_id: string with the unique collection identifier this
+                asset is in
+
+        Raises:
+            Exception if errors are encountered during processing
+        """
+        try:
+            # TODO: change function to take just org_id as param
+            action_name = "copy-proofmode"
+            org_id = org_config["id"]
+            asset_helper = AssetHelper(org_id)
+
+            # Get paths
+            action_dir = asset_helper.path_for_action(collection_id, action_name)
+            action_output_dir = asset_helper.path_for_action_output(
+                collection_id, action_name
+            )
+            action_tmp_dir = asset_helper.path_for_action_tmp(
+                collection_id, action_name
+            )
+
+            # Verify and copy zip
+            input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
+            if input_zip_sha != _file_util.digest_sha256(zip_path):
+                raise Exception(f"SHA-256 of ZIP does not match file name: {zip_path}")
+            tmp_zip = shutil.copy2(zip_path, action_tmp_dir)
+            bundle_name = f"{input_zip_sha}-images"
+
+            # Define paths for files extracted from proofmode zip
+            tmp_img_dir = os.path.join(action_tmp_dir, bundle_name)
+            action_img_dir = os.path.join(action_dir, bundle_name)
+
+            meta_content = None
+            photographer_id = None
+            with ZipFile(tmp_zip) as zipf:
+                meta_content_path = next(
+                    (s for s in zipf.namelist() if s.endswith("-meta-content.json")),
+                    None,
+                )
+                if meta_content_path is None:
+                    raise Exception(f"ZIP at {zip_path} has no content metadata file")
+                with zipf.open(meta_content_path) as meta_content_f:
+                    meta_content = json.load(meta_content_f)["contentMetadata"]
+                    source_name = meta_content.get("private", {}).get("signal", {}).get("sourceName")
+                    if source_name is None:
+                        photographer_id = "default"
+                    else:
+                        photographer_id = asset_helper.filename_safe(source_name)
+
+                # Open content ZIP and extract all files
+                content_zip = next(
+                    (s for s in zipf.namelist() if s.endswith(".zip")), None
+                )
+                if content_zip is None:
+                    raise Exception(f"ZIP at {zip_path} has no content file")
+                _file_util.create_dir(tmp_img_dir)
+                with ZipFile(zipf.open(content_zip)) as content_zip_f:
+                    for file_path in content_zip_f.namelist():
+                        content_zip_f.extract(file_path, tmp_img_dir)
+
+            # Copy all files to action_dir
+            shutil.copytree(tmp_img_dir, action_img_dir, dirs_exist_ok=True)
+
+            # Atomically move all files to output folder under photographer ID and date
             shared_dir = os.path.join(
                 action_output_dir,
                 photographer_id,
