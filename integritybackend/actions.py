@@ -426,7 +426,7 @@ class Actions:
                     raise Exception(f"ZIP at {zip_path} has no content metadata file")
                 with zipf.open(meta_content_path) as meta_content_f:
                     meta_content = json.load(meta_content_f)["contentMetadata"]
-                    source_name = meta_content.get("private", {}).get("signal", {}).get("sourceName")
+                    source_name = meta_content.get("private", {}).get("author", {}).get("name")
                     if source_name is None:
                         photographer_id = "default"
                     else:
@@ -543,7 +543,7 @@ class Actions:
                     raise Exception(f"ZIP at {zip_path} has no content metadata file")
                 with zipf.open(meta_content_path) as meta_content_f:
                     meta_content = json.load(meta_content_f)["contentMetadata"]
-                    source_name = meta_content.get("private", {}).get("signal", {}).get("sourceName")
+                    source_name = meta_content.get("private", {}).get("author", {}).get("name")
                     if source_name is None:
                         photographer_id = "default"
                     else:
