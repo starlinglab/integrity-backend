@@ -115,21 +115,22 @@ class Claim:
         assertion_templates = self.assertions_by_label(claim)
         assertions = []
 
-        author_data = meta_content["author"]
+        author_data = meta_content.get("author")
         if author_data is not None:
             creative_work = assertion_templates["stds.schema-org.CreativeWork"]
             creative_work["data"] = author_data
             author_data["credential"] = []
             assertions.append(creative_work)
 
-        author_name = meta_content["author"]["name"]
-        copyright = meta_content["copyright"]
-        gps_lat = meta_content["private"]["proofmode"][filename]["proofs"][0][
-            "Location.Latitude"
-        ]
-        gps_lon = meta_content["private"]["proofmode"][filename]["proofs"][0][
-            "Location.Longitude"
-        ]
+        author_name = meta_content.get("author", {}).get("name")
+        copyright = meta_content.get("copyright")
+
+        # Find proofmode data for asset
+        proofmode_data = meta_content.get("private", {}).get("proofmode", {}).get(filename, {})
+
+        # TODO Make GPS data optional
+        gps_lat = proofmode_data["proofs"][0]["Location.Latitude"]
+        gps_lon = proofmode_data["proofs"][0]["Location.Longitude"]
         photo_meta_data = self._make_photo_meta_data(
             author_name, copyright, gps_lat, gps_lon
         )
@@ -140,12 +141,7 @@ class Claim:
 
         gps_time = (
             datetime.utcfromtimestamp(
-                int(
-                    meta_content["private"]["proofmode"][filename]["proofs"][0][
-                        "Location.Time"
-                    ]
-                )
-                / 1000
+                int(proofmode_data["proofs"][0]["Location.Time"]) / 1000
             ).isoformat()
             + "Z"
         )
@@ -155,9 +151,9 @@ class Claim:
             exif["data"] = exif_data
             assertions.append(exif)
 
-        pgp_sig = meta_content["private"]["proofmode"][filename]["pgpSignature"]
-        pgp_pubkey = meta_content["private"]["proofmode"][filename]["pgpPublicKey"]
-        sha256hash = meta_content["private"]["proofmode"][filename]["sha256hash"]
+        pgp_sig = proofmode_data.get("pgpSignature")
+        pgp_pubkey = proofmode_data.get("pgpPublicKey")
+        sha256hash = proofmode_data.get("sha256hash")
         signature_data = self._make_signature_data_proofmode(
             pgp_sig, pgp_pubkey, sha256hash, filename
         )
@@ -166,7 +162,7 @@ class Claim:
             signature["data"] = signature_data
             assertions.append(signature)
 
-        proofmode_time = meta_content["dateCreated"]
+        proofmode_time = meta_content.get("dateCreated")
         if proofmode_time is not None:
             c2pa_actions = assertion_templates["c2pa.actions"]
             c2pa_actions["data"]["actions"][0]["when"] = proofmode_time
