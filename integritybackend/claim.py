@@ -98,17 +98,16 @@ class Claim:
         return claim
 
     def generate_c2pa_proofmode(
-        self, action_params: dict, meta_content: dict, filename: str
+        self, meta_content: dict, filename: str
     ):
         """Generates a claim for the 'c2pa-proofmode' action.
 
         Args:
-            action_params: a dictionary with the params from this action's config
-            meta_content: dictionary with the metadata from a proofmode bundle
-            filename:
+            meta_content: dictionary in the content metadata of a proofmode input zip
+            filename: filename of the JPG file in the proofmode bundle to generate this claim for
 
         Returns:
-            a dictionary containing the 'create' claim data
+            a dictionary containing the claim data
         """
         claim = copy.deepcopy(CREATE_CLAIM_TEMPLATE)
         claim["recorder"] = "ProofMode by Guardian Project and WITNESS"
@@ -123,8 +122,8 @@ class Claim:
             author_data["credential"] = []
             assertions.append(creative_work)
 
-        author_name = action_params["creative_work_author"]["name"]
-        copyright = action_params["copyright"]
+        author_name = meta_content["author"]["name"]
+        copyright = meta_content["copyright"]
         gps_lat = meta_content["private"]["proofmode"][filename]["proofs"][0][
             "Location.Latitude"
         ]
