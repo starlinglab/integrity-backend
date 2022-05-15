@@ -530,6 +530,7 @@ class Actions:
 
             # Define paths for files extracted from proofmode zip
             tmp_img_dir = os.path.join(action_tmp_dir, bundle_name)
+            # TODO rename variables, these are not images
             action_img_dir = os.path.join(action_dir, bundle_name)
 
             meta_content = None
