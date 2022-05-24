@@ -14,3 +14,4 @@ from integritybackend import file_util
 from integritybackend import geocoder
 from integritybackend import iscn
 from integritybackend import zip_util
+from integritybackend import sig66
