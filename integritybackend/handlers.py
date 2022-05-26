@@ -18,13 +18,6 @@ _logger = LogHelper.getLogger()
 _file_util = FileUtil()
 
 
-def create_inputBundle(httppost, jwt, config_preproc):
-    # parse JWT -
-    # verify content sigs
-    # store a compliant zip into input folder
-    pass
-
-
 async def create(request):
     with error_handling_and_response() as response:
         jwt = request["jwt_payload"]
