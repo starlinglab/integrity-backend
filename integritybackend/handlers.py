@@ -24,8 +24,6 @@ async def create(request):
     return web.json_response(response, status=response.get("status_code"))
 
 
-# TODO: change for new action c2pa_proofmode
-# Maybe remove API path entirely?
 async def create_proofmode(request):
     with error_handling_and_response() as response:
         data = await Multipart(request).read()

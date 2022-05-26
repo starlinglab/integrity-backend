@@ -74,12 +74,24 @@ class FsWatcher:
             # and dispatch the file for processing in parallel by all the
             # configured actions for the collection.
             for action_name in collection_config.get("actions", {}).keys():
-                self._schedule(
-                    collection_id,
-                    action_name,
-                    ["*.zip"],
-                    self.asset_helper.path_for_input(collection_id),
-                )
+                if action_name == "archive":
+                    self._schedule(
+                        collection_id,
+                        action_name,
+                        ["*.zip"],
+                        self.asset_helper.input_path_for(collection_id),
+                    )
+                else:
+                    # Legacy actions will eventually be all migrated to watch for *.zip
+                    # See details in https://github.com/starlinglab/starling-integrity-api/issues/79
+                    # At that point, all patterns will be *.zip, and the path to watch will be the collection input
+                    # directory, and will no longer need to be parameters passed into _schedule(...).
+                    self._schedule(
+                        collection_id,
+                        action_name,
+                        ["*.jpg", "*.jpeg"],
+                        self.asset_helper.path_for(collection_id, action_name),
+                    )
 
         self.observer.start()
         try:
@@ -128,6 +140,38 @@ class OrganizationHandler(PatternMatchingEventHandler):
         return self
 
 
+class C2paAddHandler(OrganizationHandler):
+    """Handles file changes for add action."""
+
+    def on_created(self, event):
+        with caught_and_logged_exceptions(event):
+            _actions.c2pa_add(event.src_path, self.org_config, self.collection_id)
+
+
+class C2paUpdateHandler(OrganizationHandler):
+    """Handles file changes for update action."""
+
+    def on_created(self, event):
+        with caught_and_logged_exceptions(event):
+            _actions.c2pa_update(event.src_path, self.org_config, self.collection_id)
+
+
+class C2paStoreHandler(OrganizationHandler):
+    """Handles file changes for store action."""
+
+    def on_created(self, event):
+        with caught_and_logged_exceptions(event):
+            _actions.c2pa_store(event.src_path, self.org_config, self.collection_id)
+
+
+class C2paCustomHandler(OrganizationHandler):
+    """Handles file changes for custom action."""
+
+    def on_created(self, event):
+        with caught_and_logged_exceptions(event):
+            _actions.c2pa_custom(event.src_path, self.org_config, self.collection_id)
+
+
 class ArchiveHandler(OrganizationHandler):
     """Handles file changes for Archive action."""
 
@@ -136,63 +180,11 @@ class ArchiveHandler(OrganizationHandler):
             _actions.archive(event.src_path, self.org_config, self.collection_id)
 
 
-class C2paStarlingCaptureHandler(OrganizationHandler):
-    """Handles file changes for C2PA Starling Capture action."""
-
-    def on_created(self, event):
-        with caught_and_logged_exceptions(event):
-            _actions.c2pa_starling_capture(
-                event.src_path, self.org_config, self.collection_id
-            )
-
-
-class C2paProofmodeHandler(OrganizationHandler):
-    """Handles file changes for C2PA Proofmode action."""
-
-    def on_created(self, event):
-        with caught_and_logged_exceptions(event):
-            _actions.c2pa_proofmode(event.src_path, self.org_config, self.collection_id)
-
-
-# class C2paAddHandler(OrganizationHandler):
-#     """Handles file changes for add action."""
-
-#     def on_created(self, event):
-#         with caught_and_logged_exceptions(event):
-#             _actions.c2pa_add(event.src_path, self.org_config, self.collection_id)
-
-
-# class C2paUpdateHandler(OrganizationHandler):
-#     """Handles file changes for update action."""
-
-#     def on_created(self, event):
-#         with caught_and_logged_exceptions(event):
-#             _actions.c2pa_update(event.src_path, self.org_config, self.collection_id)
-
-
-# class C2paStoreHandler(OrganizationHandler):
-#     """Handles file changes for store action."""
-
-#     def on_created(self, event):
-#         with caught_and_logged_exceptions(event):
-#             _actions.c2pa_store(event.src_path, self.org_config, self.collection_id)
-
-
-# class C2paCustomHandler(OrganizationHandler):
-#     """Handles file changes for custom action."""
-
-#     def on_created(self, event):
-#         with caught_and_logged_exceptions(event):
-#             _actions.c2pa_custom(event.src_path, self.org_config, self.collection_id)
-
-
 # Mapping from action name to handler class
 ACTION_HANDLER = {
+    "c2pa-add": C2paAddHandler,
     "archive": ArchiveHandler,
-    "c2pa-starling-capture": C2paStarlingCaptureHandler,
-    "c2pa-proofmode": C2paProofmodeHandler,
-    # "c2pa-add": C2paAddHandler,
-    # "c2pa-update": C2paUpdateHandler,
-    # "c2pa-store": C2paStoreHandler,
-    # "c2pa-custom": C2paCustomHandler,
+    "c2pa-custom": C2paCustomHandler,
+    "c2pa-store": C2paStoreHandler,
+    "c2pa-update": C2paUpdateHandler,
 }

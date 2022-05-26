@@ -1,4 +1,3 @@
-import binascii
 import os
 from Crypto.Cipher import AES
 from .config import KEY_STORE
@@ -24,8 +23,6 @@ def get_key(name: str) -> bytes:
 
     If the key doesn't exist, it will be generated.
 
-    Keys are hex-encoded for storage.
-
     Raises:
         any file I/O errors
     """
@@ -34,12 +31,12 @@ def get_key(name: str) -> bytes:
 
     if os.path.exists(key_path):
         with open(key_path, "rb") as f:
-            return binascii.unhexlify(f.read())
+            return f.read()
 
     os.makedirs(KEY_STORE, 0o755, exist_ok=True)
     new_key = new_aes_key()
     with open(key_path, "wb") as f:
-        f.write(binascii.hexlify(new_key))
+        f.write(new_key)
     return new_key
 
 
