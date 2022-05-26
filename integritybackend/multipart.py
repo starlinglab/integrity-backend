@@ -52,7 +52,8 @@ class Multipart:
 
     def __init__(self, request):
         self.request = request
-        self.asset_helper = AssetHelper.from_jwt(self.request.get("jwt_payload"))
+        self.jwt = self.request.get("jwt_payload")
+        self.asset_helper = AssetHelper.from_jwt(self.jwt)
 
     async def read(self):
         """Reads the multipart section of an incoming request and handles it appropriately.
@@ -68,7 +69,8 @@ class Multipart:
             request: an aiohttp request containing multipart data
 
         Returns:
-            a dictionary with metadata about the multipart sections encountered
+            Three dictionaries: data, meta_content, meta_recorder
+            data is a dict with metadata about the multipart sections encountered
         """
 
         multipart_data = {}
@@ -78,14 +80,10 @@ class Multipart:
             "contentMetadata": {
                 "name": "Authenticated content",
                 "description": "Content captured with Starling Capture application",
-                "author": {
-                    "type": "Organization",
-                    "identifier": "https://starlinglab.org",
-                    "name": "Starling Lab",
-                },
+                "author": self.jwt.get("author"),
                 "extras": {},
                 "private": {
-                    "providerToken": self.request.get("jwt_payload"),
+                    "providerToken": self.jwt,
                 },
             },
             "timestamp": datetime.utcnow().isoformat() + "Z",
@@ -149,11 +147,7 @@ class Multipart:
             else:
                 _logger.warning("Ignoring multipart part %s", part.name)
 
-        if asset_file is not None:
-            await self._write_json(meta_content, asset_file, "meta-content")
-            await self._write_json(meta_recorder, asset_file, "meta-recorder")
-
-        return multipart_data
+        return multipart_data, meta_content, meta_recorder
 
     async def _write_file(self, part, request_path):
         # Write file in temporary directory.
@@ -176,16 +170,3 @@ class Multipart:
         shutil.move(tmp_file, create_file)
         _logger.info("New file added to the assets creation directory: " + create_file)
         return create_file
-
-    async def _write_json(self, json_data, asset_file, metadata_tag):
-        json_file = self.asset_helper.get_create_metadata_fullpath(
-            asset_file, metadata_tag
-        )
-        # Mode "a" will append if a file with the same name already exists.
-        with open(json_file, "a") as f:
-            f.write(json.dumps(json_data))
-            f.write("\n")
-        _logger.info(
-            "New metadata added to the assets creation directory: " + json_file
-        )
-        return json_file
