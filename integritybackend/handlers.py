@@ -2,9 +2,6 @@ import os
 import zipfile
 from contextlib import contextmanager
 
-from integritybackend.config import JWT_SECRET
-
-from .actions import Actions
 from .log_helper import LogHelper
 from .multipart import Multipart
 from .asset_helper import AssetHelper
