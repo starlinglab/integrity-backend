@@ -41,6 +41,13 @@ ISCN_SERVER = os.environ.get("ISCN_SERVER")
 NUMBERS_API_KEY = os.environ.get("NUMBERS_API_KEY")
 NUMBERS_API_URL = os.environ.get("NUMBERS_API_URL")
 
+AUTHSIGN_URL = os.environ.get("AUTHSIGN_URL")
+AUTHSIGN_TOKEN = os.environ.get("AUTHSIGN_TOKEN", "")
+
+KEY_STORE = os.environ.get("KEY_STORE")
+
+INTEGRITY_RECORDER_ID_JSON = os.environ.get("INTEGRITY_RECORDER_ID_JSON")
+
 
 class OrganizationConfig:
     def __init__(self, config_file):
