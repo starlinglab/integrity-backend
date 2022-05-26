@@ -329,7 +329,7 @@ class Actions:
         finally:
             self._purge_from_tmp(zip_dir, tmp_dir)
 
-    def c2pa_starling_capture(self, asset_fullpath, jwt_payload, meta):
+    def c2pa_starling_capture(self, asset_fullpath, jwt_payload, data):
         """Process asset with create action.
         A new asset file is generated in the create-output folder with an original creation claim.
 
