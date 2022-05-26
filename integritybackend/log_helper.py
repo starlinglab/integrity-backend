@@ -3,7 +3,6 @@ import sys
 
 
 class LogHelper:
-
     @staticmethod
     def getLogger():
         logging.basicConfig(
