@@ -192,7 +192,8 @@ class Actions:
             # Register encrypted ZIP on ISCN
             if action_params["registration_policies"]["opentimestamps"]["active"]:
                 with open(extracted_meta_content) as meta_content_f:
-                    meta_content = json.load(meta_content_f)
+                    meta_content_all = json.load(meta_content_f)
+                    meta_content = meta_content_all["contentMetadata"]
                     iscn_record = {
                       "contentFingerprints": [
                         f"hash://sha256/{enc_zip_sha}",
