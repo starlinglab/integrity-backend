@@ -15,7 +15,7 @@ class Numbers:
     """Handles interactions with Numbers Protocol."""
 
     @staticmethod
-    def register(asset_name, asset_description, asset_cid, asset_mime_type, asset_timestamp_created, asset_extras, nft_contract_address):
+    def register(asset_name, asset_description, asset_cid, asset_sha256, asset_mime_type, asset_timestamp_created, asset_extras, nft_contract_address):
         """Registers an asset to the integrity blockchain.
 
         https://github.com/numbersprotocol/enterprise-service/wiki/7.-Nit,-Native-Protocol-Tool#nit-create-asset
@@ -24,6 +24,7 @@ class Numbers:
             asset_name: name of the asset
             asset_description: description of the asset
             asset_cid: CID of the asset
+            asset_sha256: SHA-256 of the asset
             asset_mime_type: MIME type of asset (use 'application/octet-stream' for encrypted assets)
             asset_timestamp_created: creation timestamp of the asset
             asset_extras: extra JSON object to be included in asset registration
@@ -39,6 +40,7 @@ class Numbers:
         if not nft_contract_address:
             registration_data = [
                 ("assetCid", asset_cid),
+                ("assetSha256", asset_sha256),
                 ("assetMimetype", asset_mime_type),
                 ("assetTimestampCreated", asset_timestamp_created),
                 ("custom", json.dumps(custom)),
@@ -53,6 +55,7 @@ class Numbers:
 
             registration_data = [
                 ("assetCid", asset_cid),
+                ("assetSha256", asset_sha256),
                 ("assetMimetype", asset_mime_type),
                 ("assetTimestampCreated", asset_timestamp_created),
                 ("custom", json.dumps(custom)),

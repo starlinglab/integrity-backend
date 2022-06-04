@@ -154,7 +154,7 @@ class Actions:
                         f"Content signed by authsign server: {content_authsign_path}"
                     )
                 else:
-                    _logger.info(f"Content signage failed")
+                    _logger.error(f"Content signage failed")
 
                 # Sign content metadata hash
                 meta_content_sha = _file_util.digest_sha256(extracted_meta_content)
@@ -170,7 +170,7 @@ class Actions:
                         f"Metadata of content signed by authsign server: {meta_content_authsign_path}"
                     )
                 else:
-                    _logger.info(f"Metadata of content signage failed")
+                    _logger.error(f"Metadata of content signage failed")
 
                 # Sign recorder metadata hash
                 meta_recorder_sha = _file_util.digest_sha256(extracted_meta_recorder)
@@ -186,7 +186,7 @@ class Actions:
                         f"Metadata of recorder signed by authsign server: {meta_recorder_authsign_path}"
                     )
                 else:
-                    _logger.info(f"Metadata of recorder signage failed")
+                    _logger.error(f"Metadata of recorder signage failed")
             else:
                 _logger.info(f"Content signage with authsign skipped")
 
@@ -206,7 +206,7 @@ class Actions:
                         f"Content securely timestamped with OpenTimestamps: {content_ots_path}"
                     )
                 else:
-                    _logger.info(f"Metadata of content timestamp registration failed")
+                    _logger.error(f"Metadata of content timestamp registration failed")
 
                 # Content metadata timestamp registration
                 meta_content_ots_path = self._opentimestamps_data(
@@ -218,7 +218,7 @@ class Actions:
                         f"Metadata of content securely timestamped with OpenTimestamps: {meta_content_ots_path}"
                     )
                 else:
-                    _logger.info(f"Metadata of content timestamp registration failed")
+                    _logger.error(f"Metadata of content timestamp registration failed")
 
                 # Recorder metadata timestamp registration
                 meta_recorder_ots_path = self._opentimestamps_data(
@@ -230,7 +230,7 @@ class Actions:
                         f"Metadata of recorder securely timestamped with OpenTimestamps:: {meta_recorder_ots_path}"
                     )
                 else:
-                    _logger.info(f"Metadata of recorder timestamp registration failed")
+                    _logger.error(f"Metadata of recorder timestamp registration failed")
             else:
                 _logger.info(f"Timestamp registration with OpenTimestamps skipped")
 
@@ -372,6 +372,7 @@ class Actions:
                                 meta_content["name"],
                                 meta_content["description"],
                                 enc_zip_cid,
+                                enc_zip_sha,
                                 "application/octet-stream",
                                 meta_content["dateCreated"],
                                 asset_extras,
