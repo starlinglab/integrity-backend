@@ -149,9 +149,12 @@ class Actions:
                     authsign_server_url,
                     authsign_auth_token,
                 )
-                _logger.info(
-                    f"Content signed by authsign server: {content_authsign_path}"
-                )
+                if content_authsign_path != None:
+                    _logger.info(
+                        f"Content signed by authsign server: {content_authsign_path}"
+                    )
+                else:
+                    _logger.info(f"Content signage failed")
 
                 # Sign content metadata hash
                 meta_content_sha = _file_util.digest_sha256(extracted_meta_content)
@@ -187,20 +190,49 @@ class Actions:
             else:
                 _logger.info(f"Content signage with authsign skipped")
 
-            # Register on OpenTimestamp and add that file to zip
+            # Register on OpenTimestamps and add that file to zip
             if action_params["registration_policies"]["opentimestamps"]["active"]:
-                content_ots_path = f"{extracted_content}.ots"
-                _file_util.register_timestamp(extracted_content, content_ots_path)
-                zip_util.append(
-                    tmp_zip,
-                    content_ots_path,
-                    "proofs/" + os.path.basename(content_ots_path),
-                )
                 _logger.info(
-                    f"Content registered on opentimestamps: {content_ots_path}"
+                    f"Secure timestamping of content and metadata with OpenTimestamps"
                 )
+
+                # Content timestamp registration
+                content_ots_path = self._opentimestamps_data(
+                    tmp_zip,
+                    extracted_content,
+                )
+                if content_ots_path != None:
+                    _logger.info(
+                        f"Content securely timestamped with OpenTimestamps: {content_ots_path}"
+                    )
+                else:
+                    _logger.info(f"Metadata of content timestamp registration failed")
+
+                # Content metadata timestamp registration
+                meta_content_ots_path = self._opentimestamps_data(
+                    tmp_zip,
+                    extracted_meta_content,
+                )
+                if meta_content_ots_path != None:
+                    _logger.info(
+                        f"Metadata of content securely timestamped with OpenTimestamps: {meta_content_ots_path}"
+                    )
+                else:
+                    _logger.info(f"Metadata of content timestamp registration failed")
+
+                # Recorder metadata timestamp registration
+                meta_recorder_ots_path = self._opentimestamps_data(
+                    tmp_zip,
+                    extracted_meta_recorder,
+                )
+                if meta_recorder_ots_path != None:
+                    _logger.info(
+                        f"Metadata of recorder securely timestamped with OpenTimestamps:: {meta_recorder_ots_path}"
+                    )
+                else:
+                    _logger.info(f"Metadata of recorder timestamp registration failed")
             else:
-                _logger.info(f"Content registration on opentimestamps skipped")
+                _logger.info(f"Timestamp registration with OpenTimestamps skipped")
 
             # Get archive ZIP hashes
             zip_sha = _file_util.digest_sha256(tmp_zip)
@@ -838,6 +870,21 @@ class Actions:
         proof_file_path = f"{extracted_content_path}.authsign"
         try:
             _file_util.authsign_sign(data_hash, server_url, auth_token, proof_file_path)
+            zip_util.append(
+                proof_zip_path,
+                proof_file_path,
+                "proofs/" + os.path.basename(proof_file_path),
+            )
+        except Exception as e:
+            _logger.error(str(e))
+        return proof_file_path
+
+    def _opentimestamps_data(
+        self, proof_zip_path, extracted_content_path
+    ):
+        proof_file_path = f"{extracted_content_path}.ots"
+        try:
+            _file_util.register_timestamp(extracted_content_path, proof_file_path)
             zip_util.append(
                 proof_zip_path,
                 proof_file_path,
