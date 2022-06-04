@@ -20,14 +20,13 @@ class Iscn:
                 ISCN schema (https://github.com/likecoin/iscn-specs/tree/master/schema)
 
         Returns:
-            iscnId if the registration succeeded; None otherwise
+            ISCN registration receipt if the registration succeeded; None otherwise
         """
-        response = requests.post(_REGISTER, json={"metadata": registration})
+        resp = requests.post(_REGISTER, json={"metadata": registration})
 
-        if not response.ok:
-            _logger.error(
-                f"ISCN registration failed: {response.status_code} {response.text}"
-            )
+        if not resp.ok:
+            _logger.error(f"ISCN registration failed: {resp.status_code} {resp.text}")
             return None
-        _logger.info(f"ISCN registration succeeded: {response.text}")
-        return json.loads(response.text)["iscnId"]
+
+        _logger.info(f"ISCN registration succeeded: {resp.text}")
+        return resp.json()
