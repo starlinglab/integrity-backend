@@ -2,70 +2,95 @@ from . import config
 from .file_util import FileUtil
 from .log_helper import LogHelper
 
+import copy
+import json
 import requests
 import sys
 
 _logger = LogHelper.getLogger()
-_COMMIT_URL = config.NUMBERS_API_URL + "/commit"
+_REGISTER = config.NUMBERS_API_URL + "/nit_create_asset"
 
 
 class Numbers:
     """Handles interactions with Numbers Protocol."""
 
     @staticmethod
-    def commit(asset, asset_tree, author):
-        """Registers a commit to the integrity blockchain.
+    def register(
+        asset_name,
+        asset_description,
+        asset_cid,
+        asset_sha256,
+        asset_mime_type,
+        asset_timestamp_created,
+        asset_extras,
+        nft_contract_address,
+    ):
+        """Registers an asset to the integrity blockchain.
 
-        https://github.com/numbersprotocol/enterprise-service/wiki/Web-3.0-API#nit-commit
+        https://github.com/numbersprotocol/enterprise-service/wiki/7.-Nit,-Native-Protocol-Tool#nit-create-asset
 
         Args:
-            asset: path to the asset file
-            asset_tree: path to asset JSON
-            author: path to author JSON
-
-        Raises:
-            any file I/O errors
-            JSON decoding errors
+            asset_name: name of the asset
+            asset_description: description of the asset
+            asset_cid: CID of the asset
+            asset_sha256: SHA-256 of the asset
+            asset_mime_type: MIME type of asset (use 'application/octet-stream' for encrypted assets)
+            asset_timestamp_created: creation timestamp of the asset
+            asset_extras: extra JSON object to be included in asset registration
+            nft_contract_address: Avalanche contract address for minting an ERC-721 custody token for the asset; None to skip
 
         Returns:
-            Transaction hash string. If registration fails it returns None.
+            Numbers registration receipt if the registration succeeded; None otherwise
         """
-        file_util = FileUtil()
-        asset_cid = file_util.digest_cidv1(asset)
-        asset_tree_cid = file_util.digest_cidv1(asset_tree)
-        asset_tree_sha = file_util.digest_sha256(asset_tree)
-        author_cid = file_util.digest_cidv1(author)
+        custom = copy.copy(asset_extras)
+        custom.update({"name": asset_name})
+        custom.update({"description": asset_description})
 
-        r = requests.post(
-            _COMMIT_URL,
-            headers={"Authorization": f"Bearer {config.NUMBERS_API_KEY}"},
-            data=[
+        if not nft_contract_address:
+            registration_data = [
                 ("assetCid", asset_cid),
-                ("assetTreeCid", asset_tree_cid),
-                ("assetTreeSha256", asset_tree_sha),
-                ("author", author_cid),
-                ("action", "testAction"),  # Will change in the future!
-                ("actionResult", "testActionResult"),  # Will change in the future!
-                ("dryRun", "false"),
-                ("mockup", "false"),
-            ],
+                ("assetSha256", asset_sha256),
+                ("assetMimetype", asset_mime_type),
+                ("assetTimestampCreated", asset_timestamp_created),
+                ("custom", json.dumps(custom)),
+            ]
+        else:
+            nft_metadata = {
+                "name": asset_name,
+                "description": asset_description,
+                "external_url": f"ipfs://{asset_cid}",
+                "custom": custom,
+            }
+
+            registration_data = [
+                ("assetCid", asset_cid),
+                ("assetSha256", asset_sha256),
+                ("assetMimetype", asset_mime_type),
+                ("assetTimestampCreated", asset_timestamp_created),
+                ("custom", json.dumps(custom)),
+                ("nftContractAddress", nft_contract_address),
+                ("nftMetadata", json.dumps(nft_metadata)),
+            ]
+
+        resp = requests.post(
+            _REGISTER,
+            headers={"Authorization": f"Bearer {config.NUMBERS_API_KEY}"},
+            data=registration_data,
         )
 
-        if not r.ok:
-            _logger.error("Numbers commit failed: %s %s", r.status_code, r.text)
+        if not resp.ok:
+            _logger.error(
+                f"Numbers registration failed: {resp.status_code} {resp.text}"
+            )
             return None
 
-        data = r.json()
-
+        data = resp.json()
         if data.get("response") is None:
             _logger.warning(
-                "Numbers commit response did not have the 'response' field: %s", r.text
-            )
-            return None
-        if data["response"].get("txHash") is None:
-            _logger.warning(
-                "Numbers commit response did not have the 'txHash' field: %s", r.text
+                "Numbers registration response did not have the 'response' field: %s",
+                resp.text,
             )
             return None
 
-        return data["response"]["txHash"]
+        _logger.info(f"Numbers registration succeeded: {resp.text}")
+        return data["response"]

@@ -97,9 +97,7 @@ class Claim:
 
         return claim
 
-    def generate_c2pa_proofmode(
-        self, meta_content: dict, filename: str
-    ):
+    def generate_c2pa_proofmode(self, meta_content: dict, filename: str):
         """Generates a claim for the 'c2pa-proofmode' action.
 
         Args:
@@ -126,7 +124,9 @@ class Claim:
         copyright = meta_content.get("copyright")
 
         # Find proofmode data for asset
-        proofmode_data = meta_content.get("private", {}).get("proofmode", {}).get(filename, {})
+        proofmode_data = (
+            meta_content.get("private", {}).get("proofmode", {}).get(filename, {})
+        )
 
         # TODO Make GPS data optional
         gps_lat = proofmode_data["proofs"][0]["Location.Latitude"]
