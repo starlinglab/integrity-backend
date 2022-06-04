@@ -336,12 +336,12 @@ class Actions:
                             "usageInfo": "Encrypted with AES-256.",
                             "keywords": [org_id, collection_id],
                             "extras": meta_content["extras"],
-                            "contentFingerprints":[
+                            "contentFingerprints": [
                                 f"hash://sha256/{enc_zip_sha}",
                                 f"hash://md5/{enc_zip_md5}",
                                 f"ipfs://{enc_zip_cid}",
                             ],
-                            "relatedContent":[
+                            "relatedContent": [
                                 {
                                     "value": f"hash://sha256/{content_sha}",
                                     "description": "The SHA-256 of the original content.",
@@ -366,22 +366,28 @@ class Actions:
                                     "value": f"ipfs://{zip_cid}",
                                     "description": "The CID of the unencrypted archive.",
                                 },
-                            ]
+                            ],
                         }
                         numbers_receipt = Numbers.register(
-                                meta_content["name"],
-                                meta_content["description"],
-                                enc_zip_cid,
-                                enc_zip_sha,
-                                "application/octet-stream",
-                                meta_content["dateCreated"],
-                                asset_extras,
-                                action_params["registration_policies"]["numbersprotocol"]["custody_token_contract_address"],
-                            )
+                            meta_content["name"],
+                            meta_content["description"],
+                            enc_zip_cid,
+                            enc_zip_sha,
+                            "application/octet-stream",
+                            meta_content["dateCreated"],
+                            asset_extras,
+                            action_params["registration_policies"]["numbersprotocol"][
+                                "custody_token_contract_address"
+                            ],
+                        )
                         if numbers_receipt is not None:
-                            _logger.info(f"Content registered on Numbers Protocol: {numbers_receipt}")
+                            _logger.info(
+                                f"Content registered on Numbers Protocol: {numbers_receipt}"
+                            )
                         else:
-                            _logger.error("Content registration on Numbers Protocol failed")
+                            _logger.error(
+                                "Content registration on Numbers Protocol failed"
+                            )
                 else:
                     _logger.info("Content registration on Numbers Protocol skipped")
             except Exception as e:
@@ -416,7 +422,9 @@ class Actions:
             if iscn_receipt is not None:
                 hash_list["registrationRecords"].update({"iscn": iscn_receipt})
             if numbers_receipt is not None:
-                hash_list["registrationRecords"].update({"numbersProtocol": numbers_receipt})
+                hash_list["registrationRecords"].update(
+                    {"numbersProtocol": numbers_receipt}
+                )
             with open(hash_list_path, "w") as f:
                 f.write(json.dumps(hash_list))
                 f.write("\n")
@@ -553,9 +561,7 @@ class Actions:
 
             # C2PA-inject all JPEGs
             for filename in image_filenames:
-                claim = _claim.generate_c2pa_proofmode(
-                    meta_content, filename
-                )
+                claim = _claim.generate_c2pa_proofmode(meta_content, filename)
                 path = os.path.join(tmp_img_dir, filename)
                 _claim_tool.run_claim_inject(claim, path, None)
 
@@ -880,9 +886,7 @@ class Actions:
             _logger.error(str(e))
         return proof_file_path
 
-    def _opentimestamps_data(
-        self, proof_zip_path, extracted_content_path
-    ):
+    def _opentimestamps_data(self, proof_zip_path, extracted_content_path):
         proof_file_path = f"{extracted_content_path}.ots"
         try:
             _file_util.register_timestamp(extracted_content_path, proof_file_path)

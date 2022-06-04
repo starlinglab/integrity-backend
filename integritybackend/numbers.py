@@ -15,7 +15,16 @@ class Numbers:
     """Handles interactions with Numbers Protocol."""
 
     @staticmethod
-    def register(asset_name, asset_description, asset_cid, asset_sha256, asset_mime_type, asset_timestamp_created, asset_extras, nft_contract_address):
+    def register(
+        asset_name,
+        asset_description,
+        asset_cid,
+        asset_sha256,
+        asset_mime_type,
+        asset_timestamp_created,
+        asset_extras,
+        nft_contract_address,
+    ):
         """Registers an asset to the integrity blockchain.
 
         https://github.com/numbersprotocol/enterprise-service/wiki/7.-Nit,-Native-Protocol-Tool#nit-create-asset
@@ -70,13 +79,16 @@ class Numbers:
         )
 
         if not resp.ok:
-            _logger.error(f"Numbers registration failed: {resp.status_code} {resp.text}")
+            _logger.error(
+                f"Numbers registration failed: {resp.status_code} {resp.text}"
+            )
             return None
 
         data = resp.json()
         if data.get("response") is None:
             _logger.warning(
-                "Numbers registration response did not have the 'response' field: %s", resp.text
+                "Numbers registration response did not have the 'response' field: %s",
+                resp.text,
             )
             return None
 
