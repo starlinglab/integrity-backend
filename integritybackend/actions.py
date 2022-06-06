@@ -436,53 +436,6 @@ class Actions:
         finally:
             self._purge_from_tmp(zip_dir, tmp_dir)
 
-    def c2pa_starling_capture(self, asset_fullpath, jwt_payload, meta):
-        """Process asset with create action.
-        A new asset file is generated in the create-output folder with an original creation claim.
-
-        Args:
-            asset_fullpath: the local path to the asset file
-            jwt_payload: a JWT payload containing metadata
-            meta: dictionary with the 'meta' section of the incoming multipart request
-
-        Returns:
-            the local path to the asset file in the internal directory
-
-        Raises:
-            Exception if errors are encountered during processing
-        """
-        asset_helper = AssetHelper.from_jwt(jwt_payload)
-        # Create temporary files to work with.
-        tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
-        tmp_claim_file = asset_helper.get_tmp_file_fullpath(".json")
-
-        # Inject create claim and read back from file.
-        claim = _claim.generate_create(jwt_payload, meta)
-        shutil.copy2(asset_fullpath, tmp_asset_file)
-        _claim_tool.run_claim_inject(claim, tmp_asset_file, None)
-        _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
-
-        # Copy the C2PA-injected asset to both the internal and shared asset directories.
-        internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
-        shutil.move(tmp_asset_file, internal_asset_file)
-        subfolders = [
-            jwt_payload.get("author", {}).get("name"),
-            datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        ]
-        shutil.copy2(
-            internal_asset_file, asset_helper.get_assets_create_output(subfolders)
-        )
-        _logger.info("New asset file added: %s", internal_asset_file)
-        internal_claim_file = asset_helper.get_internal_claim_fullpath(
-            internal_asset_file
-        )
-        shutil.move(tmp_claim_file, internal_claim_file)
-        _logger.info(
-            "New claim file added to the internal claims directory: %s",
-            internal_claim_file,
-        )
-        return internal_asset_file
-
     def c2pa_proofmode(self, zip_path: str, org_config: dict, collection_id: str):
         """Process a proofmode zip that bundles multiple JPEG assets with metadata,
         and injects C2PA claims to outputted JPEG assets.
@@ -687,6 +640,53 @@ class Actions:
         finally:
             self._purge_from_tmp(tmp_img_dir, action_tmp_dir)
             self._purge_from_tmp(tmp_zip, action_tmp_dir)
+
+    # def c2pa_starling_capture(self, asset_fullpath, jwt_payload, meta):
+    #     """Process asset with create action.
+    #     A new asset file is generated in the create-output folder with an original creation claim.
+
+    #     Args:
+    #         asset_fullpath: the local path to the asset file
+    #         jwt_payload: a JWT payload containing metadata
+    #         meta: dictionary with the 'meta' section of the incoming multipart request
+
+    #     Returns:
+    #         the local path to the asset file in the internal directory
+
+    #     Raises:
+    #         Exception if errors are encountered during processing
+    #     """
+    #     asset_helper = AssetHelper.from_jwt(jwt_payload)
+    #     # Create temporary files to work with.
+    #     tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
+    #     tmp_claim_file = asset_helper.get_tmp_file_fullpath(".json")
+
+    #     # Inject create claim and read back from file.
+    #     claim = _claim.generate_create(jwt_payload, meta)
+    #     shutil.copy2(asset_fullpath, tmp_asset_file)
+    #     _claim_tool.run_claim_inject(claim, tmp_asset_file, None)
+    #     _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
+
+    #     # Copy the C2PA-injected asset to both the internal and shared asset directories.
+    #     internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
+    #     shutil.move(tmp_asset_file, internal_asset_file)
+    #     subfolders = [
+    #         jwt_payload.get("author", {}).get("name"),
+    #         datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+    #     ]
+    #     shutil.copy2(
+    #         internal_asset_file, asset_helper.get_assets_create_output(subfolders)
+    #     )
+    #     _logger.info("New asset file added: %s", internal_asset_file)
+    #     internal_claim_file = asset_helper.get_internal_claim_fullpath(
+    #         internal_asset_file
+    #     )
+    #     shutil.move(tmp_claim_file, internal_claim_file)
+    #     _logger.info(
+    #         "New claim file added to the internal claims directory: %s",
+    #         internal_claim_file,
+    #     )
+    #     return internal_asset_file
 
     # def c2pa_add(self, asset_fullpath, org_config, collection_id):
     #     """Process asset with add action.
