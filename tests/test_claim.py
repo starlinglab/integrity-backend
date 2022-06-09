@@ -152,7 +152,7 @@ def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
             "meta": {
                 "information": [
                     {
-                        "name": "Last Known GPS Timestamp",
+                        "name": "Current GPS Timestamp",
                         "value": "2021-10-30T18:43:14Z",
                     }
                 ]

@@ -27,6 +27,7 @@ pytest = "*"
 pytest-mock = "*"
 pytest-env = "*"
 requests-mock = "*"
+pylint = "*"
 
 [requires]
 python_version = "3.9"
