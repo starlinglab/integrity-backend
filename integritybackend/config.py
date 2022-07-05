@@ -11,8 +11,8 @@ dotenv.load_dotenv()
 # Secret for encoding/decoding JWT tokens.
 JWT_SECRET = os.environ.get("JWT_SECRET")
 
-# Full path to claim_tool binary. Must be already configured.
-CLAIM_TOOL_PATH = os.environ.get("CLAIM_TOOL_PATH")
+# Full path to c2patool binary. Must be already configured.
+C2PA_TOOL_PATH = os.environ.get("C2PA_TOOL_PATH")
 
 # Full path to IPFS client binary. Must be already configured.
 IPFS_CLIENT_PATH = os.environ.get("IPFS_CLIENT_PATH")

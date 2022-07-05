@@ -7,8 +7,8 @@ import subprocess
 _logger = LogHelper.getLogger()
 
 
-class ClaimTool:
-    """Manages interactions with the claim_tool binary."""
+class C2patool:
+    """Manages interactions with the c2patool binary."""
 
     def run_claim_inject(self, claim_dict, asset_fullpath, parent_asset_fullpath):
         """Overwrite the claim information an asset file with the provided claim, linked to a parent asset if provided.
@@ -23,27 +23,27 @@ class ClaimTool:
         """
         if parent_asset_fullpath is None:
             args = [
-                config.CLAIM_TOOL_PATH,
-                "--claimdef",
+                config.C2PA_TOOL_PATH,
+                "--config",
                 json.dumps(claim_dict),
                 "--output",
                 asset_fullpath,
             ]
         else:
             args = [
-                config.CLAIM_TOOL_PATH,
-                "--claimdef",
+                config.C2PA_TOOL_PATH,
+                "--config",
                 json.dumps(claim_dict),
-                "--output",
-                asset_fullpath,
                 "--parent",
                 parent_asset_fullpath,
+                "--output",
+                asset_fullpath,
             ]
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         popen.wait()
         if popen.returncode != 0:
             raise Exception(
-                f"claim_tool failed with code {popen.returncode} and output: {popen.stdout.read()}"
+                f"c2patool failed with code {popen.returncode} and output: {popen.stdout.read()}"
             )
 
     def run_claim_dump(self, asset_fullpath, claim_fullpath):
@@ -57,14 +57,13 @@ class ClaimTool:
             Exception if errors are encountered
         """
         args = [
-            config.CLAIM_TOOL_PATH,
+            config.C2PA_TOOL_PATH,
             asset_fullpath,
-            "--dump_store",
         ]
         with open(claim_fullpath, "w") as claim_file:
             popen = subprocess.Popen(args, stdout=claim_file)
             popen.wait()
             if popen.returncode != 0:
                 raise Exception(
-                    f"claim_tool failed with code {popen.returncode} and output: {popen.stdout.read()}"
+                    f"c2patool failed with code {popen.returncode} and output: {popen.stdout.read()}"
                 )

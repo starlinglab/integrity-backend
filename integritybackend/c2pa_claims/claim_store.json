@@ -1,6 +1,7 @@
 {
     "vendor": "starlinglab",
-    "recorder": "{{recorder}}",
+    "claim_generator": "{{recorder}}",
+    "ta_url": "http://timestamp.digicert.com",
     "assertions": [
         {
             "label": "stds.schema-org.CreativeWork",
@@ -10,8 +11,7 @@
                 "author": [
                     {
                         "@type": "{{author_type}}",
-                        "credential": [
-                        ],
+                        "credential": [],
                         "identifier": "{{author_identifier}}",
                         "name": "{{author_name}}"
                     },
