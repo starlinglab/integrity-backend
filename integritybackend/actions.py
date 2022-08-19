@@ -269,59 +269,24 @@ class Actions:
         if action_params["registration_policies"]["iscn"]["active"]:
             with open(extracted_meta_content) as meta_content_f:
                 meta_content = json.load(meta_content_f)["contentMetadata"]
-                iscn_record = {
-                    "contentFingerprints": [
-                        f"hash://sha256/{enc_zip_sha}",
-                        f"hash://md5/{enc_zip_md5}",
-                        f"ipfs://{enc_zip_cid}",
-                    ],
-                    "stakeholders": [
-                        {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": f"hash://sha256/{content_sha}",
-                            "description": "The SHA-256 of the original content.",
-                        },
-                        {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": f"hash://md5/{content_md5}",
-                            "description": "The MD5 of the original content.",
-                        },
-                        {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": f"ipfs://{content_cid}",
-                            "description": "The CID of the original content.",
-                        },
-                        {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": f"hash://sha256/{zip_sha}",
-                            "description": "The SHA-256 of the unencrypted archive.",
-                        },
-                        {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": f"hash://md5/{zip_md5}",
-                            "description": "The MD5 of the unencrypted archive.",
-                        },
-                        {
-                            "contributionType": "http://schema.org/citation",
-                            "footprint": f"ipfs://{zip_cid}",
-                            "description": "The CID of the unencrypted archive.",
-                        },
-                    ],
-                    "type": "Record",
-                    "name": meta_content["name"],
-                    "description": meta_content["description"],
-                    "author": meta_content["author"],
-                    "usageInfo": "Encrypted with AES-256.",
-                    "keywords": [org_id, collection_id],
-                    "datePublished": meta_content["dateCreated"],
-                    "url": "",
-                    "recordNotes": json.dumps(
-                        (meta_content["extras"]), separators=(",", ":")
-                    ),
-                }
-
                 try:
-                    iscn_receipt = Iscn.register(iscn_record)
+                    iscn_receipt = Iscn.register_archive(
+                        enc_zip_sha,
+                        enc_zip_md5,
+                        enc_zip_cid,
+                        content_sha,
+                        content_md5,
+                        content_cid,
+                        zip_sha,
+                        zip_md5,
+                        zip_cid,
+                        meta_content["name"],
+                        meta_content["description"],
+                        meta_content["author"],
+                        [org_id, collection_id],
+                        meta_content["dateCreated"],
+                        json.dumps((meta_content["extras"]), separators=(",", ":")),
+                    )
                 except requests.exceptions.RequestException as e:
                     _logger.error(f"Content registration on ISCN failed: {e}")
                 else:
