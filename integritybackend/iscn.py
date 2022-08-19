@@ -1,7 +1,6 @@
 from . import config
 from .log_helper import LogHelper
 
-import json
 import requests
 
 _logger = LogHelper.getLogger()

@@ -15,6 +15,8 @@ import shutil
 import time
 from zipfile import ZipFile
 
+import requests
+
 
 _claim = Claim()
 _claim_tool = ClaimTool()
@@ -152,7 +154,7 @@ class Actions:
                 authsign_server_url,
                 authsign_auth_token,
             )
-            if content_authsign_path != None:
+            if content_authsign_path is not None:
                 _logger.info(
                     f"Content signed by authsign server: {content_authsign_path}"
                 )
@@ -168,7 +170,7 @@ class Actions:
                 authsign_server_url,
                 authsign_auth_token,
             )
-            if meta_content_authsign_path != None:
+            if meta_content_authsign_path is not None:
                 _logger.info(
                     f"Metadata of content signed by authsign server: {meta_content_authsign_path}"
                 )
@@ -184,7 +186,7 @@ class Actions:
                 authsign_server_url,
                 authsign_auth_token,
             )
-            if meta_recorder_authsign_path != None:
+            if meta_recorder_authsign_path is not None:
                 _logger.info(
                     f"Metadata of recorder signed by authsign server: {meta_recorder_authsign_path}"
                 )
@@ -204,7 +206,7 @@ class Actions:
                 tmp_zip,
                 extracted_content,
             )
-            if content_ots_path != None:
+            if content_ots_path is not None:
                 _logger.info(
                     f"Content securely timestamped with OpenTimestamps: {content_ots_path}"
                 )
@@ -216,7 +218,7 @@ class Actions:
                 tmp_zip,
                 extracted_meta_content,
             )
-            if meta_content_ots_path != None:
+            if meta_content_ots_path is not None:
                 _logger.info(
                     f"Metadata of content securely timestamped with OpenTimestamps: {meta_content_ots_path}"
                 )
@@ -228,7 +230,7 @@ class Actions:
                 tmp_zip,
                 extracted_meta_recorder,
             )
-            if meta_recorder_ots_path != None:
+            if meta_recorder_ots_path is not None:
                 _logger.info(
                     f"Metadata of recorder securely timestamped with OpenTimestamps:: {meta_recorder_ots_path}"
                 )
@@ -264,113 +266,115 @@ class Actions:
 
         # Register encrypted ZIP on ISCN
         iscn_receipt = None
-        try:
-            if action_params["registration_policies"]["iscn"]["active"]:
-                with open(extracted_meta_content) as meta_content_f:
-                    meta_content = json.load(meta_content_f)["contentMetadata"]
-                    iscn_record = {
-                        "contentFingerprints": [
-                            f"hash://sha256/{enc_zip_sha}",
-                            f"hash://md5/{enc_zip_md5}",
-                            f"ipfs://{enc_zip_cid}",
-                        ],
-                        "stakeholders": [
-                            {
-                                "contributionType": "http://schema.org/citation",
-                                "footprint": f"hash://sha256/{content_sha}",
-                                "description": "The SHA-256 of the original content.",
-                            },
-                            {
-                                "contributionType": "http://schema.org/citation",
-                                "footprint": f"hash://md5/{content_md5}",
-                                "description": "The MD5 of the original content.",
-                            },
-                            {
-                                "contributionType": "http://schema.org/citation",
-                                "footprint": f"ipfs://{content_cid}",
-                                "description": "The CID of the original content.",
-                            },
-                            {
-                                "contributionType": "http://schema.org/citation",
-                                "footprint": f"hash://sha256/{zip_sha}",
-                                "description": "The SHA-256 of the unencrypted archive.",
-                            },
-                            {
-                                "contributionType": "http://schema.org/citation",
-                                "footprint": f"hash://md5/{zip_md5}",
-                                "description": "The MD5 of the unencrypted archive.",
-                            },
-                            {
-                                "contributionType": "http://schema.org/citation",
-                                "footprint": f"ipfs://{zip_cid}",
-                                "description": "The CID of the unencrypted archive.",
-                            },
-                        ],
-                        "type": "Record",
-                        "name": meta_content["name"],
-                        "description": meta_content["description"],
-                        "author": meta_content["author"],
-                        "usageInfo": "Encrypted with AES-256.",
-                        "keywords": [org_id, collection_id],
-                        "datePublished": meta_content["dateCreated"],
-                        "url": "",
-                        "recordNotes": json.dumps(
-                            (meta_content["extras"]), separators=(",", ":")
-                        ),
-                    }
+        if action_params["registration_policies"]["iscn"]["active"]:
+            with open(extracted_meta_content) as meta_content_f:
+                meta_content = json.load(meta_content_f)["contentMetadata"]
+                iscn_record = {
+                    "contentFingerprints": [
+                        f"hash://sha256/{enc_zip_sha}",
+                        f"hash://md5/{enc_zip_md5}",
+                        f"ipfs://{enc_zip_cid}",
+                    ],
+                    "stakeholders": [
+                        {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": f"hash://sha256/{content_sha}",
+                            "description": "The SHA-256 of the original content.",
+                        },
+                        {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": f"hash://md5/{content_md5}",
+                            "description": "The MD5 of the original content.",
+                        },
+                        {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": f"ipfs://{content_cid}",
+                            "description": "The CID of the original content.",
+                        },
+                        {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": f"hash://sha256/{zip_sha}",
+                            "description": "The SHA-256 of the unencrypted archive.",
+                        },
+                        {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": f"hash://md5/{zip_md5}",
+                            "description": "The MD5 of the unencrypted archive.",
+                        },
+                        {
+                            "contributionType": "http://schema.org/citation",
+                            "footprint": f"ipfs://{zip_cid}",
+                            "description": "The CID of the unencrypted archive.",
+                        },
+                    ],
+                    "type": "Record",
+                    "name": meta_content["name"],
+                    "description": meta_content["description"],
+                    "author": meta_content["author"],
+                    "usageInfo": "Encrypted with AES-256.",
+                    "keywords": [org_id, collection_id],
+                    "datePublished": meta_content["dateCreated"],
+                    "url": "",
+                    "recordNotes": json.dumps(
+                        (meta_content["extras"]), separators=(",", ":")
+                    ),
+                }
+
+                try:
                     iscn_receipt = Iscn.register(iscn_record)
+                except requests.exceptions.RequestException as e:
+                    _logger.error(f"Content registration on ISCN failed: {e}")
+                else:
                     if iscn_receipt is not None:
                         _logger.info(f"Content registered on ISCN: {iscn_receipt}")
                     else:
                         _logger.error("Content registration on ISCN failed")
-            else:
-                _logger.info("Content registration on ISCN skipped")
-        except Exception as e:
-            _logger.error(f"Content registration on ISCN failed: {e}")
+        else:
+            _logger.info("Content registration on ISCN skipped")
 
         # Register encrypted ZIP on Numbers Protocol
         numbers_receipt = None
-        try:
-            if action_params["registration_policies"]["numbersprotocol"]["active"]:
-                with open(extracted_meta_content) as meta_content_f:
-                    meta_content = json.load(meta_content_f)["contentMetadata"]
-                    asset_extras = {
-                        "author": meta_content["author"],
-                        "usageInfo": "Encrypted with AES-256.",
-                        "keywords": [org_id, collection_id],
-                        "extras": meta_content["extras"],
-                        "contentFingerprints": [
-                            f"hash://sha256/{enc_zip_sha}",
-                            f"hash://md5/{enc_zip_md5}",
-                            f"ipfs://{enc_zip_cid}",
-                        ],
-                        "relatedContent": [
-                            {
-                                "value": f"hash://sha256/{content_sha}",
-                                "description": "The SHA-256 of the original content.",
-                            },
-                            {
-                                "value": f"hash://md5/{content_md5}",
-                                "description": "The MD5 of the original content.",
-                            },
-                            {
-                                "value": f"ipfs://{content_cid}",
-                                "description": "The CID of the original content.",
-                            },
-                            {
-                                "value": f"hash://sha256/{zip_sha}",
-                                "description": "The SHA-256 of the unencrypted archive.",
-                            },
-                            {
-                                "value": f"hash://md5/{zip_md5}",
-                                "description": "The MD5 of the unencrypted archive.",
-                            },
-                            {
-                                "value": f"ipfs://{zip_cid}",
-                                "description": "The CID of the unencrypted archive.",
-                            },
-                        ],
-                    }
+        if action_params["registration_policies"]["numbersprotocol"]["active"]:
+            with open(extracted_meta_content) as meta_content_f:
+                meta_content = json.load(meta_content_f)["contentMetadata"]
+                asset_extras = {
+                    "author": meta_content["author"],
+                    "usageInfo": "Encrypted with AES-256.",
+                    "keywords": [org_id, collection_id],
+                    "extras": meta_content["extras"],
+                    "contentFingerprints": [
+                        f"hash://sha256/{enc_zip_sha}",
+                        f"hash://md5/{enc_zip_md5}",
+                        f"ipfs://{enc_zip_cid}",
+                    ],
+                    "relatedContent": [
+                        {
+                            "value": f"hash://sha256/{content_sha}",
+                            "description": "The SHA-256 of the original content.",
+                        },
+                        {
+                            "value": f"hash://md5/{content_md5}",
+                            "description": "The MD5 of the original content.",
+                        },
+                        {
+                            "value": f"ipfs://{content_cid}",
+                            "description": "The CID of the original content.",
+                        },
+                        {
+                            "value": f"hash://sha256/{zip_sha}",
+                            "description": "The SHA-256 of the unencrypted archive.",
+                        },
+                        {
+                            "value": f"hash://md5/{zip_md5}",
+                            "description": "The MD5 of the unencrypted archive.",
+                        },
+                        {
+                            "value": f"ipfs://{zip_cid}",
+                            "description": "The CID of the unencrypted archive.",
+                        },
+                    ],
+                }
+                try:
                     numbers_receipt = Numbers.register(
                         meta_content["name"],
                         meta_content["description"],
@@ -383,16 +387,19 @@ class Actions:
                             "custody_token_contract_address"
                         ],
                     )
+                except requests.exceptions.RequestException as e:
+                    _logger.error(
+                        f"Content registration on Numbers Protocol failed: {e}"
+                    )
+                else:
                     if numbers_receipt is not None:
                         _logger.info(
                             f"Content registered on Numbers Protocol: {numbers_receipt}"
                         )
                     else:
                         _logger.error("Content registration on Numbers Protocol failed")
-            else:
-                _logger.info("Content registration on Numbers Protocol skipped")
-        except Exception as e:
-            _logger.error(f"Content registration on Numbers Protocol failed: {e}")
+        else:
+            _logger.info("Content registration on Numbers Protocol skipped")
 
         # Generate file that contains all the hashes
         action_output_dir = asset_helper.path_for_action_output(
