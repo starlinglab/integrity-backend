@@ -458,8 +458,7 @@ class Actions:
 
         # Inject create claim and read back from file.
         claim = _claim.generate_create(jwt_payload, meta)
-        shutil.copy2(asset_fullpath, tmp_asset_file)
-        _c2patool.run_claim_inject(claim, tmp_asset_file, None)
+        _c2patool.run_claim_inject(claim, asset_fullpath, tmp_asset_file)
         _c2patool.run_claim_dump(tmp_asset_file, tmp_claim_file)
 
         # Copy the C2PA-injected asset to both the internal and shared asset directories.
@@ -563,7 +562,7 @@ class Actions:
             for filename in image_filenames:
                 claim = _claim.generate_c2pa_proofmode(meta_content, filename)
                 path = os.path.join(tmp_img_dir, filename)
-                _c2patool.run_claim_inject(claim, path, None)
+                _c2patool.run_claim_inject(claim, path, path)
 
             # Process C2PA-injected JPEGs
             for filename in image_filenames:

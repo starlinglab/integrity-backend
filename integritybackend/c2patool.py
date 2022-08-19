@@ -10,34 +10,44 @@ _logger = LogHelper.getLogger()
 class C2patool:
     """Manages interactions with the c2patool binary."""
 
-    def run_claim_inject(self, claim_dict, asset_fullpath, parent_asset_fullpath):
-        """Overwrite the claim information an asset file with the provided claim, linked to a parent asset if provided.
+    def run_claim_inject(
+        self, claims: dict, input_path: str, output_path: str, parent_path: str = None
+    ):
+        """
+        Inject C2PA claims into an asset, optionally inheriting claims from a parent asset.
+
+        The output file will be overwritten if it already exists.
 
         Args:
-            claim_dict: a dictionary with the claim contents
-            asset_fullpath: the local path to the asset file
-            parent_asset_fullpath: local path to the parent asset file; or None
+            claims: a dictionary with the claim contents
+            input_path: the local path to the input asset file
+            output_path: the local path to the output asset file
+            parent_path: local path to the parent asset file, or None (default)
 
         Raises:
             Exception if something goes wrong with injection
         """
-        if parent_asset_fullpath is None:
+        if parent_path is None:
             args = [
                 config.C2PA_TOOL_PATH,
+                input_path,
                 "--config",
-                json.dumps(claim_dict),
+                json.dumps(claims),
+                "--force",
                 "--output",
-                asset_fullpath,
+                output_path,
             ]
         else:
             args = [
                 config.C2PA_TOOL_PATH,
+                input_path,
                 "--config",
-                json.dumps(claim_dict),
+                json.dumps(claims),
                 "--parent",
-                parent_asset_fullpath,
+                parent_path,
+                "--force",
                 "--output",
-                asset_fullpath,
+                output_path,
             ]
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         popen.wait()
