@@ -12,7 +12,12 @@ dotenv.load_dotenv()
 JWT_SECRET = os.environ.get("JWT_SECRET")
 
 # Full path to c2patool binary. Must be already configured.
-C2PA_TOOL_PATH = os.environ.get("C2PA_TOOL_PATH")
+C2PATOOL_PATH = os.environ.get("C2PATOOL_PATH")
+# C2PA cert and key files
+C2PA_PRIVATE_KEY_PATH = os.environ.get("C2PA_PRIVATE_KEY_PATH")
+C2PA_CERT_CHAIN_PATH = os.environ.get("C2PA_CERT_CHAIN_PATH")
+C2PA_SIGN_ALGO = os.environ.get("C2PA_SIGN_ALGO", "es256")
+
 
 # Full path to IPFS client binary. Must be already configured.
 IPFS_CLIENT_PATH = os.environ.get("IPFS_CLIENT_PATH")
