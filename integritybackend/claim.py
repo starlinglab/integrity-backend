@@ -256,7 +256,7 @@ class Claim:
         assertions = []
 
         creative_work = assertion_templates["stds.schema-org.CreativeWork"]
-        creative_work["data"] = {"author": CREATIVE_WORK_AUTHOR}
+        #creative_work["data"] = {"author": CREATIVE_WORK_AUTHOR}
         assertions.append(creative_work)
 
         if custom_assertions is None:
