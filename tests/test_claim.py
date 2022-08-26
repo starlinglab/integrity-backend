@@ -92,11 +92,9 @@ def test_generates_create_claim(reverse_geocode_mocker):
     }
 
     exif_assertion = assertions["stds.exif"]
-    assert exif_assertion["data"]["exif:GPSLatitude"] == "15/1 55/1 6964/125"
-    assert exif_assertion["data"]["exif:GPSLatitudeRef"] == "S"
-    assert exif_assertion["data"]["exif:GPSLongitude"] == "57/1 37/1 54183/1000"
-    assert exif_assertion["data"]["exif:GPSLongitudeRef"] == "W"
-    assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2021:10:30 18:43:14 +0000"
+    assert exif_assertion["data"]["exif:GPSLatitude"] == "15,55.928532S"
+    assert exif_assertion["data"]["exif:GPSLongitude"] == "57,37.903044W"
+    assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2021-10-30T18:43:14Z"
 
     signature_assertion = assertions["org.starlinglab.integrity"]
     signature = signatures[0]
@@ -163,7 +161,10 @@ def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
 
     assertions = _claim.assertions_by_label(claim)
     exif_assertion = assertions["stds.exif"]
-    assert exif_assertion["data"] == {"exif:GPSTimeStamp": "2021:10:30 18:43:14 +0000"}
+    assert exif_assertion["data"] == {
+        "exif:GPSVersionID": "2.2.0.0",
+        "exif:GPSTimeStamp": "2021-10-30T18:43:14Z",
+    }
 
     # Should prefer the "Current" timestamp, if one is provided.
     claim = _claim.generate_create(
@@ -187,7 +188,10 @@ def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
 
     assertions = _claim.assertions_by_label(claim)
     exif_assertion = assertions["stds.exif"]
-    assert exif_assertion["data"] == {"exif:GPSTimeStamp": "2022:10:30 18:43:14 +0000"}
+    assert exif_assertion["data"] == {
+        "exif:GPSVersionID": "2.2.0.0",
+        "exif:GPSTimeStamp": "2022-10-30T18:43:14Z",
+    }
 
 
 def test_generates_create_claim_with_no_reverse_geocode(reverse_geocode_mocker):
@@ -298,10 +302,9 @@ def test_prefers_current_latlon_with_fallback(reverse_geocode_mocker):
     assertions = _claim.assertions_by_label(claim)
     exif_assertion = assertions["stds.exif"]
     assert exif_assertion["data"] == {
-        "exif:GPSLatitude": "1/1 11/1 60/1",
-        "exif:GPSLatitudeRef": "S",
-        "exif:GPSLongitude": "3/1 23/1 60/1",
-        "exif:GPSLongitudeRef": "W",
+        "exif:GPSVersionID": "2.2.0.0",
+        "exif:GPSLatitude": "1,12.0S",
+        "exif:GPSLongitude": "3,24.0W",
     }
 
     claim = _claim.generate_create(
@@ -318,8 +321,59 @@ def test_prefers_current_latlon_with_fallback(reverse_geocode_mocker):
     assertions = _claim.assertions_by_label(claim)
     exif_assertion = assertions["stds.exif"]
     assert exif_assertion["data"] == {
-        "exif:GPSLatitude": "15/1 55/1 6964/125",
-        "exif:GPSLatitudeRef": "S",
-        "exif:GPSLongitude": "57/1 37/1 54183/1000",
-        "exif:GPSLongitudeRef": "W",
+        "exif:GPSVersionID": "2.2.0.0",
+        "exif:GPSLatitude": "15,55.928532S",
+        "exif:GPSLongitude": "57,37.903044W",
+    }
+
+
+def test_altitude(reverse_geocode_mocker):
+    reverse_geocode_mocker(fake_address)
+
+    claim = _claim.generate_create(
+        jwt_payload,
+        {
+            "meta": {
+                "information": [
+                    {"name": "Current GPS Latitude", "value": "-1.2"},
+                    {"name": "Current GPS Longitude", "value": "-3.4"},
+                    {"name": "Current GPS Altitude", "value": "178.59999084472656"},
+                    {"name": "Last Known GPS Latitude", "value": "-15.9321422"},
+                    {"name": "Last Known GPS Longitude", "value": "-57.6317174"},
+                    {"name": "Last Known GPS Altitude", "value": "111.012"},
+                ],
+            }
+        },
+    )
+
+    assertions = _claim.assertions_by_label(claim)
+    exif_assertion = assertions["stds.exif"]
+    assert exif_assertion["data"] == {
+        "exif:GPSVersionID": "2.2.0.0",
+        "exif:GPSLatitude": "1,12.0S",
+        "exif:GPSLongitude": "3,24.0W",
+        "exif:GPSAltitude": "767077217870/4294945449",
+        "exif:GPSAltitudeRef": 0,
+    }
+
+    claim = _claim.generate_create(
+        jwt_payload,
+        {
+            "meta": {
+                "information": [
+                    {"name": "Last Known GPS Latitude", "value": "-15.9321422"},
+                    {"name": "Last Known GPS Longitude", "value": "-57.6317174"},
+                    {"name": "Last Known GPS Altitude", "value": "111.012"},
+                ],
+            }
+        },
+    )
+    assertions = _claim.assertions_by_label(claim)
+    exif_assertion = assertions["stds.exif"]
+    assert exif_assertion["data"] == {
+        "exif:GPSVersionID": "2.2.0.0",
+        "exif:GPSLatitude": "15,55.928532S",
+        "exif:GPSLongitude": "57,37.903044W",
+        "exif:GPSAltitude": "27753/250",
+        "exif:GPSAltitudeRef": 0,
     }

@@ -74,21 +74,25 @@ class Claim:
         author_name = jwt_payload.get("author", {}).get("name")
         copyright = jwt_payload.get("copyright")
         lat, lon, alt = self._get_meta_lat_lon_alt(meta)
-        photo_meta_data = self._make_photo_meta_data(
-            author_name, copyright, float(lat), float(lon)
-        )
+        if lat is None:
+            photo_meta_data = self._make_photo_meta_data(
+                author_name, copyright, None, None
+            )
+        else:
+            photo_meta_data = self._make_photo_meta_data(
+                author_name, copyright, float(lat), float(lon)
+            )
         if photo_meta_data is not None:
             photo_meta = assertion_templates["stds.iptc.photo-metadata"]
             photo_meta["data"] = photo_meta_data
             assertions.append(photo_meta)
 
-        if lat is not None:
-            timestamp = self._get_meta_timestamp(meta)
-            exif_data = self._make_c2pa_exif_gps_data(lat, lon, alt, timestamp)
-            if exif_data is not None:
-                exif = assertion_templates["stds.exif"]
-                exif["data"] = exif_data
-                assertions.append(exif)
+        timestamp = self._get_meta_timestamp(meta)
+        exif_data = self._make_c2pa_exif_gps_data(lat, lon, alt, timestamp)
+        if exif_data is not None:
+            exif = assertion_templates["stds.exif"]
+            exif["data"] = exif_data
+            assertions.append(exif)
 
         signature_data = self._make_signature_data_starling_capture(signature, meta)
         if signature_data is not None:
@@ -318,8 +322,8 @@ class Claim:
         Return:
             (lat, lon, alt)
 
-            All are Decimal objects. If any are not available then (None, None, None)
-            is returned instead.
+            All are Decimal objects. If any are not available then None is
+            returned in their place.
         """
 
         lat = self._get_value_from_meta(
@@ -332,27 +336,37 @@ class Claim:
             meta, "Current GPS Altitude"
         ) or self._get_value_from_meta(meta, "Last Known GPS Altitude")
 
-        if lat is None or lon is None or alt is None:
-            _logger.warning("Could not find one or more of lat/lon/alt in 'meta'")
+        if lat is None or lon is None:
+            _logger.warning("Could not find both of lat/lon in 'meta'")
             return (None, None, None)
 
-        return (Decimal(lat), Decimal(lon), Decimal(alt))
+        if lat is not None:
+            lat = Decimal(lat)
+        if lon is not None:
+            lon = Decimal(lon)
+        if alt is not None:
+            alt = Decimal(alt)
+
+        return (lat, lon, alt)
 
     def _convert_coords_to_c2pa(
-        self, lat: Decimal, lon: Decimal, alt: Decimal
-    ) -> tuple[str, str, str, int]:
+        self, lat: Optional[Decimal], lon: Optional[Decimal], alt: Optional[Decimal]
+    ) -> tuple[Optional[str], Optional[str], Optional[str], Optional[int]]:
         """
         Converts decimal latitude, longitude, and altitude into valid C2PA (XMP Exif) strings.
 
         Args:
-            lat: latitude as a Decimal
-            lon: longitude as a Decimal
-            alt: altitude as a Decimal
+            lat: latitude as a Decimal or None
+            lon: longitude as a Decimal or None
+            alt: altitude as a Decimal or None
 
         Returns:
             Tuple of latitude, longitude, altitude (strings),
-            and then the altitude reference integer.
+            and then the altitude reference integer. Any might be None if the
+            relevant argument was None.
         """
+
+        lat_c2pa, lon_c2pa, alt_c2pa, alt_ref = None, None, None, None
 
         # Latitude and longitude:
         #
@@ -365,15 +379,24 @@ class Claim:
         # Example:
         # -77.123456 -> 77,7.40736W
 
-        degs = int(lat)
-        mins = 60 * abs(lat - degs)
-        ref = "N" if lat >= 0 else "S"
-        lat_c2pa = f"{degs},{mins}{ref}"
+        def latlon_conv(l: Decimal) -> str:
+            degs = int(l)
+            mins = (60 * abs(l - degs)).normalize()  # Remove trailing zeros
+            if int(mins) == mins:
+                # It has no decimal places
+                # But we want the output to, just in case
+                # Example:
+                #   Bad:  "5,12S"
+                #   Good: "5,12.0S"
+                mins = mins.quantize(Decimal("1.0"))
+            return f"{abs(degs)},{mins}"
 
-        degs = int(lon)
-        mins = 60 * abs(lon - degs)
-        ref = "E" if lon >= 0 else "W"
-        lon_c2pa = f"{degs},{mins}{ref}"
+        if lat is not None:
+            lat_c2pa = latlon_conv(lat)
+            lat_c2pa += "N" if lat >= 0 else "S"
+        if lon is not None:
+            lon_c2pa = latlon_conv(lon)
+            lon_c2pa += "E" if lon >= 0 else "W"
 
         # Altitude:
         #
@@ -393,15 +416,16 @@ class Claim:
         # amount that could be lost is 1/4294967295. This is roughly 2.3e-10,
         # less than a nanometre.
 
-        numer, denom = (
-            Fraction(abs(alt)).limit_denominator(4294967295).as_integer_ratio()
-        )
-        alt_c2pa = f"{numer}/{denom}"
-        if alt < 0:
-            # Presumably negative altitude means below sea level
-            alt_ref = 1
-        else:
-            alt_ref = 0
+        if alt is not None:
+            numer, denom = (
+                Fraction(abs(alt)).limit_denominator(4294967295).as_integer_ratio()
+            )
+            alt_c2pa = f"{numer}/{denom}"
+            if alt < 0:
+                # Presumably negative altitude means below sea level
+                alt_ref = 1
+            else:
+                alt_ref = 0
 
         return lat_c2pa, lon_c2pa, alt_c2pa, alt_ref
 
@@ -478,10 +502,10 @@ class Claim:
 
     def _make_c2pa_exif_gps_data(
         self,
-        lat: Decimal,
-        lon: Decimal,
-        alt: Decimal,
-        timestamp: datetime,
+        lat: Optional[Decimal],
+        lon: Optional[Decimal],
+        alt: Optional[Decimal],
+        timestamp: Optional[datetime],
     ):
         """
         Convert arguments into valid C2PA (XMP Exif) strings and embed them into
@@ -491,7 +515,8 @@ class Claim:
         """
 
         lat, lon, alt, alt_ref = self._convert_coords_to_c2pa(lat, lon, alt)
-        timestamp = self._convert_datetime_to_c2pa(timestamp)
+        if timestamp is not None:
+            timestamp = self._convert_datetime_to_c2pa(timestamp)
 
         exif_data = {}
         exif_data["exif:GPSVersionID"] = "2.2.0.0"
@@ -601,7 +626,19 @@ class Claim:
         }
 
     def _remove_keys_with_no_values(self, dictionary):
-        return {k: v for k, v in dictionary.items() if v}
+        ret = {}
+        for k, v in dictionary.items():
+            if v is None:
+                continue
+            if hasattr(v, "__len__") and len(v) == 0:
+                # Remove empty strings, dicts, lists
+                continue
+
+            # Keep truthy values
+            # But also falsy values that we like: 0, float(0), False
+            ret[k] = v
+
+        return ret
 
     def _get_value_from_meta(self, meta, name):
         """Gets the value for a given 'name' in meta['information'].
