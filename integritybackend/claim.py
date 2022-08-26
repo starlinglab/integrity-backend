@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import copy
 import json
@@ -69,19 +69,13 @@ class Claim:
             creative_work["data"] = author_data
             assertions.append(creative_work)
 
-        author_name = jwt_payload.get("author", {}).get("name")
-        copyright = jwt_payload.get("copyright")
-        lat, lon = self._get_meta_lat_lon(meta)
-
-        photo_meta_data = self._make_photo_meta_data(author_name, copyright, lat, lon)
+        photo_meta_data = self._make_photo_meta_data(jwt_payload, meta)
         if photo_meta_data is not None:
             photo_meta = assertion_templates["stds.iptc.photo-metadata"]
             photo_meta["data"] = photo_meta_data
             assertions.append(photo_meta)
 
-        exif_data = self._make_exif_data(
-            lat, lon, self._get_value_from_meta(meta, "Current GPS Timestamp")
-        )
+        exif_data = self._make_exif_data(meta)
         if exif_data is not None:
             exif = assertion_templates["stds.exif"]
             exif["data"] = exif_data
@@ -262,7 +256,7 @@ class Claim:
         assertions = []
 
         creative_work = assertion_templates["stds.schema-org.CreativeWork"]
-        # creative_work["data"] = {"author": CREATIVE_WORK_AUTHOR}
+        creative_work["data"] = {"author": CREATIVE_WORK_AUTHOR}
         assertions.append(creative_work)
 
         if custom_assertions is None:
@@ -416,9 +410,7 @@ class Claim:
         exif_data["exif:GPSLatitudeRef"] = exif_lat_ref
         exif_data["exif:GPSLongitude"] = exif_lon
         exif_data["exif:GPSLongitudeRef"] = exif_lon_ref
-        exif_data["exif:GPSTimeStamp"] = (
-            None if timestamp is None else Exif().convert_timestamp(timestamp)
-        )
+        exif_data["exif:GPSTimeStamp"] = Exif().convert_timestamp(timestamp)
 
         exif_data = self._remove_keys_with_no_values(exif_data)
         if not exif_data.keys():
