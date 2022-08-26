@@ -83,10 +83,8 @@ class Claim:
             assertions.append(photo_meta)
 
         if lat is not None:
-            lat, lon, alt, alt_ref = self._convert_coords_to_c2pa(lat, lon, alt)
             timestamp = self._get_meta_timestamp(meta)
-            timestamp = self._convert_datetime_to_c2pa(timestamp)
-            exif_data = self._make_c2pa_exif_gps_data(lat, lon, alt, alt_ref, timestamp)
+            exif_data = self._make_c2pa_exif_gps_data(lat, lon, alt, timestamp)
             if exif_data is not None:
                 exif = assertion_templates["stds.exif"]
                 exif["data"] = exif_data
@@ -140,8 +138,8 @@ class Claim:
         )
 
         # TODO Make GPS data optional
-        gps_lat = proofmode_data["proofs"][0]["Location.Latitude"]
-        gps_lon = proofmode_data["proofs"][0]["Location.Longitude"]
+        gps_lat = Decimal(proofmode_data["proofs"][0]["Location.Latitude"])
+        gps_lon = Decimal(proofmode_data["proofs"][0]["Location.Longitude"])
         photo_meta_data = self._make_photo_meta_data(
             author_name, copyright, float(gps_lat), float(gps_lon)
         )
@@ -150,20 +148,11 @@ class Claim:
             photo_meta["data"] = photo_meta_data
             assertions.append(photo_meta)
 
-        gps_time = self._convert_datetime_to_c2pa(
-            datetime.utcfromtimestamp(
-                int(proofmode_data["proofs"][0]["Location.Time"]) / 1000
-            )
+        gps_alt = Decimal(proofmode_data["proofs"][0]["Location.Altitude"])
+        gps_time = datetime.utcfromtimestamp(
+            int(proofmode_data["proofs"][0]["Location.Time"]) / 1000
         )
-        gps_lat, gps_lon, gps_alt, gps_alt_ref = self._convert_coords_to_c2pa(
-            Decimal(gps_lat),
-            Decimal(gps_lon),
-            Decimal(proofmode_data["proofs"][0]["Location.Altitude"]),
-        )
-
-        exif_data = self._make_c2pa_exif_gps_data(
-            gps_lat, gps_lon, gps_alt, gps_alt_ref, gps_time
-        )
+        exif_data = self._make_c2pa_exif_gps_data(gps_lat, gps_lon, gps_alt, gps_time)
         if exif_data is not None:
             exif = assertion_templates["stds.exif"]
             exif["data"] = exif_data
@@ -488,8 +477,22 @@ class Claim:
         return self._remove_keys_with_no_values(location_created)
 
     def _make_c2pa_exif_gps_data(
-        self, lat: str, lon: str, alt: str, alt_ref: int, timestamp: str
+        self,
+        lat: Decimal,
+        lon: Decimal,
+        alt: Decimal,
+        timestamp: datetime,
     ):
+        """
+        Convert arguments into valid C2PA (XMP Exif) strings and embed them into
+        a stds.exif assertion.
+
+
+        """
+
+        lat, lon, alt, alt_ref = self._convert_coords_to_c2pa(lat, lon, alt)
+        timestamp = self._convert_datetime_to_c2pa(timestamp)
+
         exif_data = {}
         exif_data["exif:GPSVersionID"] = "2.2.0.0"
         exif_data["exif:GPSLatitude"] = lat
