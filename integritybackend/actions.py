@@ -259,67 +259,69 @@ class Actions:
             os.rename(tmp_encrypted_zip, encrypted_zip)
             _logger.info(f"Encrypted zip generated: {encrypted_zip}")
 
+            # Load meta content data for future usage
+            with open(extracted_meta_content) as meta_content_f:
+                meta_content = json.load(meta_content_f)["contentMetadata"]
+
             # Register encrypted ZIP on ISCN
             iscn_receipt = None
             try:
                 if action_params["registration_policies"]["iscn"]["active"]:
-                    with open(extracted_meta_content) as meta_content_f:
-                        meta_content = json.load(meta_content_f)["contentMetadata"]
-                        iscn_record = {
-                            "contentFingerprints": [
-                                f"hash://sha256/{enc_zip_sha}",
-                                f"hash://md5/{enc_zip_md5}",
-                                f"ipfs://{enc_zip_cid}",
-                            ],
-                            "stakeholders": [
-                                {
-                                    "contributionType": "http://schema.org/citation",
-                                    "footprint": f"hash://sha256/{content_sha}",
-                                    "description": "The SHA-256 of the original content.",
-                                },
-                                {
-                                    "contributionType": "http://schema.org/citation",
-                                    "footprint": f"hash://md5/{content_md5}",
-                                    "description": "The MD5 of the original content.",
-                                },
-                                {
-                                    "contributionType": "http://schema.org/citation",
-                                    "footprint": f"ipfs://{content_cid}",
-                                    "description": "The CID of the original content.",
-                                },
-                                {
-                                    "contributionType": "http://schema.org/citation",
-                                    "footprint": f"hash://sha256/{zip_sha}",
-                                    "description": "The SHA-256 of the unencrypted archive.",
-                                },
-                                {
-                                    "contributionType": "http://schema.org/citation",
-                                    "footprint": f"hash://md5/{zip_md5}",
-                                    "description": "The MD5 of the unencrypted archive.",
-                                },
-                                {
-                                    "contributionType": "http://schema.org/citation",
-                                    "footprint": f"ipfs://{zip_cid}",
-                                    "description": "The CID of the unencrypted archive.",
-                                },
-                            ],
-                            "type": "Record",
-                            "name": meta_content["name"],
-                            "description": meta_content["description"],
-                            "author": meta_content["author"],
-                            "usageInfo": "Encrypted with AES-256.",
-                            "keywords": [org_id, collection_id],
-                            "datePublished": meta_content["dateCreated"],
-                            "url": "",
-                            "recordNotes": json.dumps(
-                                (meta_content["extras"]), separators=(",", ":")
-                            ),
-                        }
-                        iscn_receipt = Iscn.register(iscn_record)
-                        if iscn_receipt is not None:
-                            _logger.info(f"Content registered on ISCN: {iscn_receipt}")
-                        else:
-                            _logger.error("Content registration on ISCN failed")
+                    iscn_record = {
+                        "contentFingerprints": [
+                            f"hash://sha256/{enc_zip_sha}",
+                            f"hash://md5/{enc_zip_md5}",
+                            f"ipfs://{enc_zip_cid}",
+                        ],
+                        "stakeholders": [
+                            {
+                                "contributionType": "http://schema.org/citation",
+                                "footprint": f"hash://sha256/{content_sha}",
+                                "description": "The SHA-256 of the original content.",
+                            },
+                            {
+                                "contributionType": "http://schema.org/citation",
+                                "footprint": f"hash://md5/{content_md5}",
+                                "description": "The MD5 of the original content.",
+                            },
+                            {
+                                "contributionType": "http://schema.org/citation",
+                                "footprint": f"ipfs://{content_cid}",
+                                "description": "The CID of the original content.",
+                            },
+                            {
+                                "contributionType": "http://schema.org/citation",
+                                "footprint": f"hash://sha256/{zip_sha}",
+                                "description": "The SHA-256 of the unencrypted archive.",
+                            },
+                            {
+                                "contributionType": "http://schema.org/citation",
+                                "footprint": f"hash://md5/{zip_md5}",
+                                "description": "The MD5 of the unencrypted archive.",
+                            },
+                            {
+                                "contributionType": "http://schema.org/citation",
+                                "footprint": f"ipfs://{zip_cid}",
+                                "description": "The CID of the unencrypted archive.",
+                            },
+                        ],
+                        "type": "Record",
+                        "name": meta_content["name"],
+                        "description": meta_content["description"],
+                        "author": meta_content["author"],
+                        "usageInfo": "Encrypted with AES-256.",
+                        "keywords": [org_id, collection_id],
+                        "datePublished": meta_content["dateCreated"],
+                        "url": "",
+                        "recordNotes": json.dumps(
+                            (meta_content["extras"]), separators=(",", ":")
+                        ),
+                    }
+                    iscn_receipt = Iscn.register(iscn_record)
+                    if iscn_receipt is not None:
+                        _logger.info(f"Content registered on ISCN: {iscn_receipt}")
+                    else:
+                        _logger.error("Content registration on ISCN failed")
                 else:
                     _logger.info("Content registration on ISCN skipped")
             except Exception as e:
@@ -329,65 +331,61 @@ class Actions:
             numbers_receipt = None
             try:
                 if action_params["registration_policies"]["numbersprotocol"]["active"]:
-                    with open(extracted_meta_content) as meta_content_f:
-                        meta_content = json.load(meta_content_f)["contentMetadata"]
-                        asset_extras = {
-                            "author": meta_content["author"],
-                            "usageInfo": "Encrypted with AES-256.",
-                            "keywords": [org_id, collection_id],
-                            "extras": meta_content["extras"],
-                            "contentFingerprints": [
-                                f"hash://sha256/{enc_zip_sha}",
-                                f"hash://md5/{enc_zip_md5}",
-                                f"ipfs://{enc_zip_cid}",
-                            ],
-                            "relatedContent": [
-                                {
-                                    "value": f"hash://sha256/{content_sha}",
-                                    "description": "The SHA-256 of the original content.",
-                                },
-                                {
-                                    "value": f"hash://md5/{content_md5}",
-                                    "description": "The MD5 of the original content.",
-                                },
-                                {
-                                    "value": f"ipfs://{content_cid}",
-                                    "description": "The CID of the original content.",
-                                },
-                                {
-                                    "value": f"hash://sha256/{zip_sha}",
-                                    "description": "The SHA-256 of the unencrypted archive.",
-                                },
-                                {
-                                    "value": f"hash://md5/{zip_md5}",
-                                    "description": "The MD5 of the unencrypted archive.",
-                                },
-                                {
-                                    "value": f"ipfs://{zip_cid}",
-                                    "description": "The CID of the unencrypted archive.",
-                                },
-                            ],
-                        }
-                        numbers_receipt = Numbers.register(
-                            meta_content["name"],
-                            meta_content["description"],
-                            enc_zip_cid,
-                            enc_zip_sha,
-                            "application/octet-stream",
-                            meta_content["dateCreated"],
-                            asset_extras,
-                            action_params["registration_policies"]["numbersprotocol"][
-                                "custody_token_contract_address"
-                            ],
+                    asset_extras = {
+                        "author": meta_content["author"],
+                        "usageInfo": "Encrypted with AES-256.",
+                        "keywords": [org_id, collection_id],
+                        "extras": meta_content["extras"],
+                        "contentFingerprints": [
+                            f"hash://sha256/{enc_zip_sha}",
+                            f"hash://md5/{enc_zip_md5}",
+                            f"ipfs://{enc_zip_cid}",
+                        ],
+                        "relatedContent": [
+                            {
+                                "value": f"hash://sha256/{content_sha}",
+                                "description": "The SHA-256 of the original content.",
+                            },
+                            {
+                                "value": f"hash://md5/{content_md5}",
+                                "description": "The MD5 of the original content.",
+                            },
+                            {
+                                "value": f"ipfs://{content_cid}",
+                                "description": "The CID of the original content.",
+                            },
+                            {
+                                "value": f"hash://sha256/{zip_sha}",
+                                "description": "The SHA-256 of the unencrypted archive.",
+                            },
+                            {
+                                "value": f"hash://md5/{zip_md5}",
+                                "description": "The MD5 of the unencrypted archive.",
+                            },
+                            {
+                                "value": f"ipfs://{zip_cid}",
+                                "description": "The CID of the unencrypted archive.",
+                            },
+                        ],
+                    }
+                    numbers_receipt = Numbers.register(
+                        meta_content["name"],
+                        meta_content["description"],
+                        enc_zip_cid,
+                        enc_zip_sha,
+                        "application/octet-stream",
+                        meta_content["dateCreated"],
+                        asset_extras,
+                        action_params["registration_policies"]["numbersprotocol"][
+                            "custody_token_contract_address"
+                        ],
+                    )
+                    if numbers_receipt is not None:
+                        _logger.info(
+                            f"Content registered on Numbers Protocol: {numbers_receipt}"
                         )
-                        if numbers_receipt is not None:
-                            _logger.info(
-                                f"Content registered on Numbers Protocol: {numbers_receipt}"
-                            )
-                        else:
-                            _logger.error(
-                                "Content registration on Numbers Protocol failed"
-                            )
+                    else:
+                        _logger.error("Content registration on Numbers Protocol failed")
                 else:
                     _logger.info("Content registration on Numbers Protocol skipped")
             except Exception as e:
@@ -425,6 +423,13 @@ class Actions:
                 hash_list["registrationRecords"].update(
                     {"numbersProtocol": numbers_receipt}
                 )
+
+            # "sourceId" is a reference field to the original content
+            # Filename, item number/timestamp, public key, whatever works
+            # https://github.com/starlinglab/integrity-backend/issues/116
+            if "sourceId" in meta_content:
+                hash_list["sourceId"] = meta_content["sourceId"]
+
             with open(hash_list_path, "w") as f:
                 f.write(json.dumps(hash_list))
                 f.write("\n")
