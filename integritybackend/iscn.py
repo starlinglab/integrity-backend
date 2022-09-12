@@ -12,7 +12,7 @@ class Iscn:
     """Handles interactions with ISCN"""
 
     @staticmethod
-    def register(registration: dict) -> bool:
+    def register(registration: dict) -> dict:
         """Registers an asset on ISCN with the provided metadata.
 
         Args:
@@ -29,4 +29,8 @@ class Iscn:
             return None
 
         _logger.info(f"ISCN registration succeeded: {resp.text}")
-        return resp.json()
+        try:
+            return resp.json()
+        except ValueError:
+            _logger.warn(f"ISCN registration response could not be parsed as JSON: {resp.text}")
+            return None

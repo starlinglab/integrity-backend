@@ -69,13 +69,17 @@ class Claim:
             creative_work["data"] = author_data
             assertions.append(creative_work)
 
-        photo_meta_data = self._make_photo_meta_data(jwt_payload, meta)
+        author_name = jwt_payload.get("author", {}).get("name")
+        copyright = jwt_payload.get("copyright")
+        (lat, lon) = self._get_meta_lat_lon(meta)
+        photo_meta_data = self._make_photo_meta_data(author_name, copyright, lat, lon)
         if photo_meta_data is not None:
             photo_meta = assertion_templates["stds.iptc.photo-metadata"]
             photo_meta["data"] = photo_meta_data
             assertions.append(photo_meta)
 
-        exif_data = self._make_exif_data(meta)
+        timestamp = self._get_gps_timestamp(meta)
+        exif_data = self._make_exif_data(lat, lon, timestamp)
         if exif_data is not None:
             exif = assertion_templates["stds.exif"]
             exif["data"] = exif_data
@@ -358,23 +362,18 @@ class Claim:
 
     #     return (float(lat), float(lon))
 
-    def _get_exif_timestamp(self, meta):
-        """Returns an EXIF-formatted version of the timestamp.
+    def _get_gps_timestamp(self, meta):
+        """Returns either current or last known GPS timestamp.
 
         Args:
             meta: dictionary with the 'meta' secion of the request
 
         Return:
-            string with the exif-formatted timestamp, or None
+            string with timestamp, or None
         """
-        timestamp = self._get_value_from_meta(
+        return self._get_value_from_meta(
             meta, "Current GPS Timestamp"
         ) or self._get_value_from_meta(meta, "Last Known GPS Timestamp")
-
-        if timestamp is None:
-            return None
-
-        return Exif().convert_timestamp(timestamp)
 
     def _get_location_created(self, lat, lon):
         """Returns the Iptc4xmpExt:LocationCreated section, based on the given lat / lon
@@ -404,13 +403,15 @@ class Claim:
     def _make_exif_data(self, lat: int, lon: int, timestamp: str):
         exif_data = {}
 
-        (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
-        (exif_lon, exif_lon_ref) = Exif().convert_longitude(lon)
-        exif_data["exif:GPSLatitude"] = exif_lat
-        exif_data["exif:GPSLatitudeRef"] = exif_lat_ref
-        exif_data["exif:GPSLongitude"] = exif_lon
-        exif_data["exif:GPSLongitudeRef"] = exif_lon_ref
-        exif_data["exif:GPSTimeStamp"] = Exif().convert_timestamp(timestamp)
+        if lat is not None and lon is not None:
+            (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
+            (exif_lon, exif_lon_ref) = Exif().convert_longitude(lon)
+            exif_data["exif:GPSLatitude"] = exif_lat
+            exif_data["exif:GPSLatitudeRef"] = exif_lat_ref
+            exif_data["exif:GPSLongitude"] = exif_lon
+            exif_data["exif:GPSLongitudeRef"] = exif_lon_ref
+        if timestamp is not None:
+            exif_data["exif:GPSTimeStamp"] = Exif().convert_timestamp(timestamp)
 
         exif_data = self._remove_keys_with_no_values(exif_data)
         if not exif_data.keys():
