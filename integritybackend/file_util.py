@@ -10,11 +10,9 @@ from pathlib import Path
 import errno
 import json
 import os
-import re
 import requests
 import subprocess
 import uuid
-import zipfile
 
 _logger = LogHelper.getLogger()
 
@@ -225,7 +223,7 @@ class FileUtil:
 
         return authsign_proof
 
-    def authsign_verify(resp, authsign_server_url):
+    def authsign_verify(self, resp, authsign_server_url):
         """
         Verify the provided signed JSON with authsign.
         Args:
@@ -243,7 +241,7 @@ class FileUtil:
         r = requests.post(authsign_server_url + "/verify", data=resp)
         if r.status_code == 200:
             return True
-        elif r.status_code == 400:
+        if r.status_code == 400:
             return False
 
         # Unexpected status code
