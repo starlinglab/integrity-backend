@@ -1,9 +1,4 @@
-import os
-from .context import asset_helper
-from .context import config
 from .context import file_util
-
-import pytest
 
 
 def test_get_hash_from_filename():

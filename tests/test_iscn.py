@@ -3,8 +3,8 @@ from .context import iscn
 
 def test_register_success(requests_mock):
     registration = {"foo": 123, "bar": "other stuff"}
-    requests_mock.post(iscn._REGISTER, status_code=200)
-    assert iscn.Iscn.register(registration)
+    requests_mock.post(iscn._REGISTER, status_code=200, json={"foo": "bar"})
+    assert iscn.Iscn.register(registration) == {"foo": "bar"}
     assert len(requests_mock.request_history) == 1
     assert requests_mock.last_request.json() == {"metadata": registration}
 

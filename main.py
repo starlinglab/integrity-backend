@@ -1,14 +1,10 @@
-from aiohttp import web
-from aiohttp_jwt import JWTMiddleware
-
-import multiprocessing
 import os
 import signal
 import sys
 import time
 
 
-from integritybackend import config, handlers
+from integritybackend import config
 from integritybackend.asset_helper import AssetHelper
 from integritybackend.fs_watcher import FsWatcher
 from integritybackend.log_helper import LogHelper
@@ -47,20 +43,6 @@ def kill_processes(procs):
             _logger.info("Process %s [%s] is terminated" % (proc.pid, proc.name))
 
 
-def start_api_server():
-    app = web.Application(
-        middlewares=[
-            JWTMiddleware(
-                config.JWT_SECRET, request_property="jwt_payload", algorithms="HS256"
-            )
-        ]
-    )
-    app.add_routes([web.post("/v1/assets/create", handlers.create)])
-    app.add_routes([web.post("/v1/assets/create-proofmode", handlers.create_proofmode)])
-    _logger.info("Starting up API server")
-    web.run_app(app)
-
-
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -70,10 +52,6 @@ if __name__ == "__main__":
 
     # Start up processes for services.
     _procs = FsWatcher.init_all(config.ORGANIZATION_CONFIG)
-    proc_api_server = multiprocessing.Process(
-        name="api_server", target=start_api_server
-    )
-    _procs.append(proc_api_server)
 
     for proc in _procs:
         proc.start()

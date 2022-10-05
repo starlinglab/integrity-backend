@@ -111,7 +111,6 @@ class OrganizationConfig:
     def get_actions(self, org_id, collection_id):
         """Gets action array for a collection."""
         collection_conf = self.get_collection(org_id, collection_id)
-        org_dict = self.get(org_id)
         if "actions" in collection_conf:
             return collection_conf.get("actions")
         else:
