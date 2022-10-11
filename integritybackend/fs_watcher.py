@@ -137,16 +137,6 @@ class ArchiveHandler(OrganizationHandler):
             _actions.archive(event.src_path, self.organization_id, self.collection_id)
 
 
-class C2paStarlingCaptureHandler(OrganizationHandler):
-    """Handles file changes for C2PA Starling Capture action."""
-
-    def on_created(self, event):
-        with caught_and_logged_exceptions(event):
-            _actions.c2pa_starling_capture(
-                event.src_path, self.org_config, self.collection_id
-            )
-
-
 class C2paProofmodeHandler(OrganizationHandler):
     """Handles file changes for C2PA Proofmode action."""
 
@@ -162,6 +152,15 @@ class CopyProofmodeHandler(OrganizationHandler):
         with caught_and_logged_exceptions(event):
             _actions.copy_proofmode(event.src_path, self.org_config, self.collection_id)
 
+
+# class C2paStarlingCaptureHandler(OrganizationHandler):
+#     """Handles file changes for C2PA Starling Capture action."""
+
+#     def on_created(self, event):
+#         with caught_and_logged_exceptions(event):
+#             _actions.c2pa_starling_capture(
+#                 event.src_path, self.org_config, self.collection_id
+#             )
 
 # class C2paAddHandler(OrganizationHandler):
 #     """Handles file changes for add action."""
@@ -198,9 +197,9 @@ class CopyProofmodeHandler(OrganizationHandler):
 # Mapping from action name to handler class
 ACTION_HANDLER = {
     "archive": ArchiveHandler,
-    "c2pa-starling-capture": C2paStarlingCaptureHandler,
     "c2pa-proofmode": C2paProofmodeHandler,
     "copy-proofmode": CopyProofmodeHandler,
+    # "c2pa-starling-capture": C2paStarlingCaptureHandler,
     # "c2pa-add": C2paAddHandler,
     # "c2pa-update": C2paUpdateHandler,
     # "c2pa-store": C2paStoreHandler,

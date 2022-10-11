@@ -4,7 +4,6 @@ from .log_helper import LogHelper
 import copy
 import json
 import requests
-import sys
 
 _logger = LogHelper.getLogger()
 _REGISTER = config.NUMBERS_API_URL + "/nit_create_asset"

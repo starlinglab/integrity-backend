@@ -64,11 +64,6 @@ class AssetHelper:
         """Initializes an Asset Helper based on the data in the given JWT payload."""
         return AssetHelper(jwt_payload["organization_id"])
 
-    @staticmethod
-    def from_filename(filename: str):
-        """Initializes an Asset Helper based on the data in the given filename."""
-        return AssetHelper(FileUtil.get_organization_id_from_filename(filename))
-
     def init_dirs(self):
         """Creates the initial directory structure for asset management."""
         _logger.info(f"Initializing internal directories for {self.org_id}")
@@ -100,13 +95,6 @@ class AssetHelper:
     #         self.dir_internal_create_proofmode,
     #         _file_util.digest_sha256(from_file) + file_extension,
     #     )
-
-    def get_internal_file_fullpath(self, from_file):
-        _, file_extension = os.path.splitext(from_file)
-        return os.path.join(
-            self.dir_internal_assets,
-            _file_util.digest_sha256(from_file) + file_extension,
-        )
 
     # def get_internal_claim_fullpath(self, from_file):
     #     # TODO: shouldn't have to hash here if we can bundle this with previous func.
