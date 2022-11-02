@@ -1,4 +1,3 @@
-from crypt import crypt
 from .context import file_util
 from .context import crypto_util
 
