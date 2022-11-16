@@ -460,6 +460,11 @@ class Actions:
             org_id = org_config["id"]
             asset_helper = AssetHelper(org_id)
 
+            action = config.ORGANIZATION_CONFIG.get_action(
+                org_id, collection_id, action_name
+            )
+            action_params = action.get("params")
+
             # Get paths
             action_dir = asset_helper.path_for_action(collection_id, action_name)
             action_output_dir = asset_helper.path_for_action_output(
@@ -521,7 +526,14 @@ class Actions:
             for filename in image_filenames:
                 claim = _claim.generate_c2pa_proofmode(meta_content, filename)
                 path = os.path.join(tmp_img_dir, filename)
-                _c2patool.run_claim_inject(claim, path, path)
+                _c2patool.run_claim_inject(
+                    claim,
+                    path,
+                    path,
+                    action_params["c2pa_cert"],
+                    action_params["c2pa_key"],
+                    action_params["c2pa_algo"],
+                )
 
             # Process C2PA-injected JPEGs
             for filename in image_filenames:

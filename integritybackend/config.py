@@ -14,9 +14,7 @@ JWT_SECRET = os.environ.get("JWT_SECRET")
 # Full path to c2patool binary. Must be already configured.
 C2PATOOL_PATH = os.environ.get("C2PATOOL_PATH")
 # C2PA cert and key files
-C2PA_PRIVATE_KEY_PATH = os.environ.get("C2PA_PRIVATE_KEY_PATH")
-C2PA_CERT_CHAIN_PATH = os.environ.get("C2PA_CERT_CHAIN_PATH")
-C2PA_SIGN_ALGO = os.environ.get("C2PA_SIGN_ALGO", "es256")
+C2PA_CERT_STORE = os.environ.get("C2PA_CERT_STORE")
 
 
 # Full path to IPFS client binary. Must be already configured.
