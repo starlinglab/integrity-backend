@@ -12,8 +12,7 @@ watchdog = "~=2.1.6"
 requests = "~=2.26"
 # For reverse geocoding of lat/longs
 geocoder = "~=1.38"
-# For date parsing and manipulation
-python-dateutil = "~=2.8"
+# For cryptography
 pycryptodome = "~=3.14.1"
 
 [dev-packages]
