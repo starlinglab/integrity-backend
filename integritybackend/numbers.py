@@ -6,7 +6,7 @@ import json
 import requests
 
 _logger = LogHelper.getLogger()
-_REGISTER = config.NUMBERS_API_URL + "/nit_create_asset"
+_REGISTER = config.NUMBERS_API_URL
 
 
 class Numbers:
@@ -87,6 +87,11 @@ class Numbers:
             _logger.warning(
                 "Numbers registration response did not have the 'response' field: %s",
                 resp.text,
+            )
+            return None
+        if data.get("status") != "success":
+            _logger.warning(
+                "Numbers registration didn't have success status: %s", resp.text
             )
             return None
 
