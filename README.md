@@ -72,7 +72,7 @@ sha256(archive).zip
     sha256(content).ext
     sha256(content)-meta-content.json
     sha256(content)-meta-recorder.json
-    proof/
+    proofs/
         sha256(content).ext.authsign
         sha256(content)-meta-content.json.authsign
         sha256(content)-meta-recorder.json.authsign
