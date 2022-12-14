@@ -213,7 +213,7 @@ class FileUtil:
             json={"hash": data_hash, "created": dt},
         )
         r.raise_for_status()
-        authsign_proof = r.text
+        authsign_proof = r.json()
 
         # Write proof to file
         if authsign_file_path != None:
