@@ -14,6 +14,7 @@ import os
 import shutil
 import time
 from zipfile import ZipFile
+from typing import List, Tuple
 
 
 _claim = Claim()
@@ -33,6 +34,57 @@ class Actions:
     3. sha256(asset)-meta-recorder.json: the metadata associated with the recorder of the asset
     """
 
+    def _verify_zip(self, zip_path: str, asset_exts: List[str]) -> Tuple[str, str]:
+        """
+        Verify the provided ZIP is in the expected preprocessor format.
+
+        The content filename and content SHA-256 hash are returned for further usage.
+
+        An Exception is raised with information if the ZIP is not valid.
+        """
+
+        # Verify ZIP name
+        input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
+        if input_zip_sha != _file_util.digest_sha256(zip_path):
+            raise Exception(f"SHA-256 of ZIP does not match file name: {zip_path}")
+
+        # Verify ZIP contents are valid and expected
+        zip_listing = zip_util.listing(zip_path)
+        if len(zip_listing) != 3:
+            # ZIP must contain three files: content, meta-content , meta-recorder
+            raise Exception(
+                f"ZIP at {zip_path} has more than three files: {zip_listing}"
+            )
+        content_filename = next((s for s in zip_listing if "-meta-" not in s), None)
+        if content_filename is None:
+            raise Exception(f"ZIP at {zip_path} has no content file: {zip_listing}")
+        if "/" in content_filename:
+            raise Exception(f"Content file is not at ZIP root: {content_filename}")
+        if (
+            "*" not in asset_exts
+            and os.path.splitext(content_filename)[1][1:] not in asset_exts
+        ):
+            raise Exception(
+                f"Content file in ZIP has wrong extension: {content_filename}"
+            )
+        content_sha_unverified = os.path.splitext(content_filename)[0]
+        if f"{content_sha_unverified}-meta-content.json" not in zip_listing:
+            raise Exception(
+                f"ZIP at {zip_path} has no content metadata file: {zip_listing}"
+            )
+        if f"{content_sha_unverified}-meta-recorder.json" not in zip_listing:
+            raise Exception(
+                f"ZIP at {zip_path} has no recorder metadata file: {zip_listing}"
+            )
+
+        # Verify content SHA from name
+        content_sha = zip_util.hash_file(zip_path, content_filename)
+        if content_sha != content_sha_unverified:
+            raise Exception(f"SHA-256 of content does not match file name: {zip_path}")
+
+        _logger.info(f"Content verified for archival: {zip_path}")
+        return content_filename, content_sha
+
     def archive(self, zip_path: str, org_config: dict, collection_id: str):
         """Archive asset.
 
@@ -42,8 +94,7 @@ class Actions:
             collection_id: string with the unique collection identifier this
                 asset is in
 
-        Raises:
-            Exception if errors are encountered during processing
+        Exceptions are not raised, only logged.
         """
         try:
             # TODO: change function to take just org_id as param
@@ -51,7 +102,6 @@ class Actions:
             org_id = org_config["id"]
 
             asset_helper = AssetHelper(org_id)
-            _file_util = FileUtil()
 
             collection = config.ORGANIZATION_CONFIG.get_collection(
                 org_id, collection_id
@@ -65,61 +115,26 @@ class Actions:
                     f"Encryption algo {action_params['encryption']['algo']} not implemented"
                 )
 
-            # Verify ZIP name
             input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
-            if input_zip_sha != _file_util.digest_sha256(zip_path):
-                raise Exception(f"SHA-256 of ZIP does not match file name: {zip_path}")
+
+            content_filename, content_sha = self._verify_zip(
+                zip_path, collection["asset_extensions"]
+            )
 
             # Copy ZIP
             archive_dir = asset_helper.path_for_action(collection_id, action_name)
             tmp_zip = shutil.copy2(zip_path, archive_dir)
 
-            # Verify ZIP contents are valid and expected
-            zip_listing = zip_util.listing(tmp_zip)
-            if len(zip_listing) != 3:
-                # ZIP must contain three files: content, meta-content , meta-recorder
-                raise Exception(
-                    f"ZIP at {zip_path} has more than three files: {zip_listing}"
-                )
-            content_filename = next((s for s in zip_listing if "-meta-" not in s), None)
-            if content_filename is None:
-                raise Exception(f"ZIP at {zip_path} has no content file: {zip_listing}")
-            if "/" in content_filename:
-                raise Exception(f"Content file is not at ZIP root: {content_filename}")
-            if (
-                "*" not in collection["asset_extensions"]
-                and os.path.splitext(content_filename)[1][1:]
-                not in collection["asset_extensions"]
-            ):
-                raise Exception(
-                    f"Content file in ZIP has wrong extension: {content_filename}"
-                )
-            content_sha_unverified = os.path.splitext(content_filename)[0]
-            if f"{content_sha_unverified}-meta-content.json" not in zip_listing:
-                raise Exception(
-                    f"ZIP at {zip_path} has no content metadata file: {zip_listing}"
-                )
-            if f"{content_sha_unverified}-meta-recorder.json" not in zip_listing:
-                raise Exception(
-                    f"ZIP at {zip_path} has no recorder metadata file: {zip_listing}"
-                )
-
             # Extract content file
             tmp_dir = asset_helper.path_for_action_tmp(collection_id, action_name)
-            zip_dir = os.path.join(tmp_dir, content_sha_unverified)
+            zip_dir = os.path.join(tmp_dir, content_sha)
             extracted_content = os.path.join(zip_dir, content_filename)
             _file_util.create_dir(zip_dir)
             zip_util.extract_file(tmp_zip, content_filename, extracted_content)
 
-            # Generate content hashes and verify
-            content_sha = _file_util.digest_sha256(extracted_content)
-            if content_sha != content_sha_unverified:
-                raise Exception(
-                    f"SHA-256 of content does not match file name: {zip_path}"
-                )
+            # Generate content hashes
             content_cid = _file_util.digest_cidv1(extracted_content)
             content_md5 = _file_util.digest_md5(extracted_content)
-            _logger.info(f"Content verified for archival: {zip_path}")
 
             # Extract metadata files
             meta_content_filename = f"{content_sha}-meta-content.json"
@@ -658,52 +673,100 @@ class Actions:
             self._purge_from_tmp(tmp_img_dir, action_tmp_dir)
             self._purge_from_tmp(tmp_zip, action_tmp_dir)
 
-    # def c2pa_starling_capture(self, asset_fullpath, jwt_payload, meta):
-    #     """Process asset with create action.
-    #     A new asset file is generated in the create-output folder with an original creation claim.
+    def c2pa_starling_capture(
+        self, zip_path: str, org_config: dict, collection_id: str
+    ):
+        """
+        Inject a JPEG from Starling Capture with C2PA information.
 
-    #     Args:
-    #         asset_fullpath: the local path to the asset file
-    #         jwt_payload: a JWT payload containing metadata
-    #         meta: dictionary with the 'meta' section of the incoming multipart request
+        A new asset file is generated in the create-output folder with an original creation claim.
 
-    #     Returns:
-    #         the local path to the asset file in the internal directory
+        Args:
+            zip_path: path to asset zip (will be copied, not altered)
+            org_config: configuration dictionary for this organization
+            collection_id: string with the unique collection identifier this asset is in
 
-    #     Raises:
-    #         Exception if errors are encountered during processing
-    #     """
-    #     asset_helper = AssetHelper.from_jwt(jwt_payload)
-    #     # Create temporary files to work with.
-    #     tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
-    #     tmp_claim_file = asset_helper.get_tmp_file_fullpath(".json")
+        Returns:
+            the local path to the asset file in the internal directory
 
-    #     # Inject create claim and read back from file.
-    #     claim = _claim.generate_create(jwt_payload, meta)
-    #     shutil.copy2(asset_fullpath, tmp_asset_file)
-    #     _claim_tool.run_claim_inject(claim, tmp_asset_file, None)
-    #     _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
+        Raises:
+            Exception if errors are encountered during processing
+        """
 
-    #     # Copy the C2PA-injected asset to both the internal and shared asset directories.
-    #     internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
-    #     shutil.move(tmp_asset_file, internal_asset_file)
-    #     subfolders = [
-    #         jwt_payload.get("author", {}).get("name"),
-    #         datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-    #     ]
-    #     shutil.copy2(
-    #         internal_asset_file, asset_helper.get_assets_create_output(subfolders)
-    #     )
-    #     _logger.info("New asset file added: %s", internal_asset_file)
-    #     internal_claim_file = asset_helper.get_internal_claim_fullpath(
-    #         internal_asset_file
-    #     )
-    #     shutil.move(tmp_claim_file, internal_claim_file)
-    #     _logger.info(
-    #         "New claim file added to the internal claims directory: %s",
-    #         internal_claim_file,
-    #     )
-    #     return internal_asset_file
+        # Setup context
+
+        action_name = "c2pa-starling-capture"
+        org_id = org_config["id"]
+
+        asset_helper = AssetHelper(org_id)
+
+        collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
+        action = config.ORGANIZATION_CONFIG.get_action(
+            org_id, collection_id, action_name
+        )
+        action_params = action.get("params")
+
+        content_filename, content_sha = self._verify_zip(
+            zip_path, collection["asset_extensions"]
+        )
+
+        # Extract content file
+        tmp_dir = asset_helper.path_for_action_tmp(collection_id, action_name)
+        zip_dir = os.path.join(tmp_dir, content_sha)
+        extracted_content = os.path.join(zip_dir, content_filename)
+        _file_util.create_dir(zip_dir)
+        zip_util.extract_file(zip_path, content_filename, extracted_content)
+
+        # Load meta content
+        meta_content_filename = f"{content_sha}-meta-content.json"
+        meta_content = zip_util.json_load(zip_path, meta_content_filename)
+
+        # Create temporary files to work with.
+        tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
+        tmp_claim_file = asset_helper.get_tmp_file_fullpath(".json")
+
+        # Inject create claim and read back from file.
+        claim = _claim.generate_c2pa_starling_capture(meta_content["contentMetadata"])
+        shutil.copy2(extracted_content, tmp_asset_file)
+        _c2patool.run_claim_inject(
+            claim,
+            tmp_asset_file,
+            tmp_asset_file,
+            action_params["c2pa_cert"],
+            action_params["c2pa_key"],
+            action_params["c2pa_algo"],
+        )
+        _c2patool.run_claim_dump(tmp_asset_file, tmp_claim_file)
+
+        # Copy the C2PA-injected asset to both the internal and shared asset directories.
+        asset_file_hash = _file_util.digest_sha256(tmp_asset_file)
+        internal_asset_file = os.path.join(
+            asset_helper.path_for_action(collection_id, action_name),
+            "assets",
+            asset_file_hash + ".jpg",
+        )
+        shutil.move(tmp_asset_file, internal_asset_file)
+        shutil.copy2(
+            internal_asset_file,
+            os.path.join(
+                asset_helper.path_for_action_output(collection_id, action_name),
+                meta_content["author"].get("name", "unknown"),
+                datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            ),
+        )
+        # Keep manifest in internal dir but not in shared dir
+        _logger.info("New asset file added: %s", internal_asset_file)
+        internal_claim_file = os.path.join(
+            asset_helper.path_for_action(collection_id, action_name),
+            "claims",
+            asset_file_hash + ".json",
+        )
+        shutil.move(tmp_claim_file, internal_claim_file)
+        _logger.info(
+            "New claim file added to the internal claims directory: %s",
+            internal_claim_file,
+        )
+        return internal_asset_file
 
     # def c2pa_add(self, asset_fullpath, org_config, collection_id):
     #     """Process asset with add action.

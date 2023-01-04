@@ -1,57 +1,11 @@
 from .context import claim
 from .context import config
 
+import json
+from copy import deepcopy
+
 _claim = claim.Claim()
 
-jwt_payload = {
-    "organization_id": "example",
-    "author": {
-        "type": "Person",
-        "identifier": "https://hypha.coop",
-        "name": "Benedict Lau",
-    },
-    "twitter": {
-        "type": "Organization",
-        "identifier": "https://hypha.coop",
-        "name": "HyphaCoop",
-    },
-    "copyright": "copyright holder",
-}
-
-meta = {
-    "information": [
-        {"name": "Current GPS Latitude", "value": "-15.9321422"},
-        {"name": "Current GPS Longitude", "value": "-57.6317174"},
-        {"name": "Current GPS Timestamp", "value": "2021-10-30T18:43:14Z"},
-        {"name": "Last Known GPS Latitude", "value": "-15.9321422"},
-        {"name": "Last Known GPS Longitude", "value": "-57.6317174"},
-        {"name": "Last Known GPS Timestamp", "value": "2021-10-30T18:43:14Z"},
-        {"name": "Timestamp", "value": "2021-12-17T23:52:47.081Z"},
-    ],
-    "proof": {
-        "hash": "476819d6203a901922683a8a2f5ff32838c58762bf7ef277a823bea4f9edf52c",
-        "mimeType": "image/jpeg",
-        "timestamp": 1635627729773,
-    },
-}
-
-signatures = [
-    {
-        "proofHash": "476819d6203a901922683a8a2f5ff32838c58762bf7ef277a823bea4f9edf52c",
-        "provider": "AndroidOpenSSL",
-        "signature": "304502205d833310b03e414cc26492dffd17bc10389e3f5631793ef665fffb1ec0ec1cea022100f10cfc74dc6109b348cfc39684c0b53d280058568df54f2c70428d580faff1a4",
-        "publicKey": "3059301306072a8648ce3d020106082a8648ce3d03010703420004a28a1e5cd501cf4540a98cb44bf357bcb166678dc3be710c40a405d0de6e7c6f92277ae73b65e08a7a53d465b338a9c751f1f3e0e68cba53e79bb551c0796a83",
-    },
-    {
-        "proofHash": "476819d6203a901922683a8a2f5ff32838c58762bf7ef277a823bea4f9edf52c",
-        "provider": "Zion",
-        "signature": "304402204e66e42d2551b080b76559131acffe97612a7106d113860697e2fa4a3de8755b022034d83ca1783f4000adf58ebce4f3714c99370511e9c2b334b2fbf0c40b95eafa",
-        "publicKey": "Session:\n3059301306072a8648ce3d020106082a8648ce3d03010703420004c33cf16bc6f0a7bac677777c6dfccc2885e76d553fff1799400ab315d6e43062efed4d6c9bc1bd51c8d5d49c16a9b8c8cf7a56cfe12c0c82f05a59d203bb31f9\n\nReceive:\n023a297c1ca2cbb123b2601de7f7a840bd8406e3e96240f8f30c7706bda91264fb\n\nSend:\n023a297c1ca2cbb123b2601de7f7a840bd8406e3e96240f8f30c7706bda91264fb",
-    },
-]
-
-
-data = {"meta": meta, "signature": signatures}
 
 fake_address = {
     "city": "Fake Town",
@@ -60,45 +14,46 @@ fake_address = {
     "country_code": "br",
 }
 
+with open("tests/assets/meta-content.json", "r") as f:
+    meta_content = json.load(f)["contentMetadata"]
 
-def test_generates_create_claim():
-    claim = _claim.generate_create(jwt_payload, data)
+
+def test_generate_c2pa_starling_capture():
+    claim = _claim.generate_c2pa_starling_capture(meta_content)
     assertions = _claim.assertions_by_label(claim)
+
+    proof = _claim._get_starling_capture_proof(meta_content)
+
     assert claim["vendor"] == "starlinglab"
     assert claim["recorder"] == "Starling Capture by Numbers Protocol"
 
     creative_work = assertions["stds.schema-org.CreativeWork"]
-    assert len(creative_work["data"]["author"]) == 2
+    print(creative_work)
+    assert len(creative_work["data"]["author"]) == 1
     author_data = creative_work["data"]["author"][0]
-    assert author_data["@type"] == "Person"
-    assert author_data["name"] == "Benedict Lau"
+    assert author_data["@type"] == "Organization"
+    assert author_data["name"] == "Starling Lab"
     assert author_data["credential"] == []
-    assert author_data["identifier"] == "https://hypha.coop"
-    twitter_data = creative_work["data"]["author"][1]
-    assert twitter_data["@id"] == "https://twitter.com/HyphaCoop"
-    assert twitter_data["@type"] == "Organization"
-    assert twitter_data["name"] == "HyphaCoop"
+    # assert author_data["identifier"] == "https://hypha.coop"
 
     photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
-    assert photo_meta_assertion["data"]["dc:creator"] == ["Benedict Lau"]
+    assert photo_meta_assertion["data"]["dc:creator"] == ["Starling Lab"]
     assert photo_meta_assertion["data"]["dc:rights"] == "copyright holder"
 
-    # Removed because this isn't handled by the backend anymore
-    # https://github.com/starlinglab/integrity-backend/issues/120
-    # assert photo_meta_assertion["data"]["Iptc4xmpExt:LocationCreated"] == {
-    #     "Iptc4xmpExt:CountryCode": "br",
-    #     "Iptc4xmpExt:CountryName": "Mock Country",
-    #     "Iptc4xmpExt:ProvinceState": "Some State",
-    #     "Iptc4xmpExt:City": "Fake Town",
-    # }
+    assert photo_meta_assertion["data"]["Iptc4xmpExt:LocationCreated"] == {
+        "Iptc4xmpExt:CountryCode": "us",
+        "Iptc4xmpExt:CountryName": "United States",
+        "Iptc4xmpExt:ProvinceState": "California",
+        "Iptc4xmpExt:City": "Stockton",
+    }
 
     exif_assertion = assertions["stds.exif"]
-    assert exif_assertion["data"]["exif:GPSLatitude"] == "15,55.928532S"
-    assert exif_assertion["data"]["exif:GPSLongitude"] == "57,37.903044W"
-    assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2021-10-30T18:43:14Z"
+    assert exif_assertion["data"]["exif:GPSLatitude"] == "123,27.36N"
+    assert exif_assertion["data"]["exif:GPSLongitude"] == "123,27.36W"
+    assert exif_assertion["data"]["exif:GPSTimeStamp"] == "2022-08-15T16:24:20Z"
 
     signature_assertion = assertions["org.starlinglab.integrity"]
-    signature = signatures[0]
+    signature = meta_content["private"]["signatures"][0]
     assert signature_assertion["data"]["starling:identifier"] == signature.get(
         "proofHash"
     )
@@ -118,21 +73,21 @@ def test_generates_create_claim():
         == "Internal identifier of the authenticated bundle"
     )
     authenticated_message = first_signature["starling:authenticatedMessagePublic"]
-    assert authenticated_message["starling:assetHash"] == meta.get("proof").get("hash")
-    assert authenticated_message["starling:assetMimeType"] == meta.get("proof").get(
-        "mimeType"
-    )
+    assert authenticated_message["starling:assetHash"] == proof.get("hash")
+    assert authenticated_message["starling:assetMimeType"] == proof.get("mimeType")
     assert (
         authenticated_message["starling:assetCreatedTimestamp"]
-        == "2021-12-17T23:52:47.081Z"
+        == "2022-04-21T18:27:45.399Z"
     )
 
     c2pa_actions = assertions["c2pa.actions"]
-    assert c2pa_actions["data"]["actions"][0]["when"] == "2021-12-17T23:52:47.081Z"
+    assert c2pa_actions["data"]["actions"][0]["when"] == "2022-04-21T18:27:45.399Z"
 
 
-def test_generates_create_claim_with_missing_author_info():
-    claim = _claim.generate_create({"bad": "jwt"}, data)
+def test_generate_c2pa_starling_capture_claim_with_missing_author_info():
+    this_mc = deepcopy(meta_content)
+    del this_mc["author"]
+    claim = _claim.generate_c2pa_starling_capture(this_mc)
 
     assert claim is not None
     assert claim["vendor"] == "starlinglab"
@@ -140,59 +95,31 @@ def test_generates_create_claim_with_missing_author_info():
     assert "stds.schema-org.CreativeWork" not in _claim.assertions_by_label(claim)
 
 
-def test_generates_create_claim_with_partial_meta():
-    claim = _claim.generate_create(
-        jwt_payload,
-        {
-            "meta": {
-                "information": [
-                    {
-                        "name": "Last Known GPS Timestamp",
-                        "value": "2021-10-30T18:43:14Z",
-                    }
-                ]
-            }
-        },
-    )
+def test_generate_c2pa_starling_capture_claim_with_partial_meta():
+    this_mc = deepcopy(meta_content)
+    this_mc["private"]["geolocation"] = {"timestamp": "2022-08-15T16:24:20.305Z"}
+    claim = _claim.generate_c2pa_starling_capture(this_mc)
     assert claim is not None
 
     assertions = _claim.assertions_by_label(claim)
     exif_assertion = assertions["stds.exif"]
     assert exif_assertion["data"] == {
         "exif:GPSVersionID": "2.2.0.0",
-        "exif:GPSTimeStamp": "2021-10-30T18:43:14Z",
-    }
-
-    # Should prefer the "Current" timestamp, if one is provided.
-    claim = _claim.generate_create(
-        jwt_payload,
-        {
-            "meta": {
-                "information": [
-                    {
-                        "name": "Current GPS Timestamp",
-                        "value": "2022-10-30T18:43:14Z",
-                    },
-                    {
-                        "name": "Last Known GPS Timestamp",
-                        "value": "2021-10-30T18:43:14Z",
-                    },
-                ]
-            }
-        },
-    )
-    assert claim is not None
-
-    assertions = _claim.assertions_by_label(claim)
-    exif_assertion = assertions["stds.exif"]
-    assert exif_assertion["data"] == {
-        "exif:GPSVersionID": "2.2.0.0",
-        "exif:GPSTimeStamp": "2022-10-30T18:43:14Z",
+        "exif:GPSTimeStamp": "2022-08-15T16:24:20Z",
     }
 
 
-def test_generates_create_claim_with_no_reverse_geocode():
-    claim = _claim.generate_create(jwt_payload, data)
+def test_generate_c2pa_starling_capture_claim_with_no_reverse_geocode():
+    this_mc = deepcopy(meta_content)
+    # No reverse-geocode
+    this_mc["private"]["geolocation"] = {
+        "latitude": "123.456",
+        "longitude": "-123.456",
+        "altitude": "123.456",
+        "timestamp": "2022-08-15T16:24:20.305Z",
+    }
+
+    claim = _claim.generate_c2pa_starling_capture(this_mc)
     assert claim is not None
     assertions = _claim.assertions_by_label(claim)
     photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
@@ -263,96 +190,3 @@ def test_generates_store_claim():
             "name": "example",
         }
     ]
-
-
-def test_prefers_current_latlon_with_fallback():
-    claim = _claim.generate_create(
-        jwt_payload,
-        {
-            "meta": {
-                "information": [
-                    {"name": "Current GPS Latitude", "value": "-1.2"},
-                    {"name": "Current GPS Longitude", "value": "-3.4"},
-                    {"name": "Last Known GPS Latitude", "value": "-15.9321422"},
-                    {"name": "Last Known GPS Longitude", "value": "-57.6317174"},
-                ],
-            }
-        },
-    )
-
-    assertions = _claim.assertions_by_label(claim)
-    exif_assertion = assertions["stds.exif"]
-    assert exif_assertion["data"] == {
-        "exif:GPSVersionID": "2.2.0.0",
-        "exif:GPSLatitude": "1,12.0S",
-        "exif:GPSLongitude": "3,24.0W",
-    }
-
-    claim = _claim.generate_create(
-        jwt_payload,
-        {
-            "meta": {
-                "information": [
-                    {"name": "Last Known GPS Latitude", "value": "-15.9321422"},
-                    {"name": "Last Known GPS Longitude", "value": "-57.6317174"},
-                ],
-            }
-        },
-    )
-    assertions = _claim.assertions_by_label(claim)
-    exif_assertion = assertions["stds.exif"]
-    assert exif_assertion["data"] == {
-        "exif:GPSVersionID": "2.2.0.0",
-        "exif:GPSLatitude": "15,55.928532S",
-        "exif:GPSLongitude": "57,37.903044W",
-    }
-
-
-def test_altitude():
-    claim = _claim.generate_create(
-        jwt_payload,
-        {
-            "meta": {
-                "information": [
-                    {"name": "Current GPS Latitude", "value": "-1.2"},
-                    {"name": "Current GPS Longitude", "value": "-3.4"},
-                    {"name": "Current GPS Altitude", "value": "178.59999084472656"},
-                    {"name": "Last Known GPS Latitude", "value": "-15.9321422"},
-                    {"name": "Last Known GPS Longitude", "value": "-57.6317174"},
-                    {"name": "Last Known GPS Altitude", "value": "111.012"},
-                ],
-            }
-        },
-    )
-
-    assertions = _claim.assertions_by_label(claim)
-    exif_assertion = assertions["stds.exif"]
-    assert exif_assertion["data"] == {
-        "exif:GPSVersionID": "2.2.0.0",
-        "exif:GPSLatitude": "1,12.0S",
-        "exif:GPSLongitude": "3,24.0W",
-        "exif:GPSAltitude": "767077217870/4294945449",
-        "exif:GPSAltitudeRef": 0,
-    }
-
-    claim = _claim.generate_create(
-        jwt_payload,
-        {
-            "meta": {
-                "information": [
-                    {"name": "Last Known GPS Latitude", "value": "-15.9321422"},
-                    {"name": "Last Known GPS Longitude", "value": "-57.6317174"},
-                    {"name": "Last Known GPS Altitude", "value": "111.012"},
-                ],
-            }
-        },
-    )
-    assertions = _claim.assertions_by_label(claim)
-    exif_assertion = assertions["stds.exif"]
-    assert exif_assertion["data"] == {
-        "exif:GPSVersionID": "2.2.0.0",
-        "exif:GPSLatitude": "15,55.928532S",
-        "exif:GPSLongitude": "57,37.903044W",
-        "exif:GPSAltitude": "27753/250",
-        "exif:GPSAltitudeRef": 0,
-    }
