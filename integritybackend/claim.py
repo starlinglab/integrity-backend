@@ -34,9 +34,6 @@ def _load_template(filename):
 
 # At code load time, read our claim JSON template files.
 CREATE_CLAIM_TEMPLATE = _load_template("claim_create.json")
-UPDATE_CLAIM_TEMPLATE = _load_template("claim_update.json")
-STORE_CLAIM_TEMPLATE = _load_template("claim_store.json")
-CUSTOM_CLAIM_TEMPLATE = _load_template("claim_custom.json")
 
 
 class Claim:
@@ -185,104 +182,6 @@ class Claim:
             assertions.append(c2pa_actions)
 
         claim["assertions"] = assertions
-        return claim
-
-    def generate_update(self, org_config, collection_id):
-        """Generates a claim for the 'update' action.
-
-        Returns:
-            a dictionary containing the 'update' claim data
-        """
-        claim = copy.deepcopy(UPDATE_CLAIM_TEMPLATE)
-        claim["recorder"] = "Starling Integrity"
-
-        timestamp = datetime.now(timezone.utc).isoformat()
-
-        assertion_templates = self.assertions_by_label(claim)
-        assertions = []
-
-        creative_work = assertion_templates["stds.schema-org.CreativeWork"]
-        creative_work["data"] = {
-            "author": config.get_param(
-                org_config, collection_id, "update", "creative_work_author"
-            )
-        }
-        assertions.append(creative_work)
-
-        c2pa_actions = assertion_templates["c2pa.actions"]
-        c2pa_actions["data"]["actions"][0]["when"] = timestamp
-        assertions.append(c2pa_actions)
-
-        claim["assertions"] = assertions
-
-        return claim
-
-    def generate_store(self, ipfs_cid, org_config, collection_id):
-        """Generates a claim for the 'store' action.
-
-        Args:
-            ipfs_cid: the IPFS CID for the asset
-
-        Returns:
-            a dictionary containing the 'store' claim data
-        """
-        claim = copy.deepcopy(STORE_CLAIM_TEMPLATE)
-        claim["recorder"] = "Starling Integrity"
-
-        timestamp = datetime.now(timezone.utc).isoformat()
-
-        assertion_templates = self.assertions_by_label(claim)
-        assertions = []
-
-        creative_work = assertion_templates["stds.schema-org.CreativeWork"]
-        creative_work["data"] = {
-            "author": config.get_param(
-                org_config, collection_id, "store", "creative_work_author"
-            )
-        }
-        assertions.append(creative_work)
-
-        c2pa_actions = assertion_templates["c2pa.actions"]
-        c2pa_actions["data"]["actions"][0]["when"] = timestamp
-        assertions.append(c2pa_actions)
-
-        ipfs_storage = assertion_templates["org.starlinglab.storage.ipfs"]
-        ipfs_storage["data"]["starling:provider"] = "Web3.Storage"
-        ipfs_storage["data"]["starling:ipfsCID"] = ipfs_cid
-        ipfs_storage["data"]["starling:assetStoredTimestamp"] = timestamp
-        assertions.append(ipfs_storage)
-
-        claim["assertions"] = assertions
-
-        return claim
-
-    def generate_custom(self, custom_assertions):
-        """Generates a claim with custom labels.
-
-        Args:
-            custom_assertions: list containing custom assertions for the claim
-
-        Returns:
-            a dictionary containing the claim data
-        """
-        claim = copy.deepcopy(CUSTOM_CLAIM_TEMPLATE)
-        claim["recorder"] = "Starling Integrity"
-
-        assertion_templates = self.assertions_by_label(claim)
-        assertions = []
-
-        creative_work = assertion_templates["stds.schema-org.CreativeWork"]
-        # creative_work["data"] = {"author": CREATIVE_WORK_AUTHOR}
-        assertions.append(creative_work)
-
-        if custom_assertions is None:
-            _logger.warning("No custom assertions are appended to claim")
-        else:
-            for custom in custom_assertions:
-                assertions.append(custom)
-
-        claim["assertions"] = assertions
-
         return claim
 
     def assertions_by_label(self, claim_dict):
