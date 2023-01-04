@@ -8,7 +8,6 @@ from fractions import Fraction
 from typing import Optional
 
 from . import config
-from .geocoder import Geocoder
 from .log_helper import LogHelper
 
 _logger = LogHelper.getLogger()
@@ -73,20 +72,13 @@ class Claim:
 
         author_name = jwt_payload.get("author", {}).get("name")
         copyright = jwt_payload.get("copyright")
-        lat, lon, alt = self._get_meta_lat_lon_alt(meta)
-        if lat is None:
-            photo_meta_data = self._make_photo_meta_data(
-                author_name, copyright, None, None
-            )
-        else:
-            photo_meta_data = self._make_photo_meta_data(
-                author_name, copyright, float(lat), float(lon)
-            )
+        photo_meta_data = self._make_photo_meta_data(author_name, copyright, None)
         if photo_meta_data is not None:
             photo_meta = assertion_templates["stds.iptc.photo-metadata"]
             photo_meta["data"] = photo_meta_data
             assertions.append(photo_meta)
 
+        lat, lon, alt = self._get_meta_lat_lon_alt(meta)
         timestamp = self._get_meta_timestamp(meta)
         exif_data = self._make_c2pa_exif_gps_data(lat, lon, alt, timestamp)
         if exif_data is not None:
@@ -136,25 +128,23 @@ class Claim:
         author_name = meta_content.get("author", {}).get("name")
         copyright = meta_content.get("copyright")
 
+        photo_meta_data = self._make_photo_meta_data(author_name, copyright, None)
+        if photo_meta_data is not None:
+            photo_meta = assertion_templates["stds.iptc.photo-metadata"]
+            photo_meta["data"] = photo_meta_data
+            assertions.append(photo_meta)
+
         # Find proofmode data for asset
         proofmode_data = (
             meta_content.get("private", {}).get("proofmode", {}).get(filename, {})
         )
 
         # TODO Make GPS data optional
-        gps_lat = Decimal(proofmode_data["proofs"][0]["Location.Latitude"])
-        gps_lon = Decimal(proofmode_data["proofs"][0]["Location.Longitude"])
-        photo_meta_data = self._make_photo_meta_data(
-            author_name, copyright, float(gps_lat), float(gps_lon)
-        )
-        if photo_meta_data is not None:
-            photo_meta = assertion_templates["stds.iptc.photo-metadata"]
-            photo_meta["data"] = photo_meta_data
-            assertions.append(photo_meta)
-
-        gps_alt = Decimal(proofmode_data["proofs"][0]["Location.Altitude"])
+        gps_lat = Decimal(proofmode_data["proofmodeJSON"]["Location.Latitude"])
+        gps_lon = Decimal(proofmode_data["proofmodeJSON"]["Location.Longitude"])
+        gps_alt = Decimal(proofmode_data["proofmodeJSON"]["Location.Altitude"])
         gps_time = datetime.utcfromtimestamp(
-            int(proofmode_data["proofs"][0]["Location.Time"]) / 1000
+            int(proofmode_data["proofmodeJSON"]["Location.Time"]) / 1000
         )
         exif_data = self._make_c2pa_exif_gps_data(gps_lat, gps_lon, gps_alt, gps_time)
         if exif_data is not None:
@@ -267,7 +257,7 @@ class Claim:
         assertions = []
 
         creative_work = assertion_templates["stds.schema-org.CreativeWork"]
-        #creative_work["data"] = {"author": CREATIVE_WORK_AUTHOR}
+        # creative_work["data"] = {"author": CREATIVE_WORK_AUTHOR}
         assertions.append(creative_work)
 
         if custom_assertions is None:
@@ -295,12 +285,12 @@ class Claim:
         return assertions_by_label
 
     def _make_photo_meta_data(
-        self, author_name: str, copyright: str, lat: float, lon: float
+        self, author_name: str, copyright: str, geolocation: dict
     ):
         photo_meta_data = {
             "dc:creator": [author_name],
             "dc:rights": copyright,
-            "Iptc4xmpExt:LocationCreated": self._get_location_created(lat, lon),
+            "Iptc4xmpExt:LocationCreated": self._get_location_created(geolocation),
         }
 
         photo_meta_data = self._remove_keys_with_no_values(photo_meta_data)
@@ -475,28 +465,25 @@ class Claim:
         # so manually add the Z.
         return dt.replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
 
-    def _get_location_created(self, lat, lon):
+    def _get_location_created(self, geolocation: dict):
         """Returns the Iptc4xmpExt:LocationCreated section, based on the given lat / lon
 
         Args:
-            lat, lon: floats (or None), indicating the latitude and longitude to use
+            geolocation: a dictionary defined by the meta-content schema
 
         Returns:
-            dictionary to use as the value of the Iptc4xmpExt:LocationCreated field
-            might be empty if lat or lon was None, or if reverse geocoding did not return an address
+            Dictionary to use as the value of the Iptc4xmpExt:LocationCreated field.
+            Might be empty if geolocation was empty.
         """
+
+        if geolocation is None or len(geolocation) == 0:
+            return {}
+
         location_created = {}
-        if lat is None or lon is None:
-            return location_created
-
-        address = Geocoder().reverse_geocode(lat, lon)
-        if address is None:
-            return location_created
-
-        location_created["Iptc4xmpExt:CountryCode"] = address.get("country_code")
-        location_created["Iptc4xmpExt:CountryName"] = address.get("country")
-        location_created["Iptc4xmpExt:ProvinceState"] = address.get("state")
-        location_created["Iptc4xmpExt:City"] = address.get("city")
+        location_created["Iptc4xmpExt:CountryCode"] = geolocation.get("countryCode")
+        location_created["Iptc4xmpExt:CountryName"] = geolocation.get("countryName")
+        location_created["Iptc4xmpExt:ProvinceState"] = geolocation.get("provinceState")
+        location_created["Iptc4xmpExt:City"] = geolocation.get("city")
 
         return self._remove_keys_with_no_values(location_created)
 

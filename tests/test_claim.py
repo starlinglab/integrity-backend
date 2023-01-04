@@ -61,9 +61,7 @@ fake_address = {
 }
 
 
-def test_generates_create_claim(reverse_geocode_mocker):
-    reverse_geocode_mocker(fake_address)
-
+def test_generates_create_claim():
     claim = _claim.generate_create(jwt_payload, data)
     assertions = _claim.assertions_by_label(claim)
     assert claim["vendor"] == "starlinglab"
@@ -84,12 +82,15 @@ def test_generates_create_claim(reverse_geocode_mocker):
     photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
     assert photo_meta_assertion["data"]["dc:creator"] == ["Benedict Lau"]
     assert photo_meta_assertion["data"]["dc:rights"] == "copyright holder"
-    assert photo_meta_assertion["data"]["Iptc4xmpExt:LocationCreated"] == {
-        "Iptc4xmpExt:CountryCode": "br",
-        "Iptc4xmpExt:CountryName": "Mock Country",
-        "Iptc4xmpExt:ProvinceState": "Some State",
-        "Iptc4xmpExt:City": "Fake Town",
-    }
+
+    # Removed because this isn't handled by the backend anymore
+    # https://github.com/starlinglab/integrity-backend/issues/120
+    # assert photo_meta_assertion["data"]["Iptc4xmpExt:LocationCreated"] == {
+    #     "Iptc4xmpExt:CountryCode": "br",
+    #     "Iptc4xmpExt:CountryName": "Mock Country",
+    #     "Iptc4xmpExt:ProvinceState": "Some State",
+    #     "Iptc4xmpExt:City": "Fake Town",
+    # }
 
     exif_assertion = assertions["stds.exif"]
     assert exif_assertion["data"]["exif:GPSLatitude"] == "15,55.928532S"
@@ -130,9 +131,7 @@ def test_generates_create_claim(reverse_geocode_mocker):
     assert c2pa_actions["data"]["actions"][0]["when"] == "2021-12-17T23:52:47.081Z"
 
 
-def test_generates_create_claim_with_missing_author_info(reverse_geocode_mocker):
-    reverse_geocode_mocker(fake_address)
-
+def test_generates_create_claim_with_missing_author_info():
     claim = _claim.generate_create({"bad": "jwt"}, data)
 
     assert claim is not None
@@ -141,9 +140,7 @@ def test_generates_create_claim_with_missing_author_info(reverse_geocode_mocker)
     assert "stds.schema-org.CreativeWork" not in _claim.assertions_by_label(claim)
 
 
-def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
-    reverse_geocode_mocker(fake_address)
-
+def test_generates_create_claim_with_partial_meta():
     claim = _claim.generate_create(
         jwt_payload,
         {
@@ -194,26 +191,12 @@ def test_generates_create_claim_with_partial_meta(reverse_geocode_mocker):
     }
 
 
-def test_generates_create_claim_with_no_reverse_geocode(reverse_geocode_mocker):
-    reverse_geocode_mocker(None)
-
+def test_generates_create_claim_with_no_reverse_geocode():
     claim = _claim.generate_create(jwt_payload, data)
     assert claim is not None
     assertions = _claim.assertions_by_label(claim)
     photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
     assert "Iptc4xmpExt:LocationCreated" not in photo_meta_assertion["data"]
-
-
-def test_generates_create_claim_with_partial_reverse_geocode(reverse_geocode_mocker):
-    reverse_geocode_mocker({"city": "Partial Town"})
-
-    claim = _claim.generate_create(jwt_payload, data)
-    assert claim is not None
-    assertions = _claim.assertions_by_label(claim)
-    photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
-    assert photo_meta_assertion["data"]["Iptc4xmpExt:LocationCreated"] == {
-        "Iptc4xmpExt:City": "Partial Town"
-    }
 
 
 def test_generates_update_claim():
@@ -282,9 +265,7 @@ def test_generates_store_claim():
     ]
 
 
-def test_prefers_current_latlon_with_fallback(reverse_geocode_mocker):
-    reverse_geocode_mocker(fake_address)
-
+def test_prefers_current_latlon_with_fallback():
     claim = _claim.generate_create(
         jwt_payload,
         {
@@ -327,9 +308,7 @@ def test_prefers_current_latlon_with_fallback(reverse_geocode_mocker):
     }
 
 
-def test_altitude(reverse_geocode_mocker):
-    reverse_geocode_mocker(fake_address)
-
+def test_altitude():
     claim = _claim.generate_create(
         jwt_payload,
         {
