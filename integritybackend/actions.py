@@ -1,6 +1,6 @@
 from .asset_helper import AssetHelper
 from .claim import Claim
-from .claim_tool import ClaimTool
+from .c2patool import C2patool
 from .file_util import FileUtil
 from .filecoin import Filecoin
 from .iscn import Iscn
@@ -19,7 +19,7 @@ import requests
 
 
 _claim = Claim()
-_claim_tool = ClaimTool()
+_c2patool = C2patool()
 _filecoin = Filecoin()
 _logger = LogHelper.getLogger()
 _file_util = FileUtil()
@@ -427,6 +427,11 @@ class Actions:
             org_id = org_config["id"]
             asset_helper = AssetHelper(org_id)
 
+            action = config.ORGANIZATION_CONFIG.get_action(
+                org_id, collection_id, action_name
+            )
+            action_params = action.get("params")
+
             # Get paths
             action_dir = asset_helper.path_for_action(collection_id, action_name)
             action_output_dir = asset_helper.path_for_action_output(
@@ -488,7 +493,14 @@ class Actions:
             for filename in image_filenames:
                 claim = _claim.generate_c2pa_proofmode(meta_content, filename)
                 path = os.path.join(tmp_img_dir, filename)
-                _claim_tool.run_claim_inject(claim, path, None)
+                _c2patool.run_claim_inject(
+                    claim,
+                    path,
+                    path,
+                    action_params["c2pa_cert"],
+                    action_params["c2pa_key"],
+                    action_params["c2pa_algo"],
+                )
 
             # Process C2PA-injected JPEGs
             for filename in image_filenames:
@@ -499,7 +511,7 @@ class Actions:
 
                 # Read claims (requires .jpg extension as input)
                 claim_path = FileUtil.change_filename_extension(image_path, ".json")
-                _claim_tool.run_claim_dump(image_path, claim_path)
+                _c2patool.run_claim_dump(image_path, claim_path)
 
             # Copy all C2PA-injected JPEGs to action_dir
             shutil.copytree(tmp_img_dir, action_img_dir, dirs_exist_ok=True)
@@ -803,8 +815,8 @@ class Actions:
     #         raise Exception(f"Expected {parent_file} to be a file, but it isn't")
 
     #     _logger.info("_update() action found parent file for asset: %s", parent_file)
-    #     _claim_tool.run_claim_inject(claim, tmp_asset_file, parent_file)
-    #     _claim_tool.run_claim_dump(tmp_asset_file, tmp_claim_file)
+    #     _c2patool.run_claim_inject(claim, tmp_asset_file, parent_file)
+    #     _c2patool.run_claim_dump(tmp_asset_file, tmp_claim_file)
     #     # Copy the C2PA-injected asset to both the internal and shared asset directories.
     #     internal_asset_file = asset_helper.get_internal_file_fullpath(tmp_asset_file)
     #     shutil.move(tmp_asset_file, internal_asset_file)

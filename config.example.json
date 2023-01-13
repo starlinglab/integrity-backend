@@ -5,8 +5,44 @@
       "collections": [
         {
           "id": "example-collection-hypha-capture",
-          "asset_extensions": ["jpg", "jpeg"],
+          "asset_extensions": [
+            "jpg",
+            "jpeg"
+          ],
           "actions": [
+            {
+              "name": "archive",
+              "params": {
+                "encryption": {
+                  "algo": "aes-256-cbc",
+                  "key": "starling-lab_project-local_aes256"
+                },
+                "signers": {
+                  "authsign": {
+                    "active": true,
+                    "server_url": "https://example.org",
+                    "auth_token": "password"
+                  }
+                },
+                "registration_policies": {
+                  "opentimestamps": {
+                    "active": true
+                  },
+                  "iscn": {
+                    "active": true
+                  }
+                }
+              }
+            },
+            {
+              "name": "c2pa-proofmode",
+              "params": {
+                "signer": "starling-lab_c2pa-key",
+                "c2pa_cert": "cert_pub_key_filename.pem",
+                "c2pa_key": "cert_priv_key_filename.key",
+                "c2pa_algo": "es256"
+              }
+            },
             {
               "name": "c2pa-update",
               "params": {

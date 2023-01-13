@@ -1,11 +1,13 @@
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 import copy
 import json
 import os
+from decimal import Decimal
+from fractions import Fraction
+from typing import Optional
 
 from . import config
-from .exif import Exif
 from .geocoder import Geocoder
 from .log_helper import LogHelper
 
@@ -69,13 +71,24 @@ class Claim:
             creative_work["data"] = author_data
             assertions.append(creative_work)
 
-        photo_meta_data = self._make_photo_meta_data(jwt_payload, meta)
+        author_name = jwt_payload.get("author", {}).get("name")
+        copyright = jwt_payload.get("copyright")
+        lat, lon, alt = self._get_meta_lat_lon_alt(meta)
+        if lat is None:
+            photo_meta_data = self._make_photo_meta_data(
+                author_name, copyright, None, None
+            )
+        else:
+            photo_meta_data = self._make_photo_meta_data(
+                author_name, copyright, float(lat), float(lon)
+            )
         if photo_meta_data is not None:
             photo_meta = assertion_templates["stds.iptc.photo-metadata"]
             photo_meta["data"] = photo_meta_data
             assertions.append(photo_meta)
 
-        exif_data = self._make_exif_data(meta)
+        timestamp = self._get_meta_timestamp(meta)
+        exif_data = self._make_c2pa_exif_gps_data(lat, lon, alt, timestamp)
         if exif_data is not None:
             exif = assertion_templates["stds.exif"]
             exif["data"] = exif_data
@@ -129,23 +142,21 @@ class Claim:
         )
 
         # TODO Make GPS data optional
-        gps_lat = proofmode_data["proofs"][0]["Location.Latitude"]
-        gps_lon = proofmode_data["proofs"][0]["Location.Longitude"]
+        gps_lat = Decimal(proofmode_data["proofs"][0]["Location.Latitude"])
+        gps_lon = Decimal(proofmode_data["proofs"][0]["Location.Longitude"])
         photo_meta_data = self._make_photo_meta_data(
-            author_name, copyright, gps_lat, gps_lon
+            author_name, copyright, float(gps_lat), float(gps_lon)
         )
         if photo_meta_data is not None:
             photo_meta = assertion_templates["stds.iptc.photo-metadata"]
             photo_meta["data"] = photo_meta_data
             assertions.append(photo_meta)
 
-        gps_time = (
-            datetime.utcfromtimestamp(
-                int(proofmode_data["proofs"][0]["Location.Time"]) / 1000
-            ).isoformat()
-            + "Z"
+        gps_alt = Decimal(proofmode_data["proofs"][0]["Location.Altitude"])
+        gps_time = datetime.utcfromtimestamp(
+            int(proofmode_data["proofs"][0]["Location.Time"]) / 1000
         )
-        exif_data = self._make_exif_data(float(gps_lat), float(gps_lon), gps_time)
+        exif_data = self._make_c2pa_exif_gps_data(gps_lat, gps_lon, gps_alt, gps_time)
         if exif_data is not None:
             exif = assertion_templates["stds.exif"]
             exif["data"] = exif_data
@@ -283,7 +294,9 @@ class Claim:
             assertions_by_label[assertion["label"]] = assertion
         return assertions_by_label
 
-    def _make_photo_meta_data(self, author_name, copyright, lat, lon):
+    def _make_photo_meta_data(
+        self, author_name: str, copyright: str, lat: float, lon: float
+    ):
         photo_meta_data = {
             "dc:creator": [author_name],
             "dc:rights": copyright,
@@ -297,84 +310,170 @@ class Claim:
 
         return photo_meta_data
 
-    def _get_meta_lat_lon(self, meta):
-        """Extracts latitude and longitude from metadata JSON dict.
+    def _get_meta_lat_lon_alt(
+        self, meta: dict
+    ) -> tuple[Optional[Decimal], Optional[Decimal], Optional[Decimal]]:
+        """
+        Extracts latitude, longitude, altitude from metadata JSON dict.
 
         Args:
             meta: dictionary with the 'meta' section of the request
 
         Return:
-            (lat, lon) from the 'meta' data, returned as a pair
+            (lat, lon, alt)
+
+            All are Decimal objects. If any are not available then None is
+            returned in their place.
         """
+
         lat = self._get_value_from_meta(
             meta, "Current GPS Latitude"
         ) or self._get_value_from_meta(meta, "Last Known GPS Latitude")
-
         lon = self._get_value_from_meta(
             meta, "Current GPS Longitude"
         ) or self._get_value_from_meta(meta, "Last Known GPS Longitude")
+        alt = self._get_value_from_meta(
+            meta, "Current GPS Altitude"
+        ) or self._get_value_from_meta(meta, "Last Known GPS Altitude")
 
         if lat is None or lon is None:
-            _logger.warning("Could not find lat or lon in 'meta'")
-            return (None, None)
+            _logger.warning("Could not find both of lat/lon in 'meta'")
+            return (None, None, None)
 
-        return (float(lat), float(lon))
+        if lat is not None:
+            lat = Decimal(lat)
+        if lon is not None:
+            lon = Decimal(lon)
+        if alt is not None:
+            alt = Decimal(alt)
 
-    # def _make_photo_meta_data(self, jwt_payload, meta):
-    #     (lat, lon) = self._get_meta_lat_lon(meta)
-    #     photo_meta_data = {
-    #         "dc:creator": [jwt_payload.get("author", {}).get("name")],
-    #         "dc:rights": jwt_payload.get("copyright"),
-    #         "Iptc4xmpExt:LocationCreated": self._get_location_created(lat, lon),
-    #     }
+        return (lat, lon, alt)
 
-    #     photo_meta_data = self._remove_keys_with_no_values(photo_meta_data)
-
-    #     if not photo_meta_data.keys():
-    #         return None
-
-    #     return photo_meta_data
-
-    # def _get_meta_lat_lon(self, meta):
-    #     """Extracts latitude and longitude from metadata JSON dict.
-
-    #     Args:
-    #         meta: dictionary with the 'meta' section of the request
-
-    #     Return:
-    #         (lat, lon) from the 'meta' data, returned as a pair
-    #     """
-    #     lat = self._get_value_from_meta(
-    #         meta, "Current GPS Latitude"
-    #     ) or self._get_value_from_meta(meta, "Last Known GPS Latitude")
-
-    #     lon = self._get_value_from_meta(
-    #         meta, "Current GPS Longitude"
-    #     ) or self._get_value_from_meta(meta, "Last Known GPS Longitude")
-
-    #     if lat is None or lon is None:
-    #         _logger.warning("Could not find lat or lon in 'meta'")
-    #         return (None, None)
-
-    #     return (float(lat), float(lon))
-
-    def _get_exif_timestamp(self, meta):
-        """Returns an EXIF-formatted version of the timestamp.
+    def _convert_coords_to_c2pa(
+        self, lat: Optional[Decimal], lon: Optional[Decimal], alt: Optional[Decimal]
+    ) -> tuple[Optional[str], Optional[str], Optional[str], Optional[int]]:
+        """
+        Converts decimal latitude, longitude, and altitude into valid C2PA (XMP Exif) strings.
 
         Args:
-            meta: dictionary with the 'meta' secion of the request
+            lat: latitude as a Decimal or None
+            lon: longitude as a Decimal or None
+            alt: altitude as a Decimal or None
+
+        Returns:
+            Tuple of latitude, longitude, altitude (strings),
+            and then the altitude reference integer. Any might be None if the
+            relevant argument was None.
+        """
+
+        lat_c2pa, lon_c2pa, alt_c2pa, alt_ref = None, None, None, None
+
+        # Latitude and longitude:
+        #
+        # Need to convert decimal degrees (DD) in to sexagesimal
+        # degrees (degrees, minutes, and seconds - DMS notation).
+        # However in the case of XMP Exif, seconds aren't used, and are instead
+        # represented as decimal points of the minutes. Also, all values are
+        # positive, and the direction is appended instead.
+        #
+        # Example:
+        # -77.123456 -> 77,7.40736W
+
+        def latlon_conv(l: Decimal) -> str:
+            degs = int(l)
+            mins = (60 * abs(l - degs)).normalize()  # Remove trailing zeros
+            if int(mins) == mins:
+                # It has no decimal places
+                # But we want the output to, just in case
+                # Example:
+                #   Bad:  "5,12S"
+                #   Good: "5,12.0S"
+                mins = mins.quantize(Decimal("1.0"))
+            return f"{abs(degs)},{mins}"
+
+        if lat is not None:
+            lat_c2pa = latlon_conv(lat)
+            lat_c2pa += "N" if lat >= 0 else "S"
+        if lon is not None:
+            lon_c2pa = latlon_conv(lon)
+            lon_c2pa += "E" if lon >= 0 else "W"
+
+        # Altitude:
+        #
+        # This is a rational number, stored as a string.
+        # For example: "100963/29890"
+        #
+        # The Exif spec stores altitude as a rational number as well.
+        # It specifies the numerator and dominator are unsigned 32-bit integers
+        # (long type in C), meaning the max value is: 2^32 - 1 = 4294967295
+        #
+        # XMP just natively stores rational numbers as text, and doesn't
+        # seem to mention a limit. However since it's supposed to be derived
+        # from Exif, I will keep the limit. This is likely more correct and
+        # will help ensure compatibility across parser implementations.
+        #
+        # No meaningful precision is lost from using this limit. The maximum
+        # amount that could be lost is 1/4294967295. This is roughly 2.3e-10,
+        # less than a nanometre.
+
+        if alt is not None:
+            numer, denom = (
+                Fraction(abs(alt)).limit_denominator(4294967295).as_integer_ratio()
+            )
+            alt_c2pa = f"{numer}/{denom}"
+            if alt < 0:
+                # Presumably negative altitude means below sea level
+                alt_ref = 1
+            else:
+                alt_ref = 0
+
+        return lat_c2pa, lon_c2pa, alt_c2pa, alt_ref
+
+    def _get_meta_timestamp(self, meta: dict) -> datetime:
+        """Returns a datetime version of the timestamp.
+
+        Args:
+            meta: dictionary with the 'meta' section of the request
 
         Return:
-            string with the exif-formatted timestamp, or None
+            datetime, or None
         """
+
         timestamp = self._get_value_from_meta(
             meta, "Current GPS Timestamp"
         ) or self._get_value_from_meta(meta, "Last Known GPS Timestamp")
-
         if timestamp is None:
             return None
 
-        return Exif().convert_timestamp(timestamp)
+        # meta format is RFC3339: 2022-05-26T19:24:40.094Z
+        return datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S%z")
+
+    def _convert_datetime_to_c2pa(self, dt: datetime) -> str:
+        """
+        Converts a datetime object into a valid C2PA (XMP Exif) string.
+
+        Args:
+            dt: an datetime.datetime object. If no timezone information is
+                included, UTC is assumed.
+
+        Returns:
+            string
+        """
+
+        # C2PA format is RFC3339, with second precision.
+        # Example: 2019-09-22T18:22:57Z
+
+        if dt.tzinfo != timezone.utc and dt.tzinfo is not None:
+            # Not UTC
+            #
+            # Non-UTC times are probably still valid, but convert to UTC just
+            # in case to reduce timezone issues by parsers.
+            dt = dt.astimezone(timezone.utc)
+
+        # Now UTC
+        # .isoformat does "+00:00" which is valid but ugly,
+        # so manually add the Z.
+        return dt.replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
 
     def _get_location_created(self, lat, lon):
         """Returns the Iptc4xmpExt:LocationCreated section, based on the given lat / lon
@@ -401,50 +500,37 @@ class Claim:
 
         return self._remove_keys_with_no_values(location_created)
 
-    def _make_exif_data(self, lat: int, lon: int, timestamp: str):
-        exif_data = {}
+    def _make_c2pa_exif_gps_data(
+        self,
+        lat: Optional[Decimal],
+        lon: Optional[Decimal],
+        alt: Optional[Decimal],
+        timestamp: Optional[datetime],
+    ):
+        """
+        Convert arguments into valid C2PA (XMP Exif) strings and embed them into
+        a stds.exif assertion.
 
-        (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
-        (exif_lon, exif_lon_ref) = Exif().convert_longitude(lon)
-        exif_data["exif:GPSLatitude"] = exif_lat
-        exif_data["exif:GPSLatitudeRef"] = exif_lat_ref
-        exif_data["exif:GPSLongitude"] = exif_lon
-        exif_data["exif:GPSLongitudeRef"] = exif_lon_ref
-        exif_data["exif:GPSTimeStamp"] = Exif().convert_timestamp(timestamp)
+
+        """
+
+        lat, lon, alt, alt_ref = self._convert_coords_to_c2pa(lat, lon, alt)
+        if timestamp is not None:
+            timestamp = self._convert_datetime_to_c2pa(timestamp)
+
+        exif_data = {}
+        exif_data["exif:GPSVersionID"] = "2.2.0.0"
+        exif_data["exif:GPSLatitude"] = lat
+        exif_data["exif:GPSLongitude"] = lon
+        exif_data["exif:GPSAltitude"] = alt
+        exif_data["exif:GPSAltitudeRef"] = alt_ref
+        exif_data["exif:GPSTimeStamp"] = timestamp
 
         exif_data = self._remove_keys_with_no_values(exif_data)
         if not exif_data.keys():
             return None
 
         return exif_data
-
-    # def _make_exif_data(self, meta):
-    #     """Returns the data fields for the stds.exif section of the claim
-
-    #     Args:
-    #         meta: metadata dictionary from the incoming request
-
-    #     Returns:
-    #         dictionary to use as the value of the stds.exif field
-    #         might be empty, if no input data is provided
-    #     """
-    #     (lat, lon) = self._get_meta_lat_lon(meta)
-
-    #     exif_data = {}
-
-    #     (exif_lat, exif_lat_ref) = Exif().convert_latitude(lat)
-    #     (exif_lon, exif_lon_ref) = Exif().convert_longitude(lon)
-    #     exif_data["exif:GPSLatitude"] = exif_lat
-    #     exif_data["exif:GPSLatitudeRef"] = exif_lat_ref
-    #     exif_data["exif:GPSLongitude"] = exif_lon
-    #     exif_data["exif:GPSLongitudeRef"] = exif_lon_ref
-    #     exif_data["exif:GPSTimeStamp"] = self._get_exif_timestamp(meta)
-
-    #     exif_data = self._remove_keys_with_no_values(exif_data)
-    #     if not exif_data.keys():
-    #         return None
-
-    #     return exif_data
 
     def _make_author_data(self, jwt_payload):
         author = []
@@ -540,7 +626,19 @@ class Claim:
         }
 
     def _remove_keys_with_no_values(self, dictionary):
-        return {k: v for k, v in dictionary.items() if v}
+        ret = {}
+        for k, v in dictionary.items():
+            if v is None:
+                continue
+            if hasattr(v, "__len__") and len(v) == 0:
+                # Remove empty strings, dicts, lists
+                continue
+
+            # Keep truthy values
+            # But also falsy values that we like: 0, float(0), False
+            ret[k] = v
+
+        return ret
 
     def _get_value_from_meta(self, meta, name):
         """Gets the value for a given 'name' in meta['information'].
