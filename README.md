@@ -101,7 +101,7 @@ The pipeline can also be configured to create Custody Tokens (e.g. [snowtrace](h
 
 When this process completes, a receipt file is generated containing all cryptographic hashes and registration records of the archive:
 
-```
+```json
 {
   "inputBundle": {
     "sha256": "e36f4378c07e922af82f96d69fa233298a2a8c8ad97e92893a01cbc9255308e3"
