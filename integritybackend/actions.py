@@ -209,52 +209,27 @@ class Actions:
             authsign_auth_token = action_params["signers"]["authsign"]["auth_token"]
             _logger.info(f"Content signing by authsign server: {authsign_server_url}")
 
-            # Sign content hash
-            content_authsign_path = self._authsign_data(
-                tmp_zip,
-                extracted_content,
-                content_sha,
-                authsign_server_url,
-                authsign_auth_token,
-            )
-            if content_authsign_path is not None:
-                _logger.info(
-                    f"Content signed by authsign server: {content_authsign_path}"
+            def authsign(data, sha, name):
+                path = self._authsign_data(
+                    tmp_zip, data, sha, authsign_server_url, authsign_auth_token
                 )
-            else:
-                _logger.error("Content signage failed")
+                if path is None:
+                    _logger.error(f"{name} signage failed")
+                else:
+                    _logger.info(f"{name} signed by authsign server {path}")
 
-            # Sign content metadata hash
-            meta_content_sha = _file_util.digest_sha256(extracted_meta_content)
-            meta_content_authsign_path = self._authsign_data(
-                tmp_zip,
+            # Sign content hash, content metadata hash, etc
+            authsign(extracted_content, content_sha, "content")
+            authsign(
                 extracted_meta_content,
-                meta_content_sha,
-                authsign_server_url,
-                authsign_auth_token,
+                _file_util.digest_sha256(extracted_meta_content),
+                "content metadata",
             )
-            if meta_content_authsign_path is not None:
-                _logger.info(
-                    f"Metadata of content signed by authsign server: {meta_content_authsign_path}"
-                )
-            else:
-                _logger.error("Metadata of content signage failed")
-
-            # Sign recorder metadata hash
-            meta_recorder_sha = _file_util.digest_sha256(extracted_meta_recorder)
-            meta_recorder_authsign_path = self._authsign_data(
-                tmp_zip,
+            authsign(
                 extracted_meta_recorder,
-                meta_recorder_sha,
-                authsign_server_url,
-                authsign_auth_token,
+                _file_util.digest_sha256(extracted_meta_recorder),
+                "recorder metadata",
             )
-            if meta_recorder_authsign_path is not None:
-                _logger.info(
-                    f"Metadata of recorder signed by authsign server: {meta_recorder_authsign_path}"
-                )
-            else:
-                _logger.error("Metadata of recorder signage failed")
         else:
             _logger.info("Content signage with authsign skipped")
 
@@ -264,41 +239,19 @@ class Actions:
                 "Secure timestamping of content and metadata with OpenTimestamps"
             )
 
-            # Content timestamp registration
-            content_ots_path = self._opentimestamps_data(
-                tmp_zip,
-                extracted_content,
-            )
-            if content_ots_path is not None:
-                _logger.info(
-                    f"Content securely timestamped with OpenTimestamps: {content_ots_path}"
-                )
-            else:
-                _logger.error("Metadata of content timestamp registration failed")
+            def ots(data, name):
+                path = self._opentimestamps_data(tmp_zip, data)
+                if path is None:
+                    _logger.error(f"{name} timestamp registration failed")
+                else:
+                    _logger.info(
+                        f"{name} securely timestamped with OpenTimestamps: {path}"
+                    )
 
-            # Content metadata timestamp registration
-            meta_content_ots_path = self._opentimestamps_data(
-                tmp_zip,
-                extracted_meta_content,
-            )
-            if meta_content_ots_path is not None:
-                _logger.info(
-                    f"Metadata of content securely timestamped with OpenTimestamps: {meta_content_ots_path}"
-                )
-            else:
-                _logger.error("Metadata of content timestamp registration failed")
-
-            # Recorder metadata timestamp registration
-            meta_recorder_ots_path = self._opentimestamps_data(
-                tmp_zip,
-                extracted_meta_recorder,
-            )
-            if meta_recorder_ots_path is not None:
-                _logger.info(
-                    f"Metadata of recorder securely timestamped with OpenTimestamps:: {meta_recorder_ots_path}"
-                )
-            else:
-                _logger.error("Metadata of recorder timestamp registration failed")
+            # Content timestamp registration, content metadata timestamp reg., etc.
+            ots(extracted_content, "content")
+            ots(extracted_meta_content, "content metadata")
+            ots(extracted_meta_recorder, "recorder metadata")
         else:
             _logger.info("Timestamp registration with OpenTimestamps skipped")
 
