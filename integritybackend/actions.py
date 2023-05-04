@@ -14,6 +14,7 @@ import os
 import shutil
 import time
 from zipfile import ZipFile
+from typing import List, Tuple
 
 import requests
 
@@ -39,53 +40,20 @@ class Actions:
         self.zip_dir = None
         self.tmp_dir = None
 
-    def archive(self, zip_path: str, org_id: str, collection_id: str):
-        """Archive asset.
-
-        Args:
-            zip_path: path to asset zip (will be copied, not altered)
-            org_id: ID for this organization
-            collection_id: string with the unique collection identifier this
-                asset is in
-
-        Raises:
-            Exception if errors are encountered during processing
+    def _verify_zip(self, zip_path: str, asset_exts: List[str]) -> Tuple[str, str]:
         """
-
-        try:
-            self._archive(zip_path, org_id, collection_id)
-        finally:
-            if self.zip_dir and self.tmp_dir:
-                self._purge_from_tmp(self.zip_dir, self.tmp_dir)
-
-    def _archive(self, zip_path: str, org_id: str, collection_id: str):
-
-        action_name = "archive"
-
-        asset_helper = AssetHelper(org_id)
-        _file_util = FileUtil()
-
-        collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
-        action = config.ORGANIZATION_CONFIG.get_action(
-            org_id, collection_id, action_name
-        )
-        action_params = action.get("params")
-        if action_params["encryption"]["algo"] != "aes-256-cbc":
-            raise Exception(
-                f"Encryption algo {action_params['encryption']['algo']} not implemented"
-            )
+        Verify the provided ZIP is in the expected preprocessor format.
+        The content filename and content SHA-256 hash are returned for further usage.
+        An Exception is raised with information if the ZIP is not valid.
+        """
 
         # Verify ZIP name
         input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
         if input_zip_sha != _file_util.digest_sha256(zip_path):
             raise Exception(f"SHA-256 of ZIP does not match file name: {zip_path}")
 
-        # Copy ZIP
-        archive_dir = asset_helper.path_for_action(collection_id, action_name)
-        tmp_zip = shutil.copy2(zip_path, archive_dir)
-
         # Verify ZIP contents are valid and expected
-        zip_listing = zip_util.listing(tmp_zip)
+        zip_listing = zip_util.listing(zip_path)
         if len(zip_listing) != 3:
             # ZIP must contain three files: content, meta-content , meta-recorder
             raise Exception(
@@ -97,9 +65,8 @@ class Actions:
         if "/" in content_filename:
             raise Exception(f"Content file is not at ZIP root: {content_filename}")
         if (
-            "*" not in collection["asset_extensions"]
-            and os.path.splitext(content_filename)[1][1:]
-            not in collection["asset_extensions"]
+            "*" not in asset_exts
+            and os.path.splitext(content_filename)[1][1:] not in asset_exts
         ):
             raise Exception(
                 f"Content file in ZIP has wrong extension: {content_filename}"
@@ -114,8 +81,59 @@ class Actions:
                 f"ZIP at {zip_path} has no recorder metadata file: {zip_listing}"
             )
 
+        # Verify content SHA from name
+        content_sha = zip_util.hash_file(zip_path, content_filename)
+        if content_sha != content_sha_unverified:
+            raise Exception(f"SHA-256 of content does not match file name: {zip_path}")
+
+        _logger.info(f"Content verified for archival: {zip_path}")
+        return content_filename, content_sha
+
+    def archive(self, zip_path: str, org_id: str, collection_id: str):
+        """Archive asset.
+
+        Args:
+            zip_path: path to asset zip (will be copied, not altered)
+            org_id: ID for this organization
+            collection_id: string with the unique collection identifier this
+                asset is in
+
+        Exceptions are not raised, only logged.
+        """
+
+        try:
+            self._archive(zip_path, org_id, collection_id)
+        finally:
+            if self.zip_dir and self.tmp_dir:
+                self._purge_from_tmp(self.zip_dir, self.tmp_dir)
+
+    def _archive(self, zip_path: str, org_id: str, collection_id: str):
+        action_name = "archive"
+
+        asset_helper = AssetHelper(org_id)
+
+        collection = config.ORGANIZATION_CONFIG.get_collection(org_id, collection_id)
+        action = config.ORGANIZATION_CONFIG.get_action(
+            org_id, collection_id, action_name
+        )
+        action_params = action.get("params")
+        if action_params["encryption"]["algo"] != "aes-256-cbc":
+            raise Exception(
+                f"Encryption algo {action_params['encryption']['algo']} not implemented"
+            )
+
+        input_zip_sha = os.path.splitext(os.path.basename(zip_path))[0]
+
+        content_filename, content_sha = self._verify_zip(
+            zip_path, collection["asset_extensions"]
+        )
+
+        # Copy ZIP
+        archive_dir = asset_helper.path_for_action(collection_id, action_name)
+        tmp_zip = shutil.copy2(zip_path, archive_dir)
+
         tmp_dir = asset_helper.path_for_action_tmp(collection_id, action_name)
-        zip_dir = os.path.join(tmp_dir, content_sha_unverified)
+        zip_dir = os.path.join(tmp_dir, content_sha)
         self.tmp_dir = tmp_dir
         self.zip_dir = zip_dir
 
@@ -124,13 +142,9 @@ class Actions:
         _file_util.create_dir(zip_dir)
         zip_util.extract_file(tmp_zip, content_filename, extracted_content)
 
-        # Generate content hashes and verify
-        content_sha = _file_util.digest_sha256(extracted_content)
-        if content_sha != content_sha_unverified:
-            raise Exception(f"SHA-256 of content does not match file name: {zip_path}")
+        # Generate content hashes
         content_cid = _file_util.digest_cidv1(extracted_content)
         content_md5 = _file_util.digest_md5(extracted_content)
-        _logger.info(f"Content verified for archival: {zip_path}")
 
         # Extract metadata files
         meta_content_filename = f"{content_sha}-meta-content.json"
@@ -352,9 +366,7 @@ class Actions:
                     ],
                 )
             except requests.exceptions.RequestException as e:
-                _logger.error(
-                    f"Content registration on Numbers Protocol failed: {e}"
-                )
+                _logger.error(f"Content registration on Numbers Protocol failed: {e}")
             else:
                 if numbers_receipt is not None:
                     _logger.info(
