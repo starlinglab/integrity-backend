@@ -8,20 +8,11 @@
 - [Development](#development)
   - [Setup](#setup)
   - [Code style and formatting](#code-style-and-formatting)
-  - [Dockerized Debian environment](#dockerized-debian-environment)
-  - [Specifying custom assertions](#specifying-custom-assertions)
 - [License](#license)
 
 ## Overview
 
 The Starling Integrity Backend ingests data bundles from the filesystem and operates on them for authenticated archival.
-
-It depends on several open source binaries:
-
-Other required binaries:
-- `c2patool` from [contentauth/c2patool](https://github.com/contentauth/c2patool)
-- `ots` from [opentimestamps/opentimestamps-client](https://github.com/opentimestamps/opentimestamps-client)
-- `ipfs` from [ipfs/kubo](https://github.com/ipfs/kubo/)
 
 ## Configuration
 
@@ -29,12 +20,23 @@ The server is configured via environment variables and a JSON file with per-orga
 
 See [config.example.json](./integritybackend/config.example.json) for an example of a valid organization configuration.
 
-See [config.py](./integritybackend/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
+Environment variables are set in a `.env` file. See `.env.example` for an example. Available variables are documented below.
 
-Most importantly, you will need to provide:
-* `C2PATOOL_PATH`: A path to a v0.3.0 `c2patool` binary. The server should have permissions to execute it, and it should be correctly configured with its keys. You can download one from [here](https://github.com/contentauth/c2patool/releases/tag/v0.3.0) and the repo is [here](https://github.com/contentauth/c2patool).
-* `IMAGES_DIR`: A path to a directory to store images. The server will need write access to this directory. This will be the persistent storage for the received images with their attestations.
-* `ISCN_SERVER`: The instance of the ISCN server to send registration requests to. Typically, this will be `http://localhost:3000` if you are using the sample server at https://github.com/likecoin/iscn-js/tree/master/sample/server in its default configuration.
+| Env Var                  | Description                                                                                                                                      | Required           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| `C2PA_CERT_STORE`        | Path to a dir of cert and key files for C2PA                                                                                                     | For C2PA           |
+| `C2PATOOL_PATH`          | Path to executable `c2patool` [binary](https://github.com/contentauth/c2patool/releases).                                                        | For C2PA           |
+| `INTERNAL_ASSET_STORE`   | Local dir for storing internal assets, must exist                                                                                                | Yes                |
+| `IPFS_CLIENT_PATH`       | Path to a IPFS/Kubo CLI [binary](https://github.com/ipfs/kubo)                                                                                   | Yes                |
+| `ISCN_SERVER`            | ISCN server for registration. The [sample server](https://github.com/likecoin/iscn-js/tree/master/sample/server) runs at `http://localhost:3000` | For ISCN           |
+| `KEY_STORE`              | Path to a dir where AES keys will be stored                                                                                                      | Yes                |
+| `NUMBERS_API_KEY`        | API key for Numbers API                                                                                                                          | For Numbers        |
+| `NUMBERS_API_URL`        | Path to the create asset API call for Numbers. See `.env.example`.                                                                               | For Numbers        |
+| `ORG_CONFIG_JSON`        | Path to organization config, see above                                                                                                           | Yes                |
+| `OTS_CLIENT_PATH`        | Path to [opentimestamps-client](https://github.com/opentimestamps/opentimestamps-client)                                                         | For OpenTimestamps |
+| `SHARED_FILE_SYSTEM`     | The output of actions are stored here to be shared with third-parties, must exist                                                                | Yes                |
+| `WEB3_STORAGE_API_TOKEN` | API token for [web3.storage](https://web3.storage/)                                                                                              | Not currently used |
+
 
 ## Architecture
 
@@ -99,7 +101,7 @@ The pipeline can also be configured to create Custody Tokens (e.g. [snowtrace](h
 
 When this process completes, a receipt file is generated containing all cryptographic hashes and registration records of the archive:
 
-```
+```json
 {
   "inputBundle": {
     "sha256": "e36f4378c07e922af82f96d69fa233298a2a8c8ad97e92893a01cbc9255308e3"
@@ -183,23 +185,6 @@ To auto-format just one file:
 ```
 pipenv run black path/to/your/file.py
 ```
-
-### Dockerized Debian environment
-
-If you need to run the `claim-tool` binary in a Debian environment and don't have one on your machine, you can use the provided `docker-compose.yml` (and `Dockerfile`).
-
-To get a shell inside the container:
-```
-docker-compose run --service-ports api bash
-```
-
-Once inside the container, run the usual commands (`pipenv install`, etc). You will also need a `claim_tool` binary inside the container (you can use `docker cp` to copy it into the container), as well as a directory for image storage.
-
-### Specifying custom assertions
-
-If you want to create a claim with manually created assertions, specify a dictionary where the key is the SHA-256 of the parent file, and the value is a list of custom assertions, then specify the path to your dictionary file in the `CUSTOM_ASSERTIONS_DICTIONARY` environment variable in your local `.env` file.
-
-See [custom-assertions.example.json](custom-assertions.example.json) for an example.
 
 ## License
 
