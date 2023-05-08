@@ -31,7 +31,6 @@ Environment variables are set in a `.env` file. See `.env.example` for an exampl
 | `ISCN_SERVER`            | ISCN server for registration. The [sample server](https://github.com/likecoin/iscn-js/tree/master/sample/server) runs at `http://localhost:3000` | For ISCN           |
 | `KEY_STORE`              | Path to a dir where AES keys will be stored                                                                                                      | Yes                |
 | `NUMBERS_API_KEY`        | API key for Numbers API                                                                                                                          | For Numbers        |
-| `NUMBERS_API_URL`        | Path to the create asset API call for Numbers. See `.env.example`.                                                                               | For Numbers        |
 | `ORG_CONFIG_JSON`        | Path to organization config, see above                                                                                                           | Yes                |
 | `OTS_CLIENT_PATH`        | Path to [opentimestamps-client](https://github.com/opentimestamps/opentimestamps-client)                                                         | For OpenTimestamps |
 | `SHARED_FILE_SYSTEM`     | The output of actions are stored here to be shared with third-parties, must exist                                                                | Yes                |
