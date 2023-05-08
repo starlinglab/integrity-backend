@@ -126,10 +126,24 @@ When this process completes, a receipt file is generated containing all cryptogr
       "iscnId": "iscn://likecoin-chain/POgpqXnFfjueFfPYGDu-baAYeYrlWt1ff90W4qb0y48/1"
     },
     "numbersProtocol": {
-      "avalancheTxHash": "0xee8b163fa0783866526028290796a30fe4803ebe21bb4815719365ce594eba96",
-      "assetCid": "bafybeif3ctgbmiso4oykvwj6jebyrkjxqr26bfrkesla5yr2ypgx47wgle",
-      "assetTreeCid": "bafkreidxsbidpzsxmmzkarp6hcaiisxbzolvyynmzwjgndkzqbrqxrr3zu",
-      "numbersTxHash": "0xaf192d98efdea2e7acc89f8a84a542b6df17bd17d750398d56f7f40b7f005612"
+      "numbers": {
+        "txHash": "0x2a498322c5002c77f01474ebf35bf4fc1d9174b0630df7ad5e88bc0fdd6aa855",
+        "assetCid": "bafybeie7gjinvhjl54dxpbhgq3re4ux4aqhwkpanndd2ubo5qii4no4etq",
+        "assetTreeCid": "bafkreiaasx537maldrfzmjfsiphzsk5xng23typktp6pi3b6aokzhyydye",
+        "order_id": "95ad56fa-54fb-4f93-9c05-7ff9fb6de3f6"
+      },
+      "avalanche": {
+        "txHash": "0xf6bdcd38e28eab1cd64674701577b7e0c9df54810ca8d37d97ab3b0b0064ac99",
+        "assetCid": "bafybeie7gjinvhjl54dxpbhgq3re4ux4aqhwkpanndd2ubo5qii4no4etq",
+        "assetTreeCid": "bafkreiaasx537maldrfzmjfsiphzsk5xng23typktp6pi3b6aokzhyydye",
+        "order_id": "16f88060-db98-4ebf-9b65-55df3e8511b5"
+      },
+      "near": {
+        "txHash": "0x0e45af7f9eefdec9fd5de75434ead2371f11e6123e4b92edcc18ccd2acb7c995",
+        "assetCid": "bafybeie7gjinvhjl54dxpbhgq3re4ux4aqhwkpanndd2ubo5qii4no4etq",
+        "assetTreeCid": "bafkreiaasx537maldrfzmjfsiphzsk5xng23typktp6pi3b6aokzhyydye",
+        "order_id": "9b5a4684-52e9-416b-8e85-027be22f6eff"
+      }
     }
   }
 }
