@@ -36,6 +36,7 @@ Environment variables are set in a `.env` file. See `.env.example` for an exampl
 | `SHARED_FILE_SYSTEM`     | The output of actions are stored here to be shared with third-parties, must exist                                                                | Yes                |
 | `WEB3_STORAGE_API_TOKEN` | API token for [web3.storage](https://web3.storage/)                                                                                              | Not currently used |
 
+
 ## Architecture
 
 Data generally enters the Integrity Backend via an [Integrity Preprocessor](https://github.com/starlinglab/integrity-preprocessor). Preprocessors handle most input-specific data processing, such as root-of-trust signature validation and metadata extraction. The Integrity Backend receives ZIP files in a set of watched folders, and proceeds to processing them according to a configuration file.
@@ -125,24 +126,10 @@ When this process completes, a receipt file is generated containing all cryptogr
       "iscnId": "iscn://likecoin-chain/POgpqXnFfjueFfPYGDu-baAYeYrlWt1ff90W4qb0y48/1"
     },
     "numbersProtocol": {
-      "numbers": {
-        "txHash": "0x2a498322c5002c77f01474ebf35bf4fc1d9174b0630df7ad5e88bc0fdd6aa855",
-        "assetCid": "bafybeie7gjinvhjl54dxpbhgq3re4ux4aqhwkpanndd2ubo5qii4no4etq",
-        "assetTreeCid": "bafkreiaasx537maldrfzmjfsiphzsk5xng23typktp6pi3b6aokzhyydye",
-        "order_id": "95ad56fa-54fb-4f93-9c05-7ff9fb6de3f6"
-      },
-      "avalanche": {
-        "txHash": "0xf6bdcd38e28eab1cd64674701577b7e0c9df54810ca8d37d97ab3b0b0064ac99",
-        "assetCid": "bafybeie7gjinvhjl54dxpbhgq3re4ux4aqhwkpanndd2ubo5qii4no4etq",
-        "assetTreeCid": "bafkreiaasx537maldrfzmjfsiphzsk5xng23typktp6pi3b6aokzhyydye",
-        "order_id": "16f88060-db98-4ebf-9b65-55df3e8511b5"
-      },
-      "near": {
-        "txHash": "0x0e45af7f9eefdec9fd5de75434ead2371f11e6123e4b92edcc18ccd2acb7c995",
-        "assetCid": "bafybeie7gjinvhjl54dxpbhgq3re4ux4aqhwkpanndd2ubo5qii4no4etq",
-        "assetTreeCid": "bafkreiaasx537maldrfzmjfsiphzsk5xng23typktp6pi3b6aokzhyydye",
-        "order_id": "9b5a4684-52e9-416b-8e85-027be22f6eff"
-      }
+      "avalancheTxHash": "0xee8b163fa0783866526028290796a30fe4803ebe21bb4815719365ce594eba96",
+      "assetCid": "bafybeif3ctgbmiso4oykvwj6jebyrkjxqr26bfrkesla5yr2ypgx47wgle",
+      "assetTreeCid": "bafkreidxsbidpzsxmmzkarp6hcaiisxbzolvyynmzwjgndkzqbrqxrr3zu",
+      "numbersTxHash": "0xaf192d98efdea2e7acc89f8a84a542b6df17bd17d750398d56f7f40b7f005612"
     }
   }
 }
@@ -152,8 +139,7 @@ When this process completes, a receipt file is generated containing all cryptogr
 
 ### Setup
 
-This is a Python3 project. We use `pipenv` to manage dependencies and the Python environment (this is like `npm` or `bundler`, but for Python). To install `pipenv` on Mac:
-
+This is a Python3 project.  We use `pipenv` to manage dependencies and the Python environment (this is like `npm` or `bundler`, but for Python). To install `pipenv` on Mac:
 ```bash
 brew install pipenv
 ```
@@ -161,29 +147,24 @@ brew install pipenv
 See https://github.com/pypa/pipenv#installation for installation instructions in other systems.
 
 The [Pipfile](./Pipfile) list all our dependencies. To install them:
+ ```
+ pipenv install
+ ```
 
-```
-pipenv install
-```
-
-To install both development and default dependencies:
-
-```
-pipenv install --dev
-```
+ To install both development and default dependencies:
+ ```
+ pipenv install --dev
+ ```
 
 To get a shell within the Python environment for this project:
-
 ```
 pipenv shell
 ```
-
 This will log you into the virtualenv that pipenv has created for this environment.
 
 See https://pipenv.pypa.io/en/latest/ for more detailed `pipenv` documentation.
 
 To run the tests:
-
 ```
 pipenv run pytest
 ```
@@ -195,13 +176,11 @@ We follow [PEP8](https://www.python.org/dev/peps/pep-0008/) style guidelines, an
 We use [black](https://black.readthedocs.io/) with the default configuration for autoformatting.
 
 To auto-format the entire codebase:
-
 ```
 pipenv run autoformat
 ```
 
 To auto-format just one file:
-
 ```
 pipenv run black path/to/your/file.py
 ```
