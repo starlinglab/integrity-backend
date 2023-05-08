@@ -376,6 +376,7 @@ class Actions:
                         "application/octet-stream",
                         meta_content["dateCreated"],
                         asset_extras,
+                        ["numbers", "avalanche", "near"],
                         action_params["registration_policies"]["numbersprotocol"][
                             "custody_token_contract_address"
                         ],

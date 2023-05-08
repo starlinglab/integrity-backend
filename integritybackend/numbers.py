@@ -20,7 +20,7 @@ class Numbers:
         asset_timestamp_created,
         asset_extras,
         chains,
-        nft_contract_address=None,
+        nft_contract_address,
     ):
         """Registers an asset to the integrity blockchain.
 
@@ -41,6 +41,9 @@ class Numbers:
         Returns:
             Numbers registration receipt if the registration succeeded; None otherwise
         """
+
+        if not chains:
+            raise TypeError("chains must be a non-zero length list")
 
         custom = copy.copy(asset_extras)
         custom.update({"name": asset_name})
