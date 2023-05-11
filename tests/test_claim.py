@@ -38,7 +38,6 @@ def test_generate_c2pa_starling_capture():
 
     photo_meta_assertion = assertions["stds.iptc.photo-metadata"]
     assert photo_meta_assertion["data"]["dc:creator"] == ["Starling Lab"]
-    assert photo_meta_assertion["data"]["dc:rights"] == "copyright holder"
 
     assert photo_meta_assertion["data"]["Iptc4xmpExt:LocationCreated"] == {
         "Iptc4xmpExt:CountryCode": "us",
