@@ -22,19 +22,22 @@ See [config.example.json](./integritybackend/config.example.json) for an example
 
 Environment variables are set in a `.env` file. See `.env.example` for an example. Available variables are documented below.
 
-| Env Var                  | Description                                                                                                                                      | Required           |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
-| `C2PA_CERT_STORE`        | Path to a dir of cert and key files for C2PA                                                                                                     | For C2PA           |
-| `C2PATOOL_PATH`          | Path to executable `c2patool` [binary](https://github.com/contentauth/c2patool/releases).                                                        | For C2PA           |
-| `INTERNAL_ASSET_STORE`   | Local dir for storing internal assets, must exist                                                                                                | Yes                |
-| `IPFS_CLIENT_PATH`       | Path to a IPFS/Kubo CLI [binary](https://github.com/ipfs/kubo)                                                                                   | Yes                |
-| `ISCN_SERVER`            | ISCN server for registration. The [sample server](https://github.com/likecoin/iscn-js/tree/master/sample/server) runs at `http://localhost:3000` | For ISCN           |
-| `KEY_STORE`              | Path to a dir where AES keys will be stored                                                                                                      | Yes                |
-| `NUMBERS_API_KEY`        | API key for Numbers API                                                                                                                          | For Numbers        |
-| `ORG_CONFIG_JSON`        | Path to organization config, see above                                                                                                           | Yes                |
-| `OTS_CLIENT_PATH`        | Path to [opentimestamps-client](https://github.com/opentimestamps/opentimestamps-client)                                                         | For OpenTimestamps |
-| `SHARED_FILE_SYSTEM`     | The output of actions are stored here to be shared with third-parties, must exist                                                                | Yes                |
-| `WEB3_STORAGE_API_TOKEN` | API token for [web3.storage](https://web3.storage/)                                                                                              | Not currently used |
+| Env Var                    | Description                                                                                                                                      | Required                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
+| `C2PA_CERT_STORE`          | Path to a dir of cert and key files for C2PA                                                                                                     | For C2PA                 |
+| `C2PATOOL_PATH`            | Path to executable `c2patool` [binary](https://github.com/contentauth/c2patool/releases).                                                        | For C2PA                 |
+| `INTERNAL_ASSET_STORE`     | Local dir for storing internal assets, must exist                                                                                                | Yes                      |
+| `IPFS_CLIENT_PATH`         | Path to a IPFS/Kubo CLI [binary](https://github.com/ipfs/kubo)                                                                                   | Yes                      |
+| `ISCN_SERVER`              | ISCN server for registration. The [sample server](https://github.com/likecoin/iscn-js/tree/master/sample/server) runs at `http://localhost:3000` | For ISCN                 |
+| `KEY_STORE`                | Path to a dir where AES keys will be stored                                                                                                      | Yes                      |
+| `NUMBERS_API_KEY`          | API key for Numbers API                                                                                                                          | For Numbers              |
+| `NUMBERS_NUMBERS_SERVER`   | API server for registering on Numbers blockchain                                                                                                 | For Numbers blockchain   |
+| `NUMBERS_AVALANCHE_SERVER` | API server for registering on Avalanche blockchain                                                                                               | For Avalanche blockchain |
+| `NUMBERS_NEAR_SERVER`      | API server for registering on Near blockchain                                                                                                    | For Near blockchain      |
+| `ORG_CONFIG_JSON`          | Path to organization config, see above                                                                                                           | Yes                      |
+| `OTS_CLIENT_PATH`          | Path to [opentimestamps-client](https://github.com/opentimestamps/opentimestamps-client)                                                         | For OpenTimestamps       |
+| `SHARED_FILE_SYSTEM`       | The output of actions are stored here to be shared with third-parties, must exist                                                                | Yes                      |
+| `WEB3_STORAGE_API_TOKEN`   | API token for [web3.storage](https://web3.storage/)                                                                                              | Not currently used       |
 
 
 ## Architecture

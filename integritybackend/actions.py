@@ -368,6 +368,7 @@ class Actions:
                             },
                         ],
                     }
+                    chains = ["numbers", "avalanche", "near"]
                     numbers_receipt = Numbers.register(
                         meta_content["name"],
                         meta_content["description"],
@@ -376,12 +377,15 @@ class Actions:
                         "application/octet-stream",
                         meta_content["dateCreated"],
                         asset_extras,
-                        ["numbers", "avalanche", "near"],
+                        chains,
                         action_params["registration_policies"]["numbersprotocol"][
                             "custody_token_contract_address"
                         ],
+                        action_params["registration_policies"]["numbersprotocol"].get(
+                            "testnet", False
+                        ),
                     )
-                    if numbers_receipt is not None:
+                    if all(x in numbers_receipt for x in chains):
                         _logger.info(
                             f"Content registered on Numbers Protocol: {numbers_receipt}"
                         )

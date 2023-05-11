@@ -21,6 +21,7 @@ class Numbers:
         asset_extras,
         chains,
         nft_contract_address,
+        testnet,
     ):
         """Registers an asset to the integrity blockchain.
 
@@ -37,9 +38,12 @@ class Numbers:
             asset_extras: extra JSON object to be included in asset registration
             chains: List of chain names to register on: numbers, avalanche, near
             nft_contract_address: Avalanche contract address for minting an ERC-721 custody token for the asset; None to skip
+            testnet: if testnet is used
 
         Returns:
-            Numbers registration receipt if the registration succeeded; None otherwise
+            A dictionary mapping the chain name to the registration information.
+            Failed registrations simply don't appear in the dictionary. So a total
+            failure results in an empty dictionary being returned.
         """
 
         if not chains:
@@ -56,7 +60,7 @@ class Numbers:
                 "assetSha256": asset_sha256,
                 "assetTimestampCreated": asset_timestamp_created,
                 "custom": custom,
-                "testnet": True,  # TODO
+                "testnet": testnet,
                 "assetCreator": "Starling Lab",
             }
         else:
@@ -83,11 +87,11 @@ class Numbers:
 
         for chain in chains:
             if chain == "numbers":
-                server = "https://eo883tj75azolos.m.pipedream.net"
+                server = config.NUMBERS_NUMBERS_SERVER
             elif chain == "avalanche":
-                server = "https://eox7ryteolf6eh2.m.pipedream.net"
+                server = config.NUMBERS_AVALANCHE_SERVER
             elif chain == "near":
-                server = "https://eof6acukpt2bka5.m.pipedream.net"
+                server = config.NUMBERS_NEAR_SERVER
             else:
                 raise NotImplementedError(f"Unknown chain {chain}")
 
@@ -99,18 +103,18 @@ class Numbers:
 
             if not resp.ok:
                 _logger.error(
-                    f"Numbers registration failed: {resp.status_code} {resp.text}"
+                    f"Numbers registration on {chain} failed: {resp.status_code} {resp.text}"
                 )
-                return None
+                continue
 
             data = resp.json()
             if "error" in data:
                 _logger.error(
-                    f"Numbers registration failed: {resp.status_code} {resp.text}"
+                    f"Numbers registration on {chain} failed: {resp.status_code} {resp.text}"
                 )
-                return None
+                continue
 
-            _logger.info(f"Numbers registration succeeded: {resp.text}")
+            _logger.info(f"Numbers registration on {chain} succeeded: {resp.text}")
             result[chain] = data
 
         return result
