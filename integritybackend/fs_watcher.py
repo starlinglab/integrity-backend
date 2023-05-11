@@ -24,6 +24,7 @@ def caught_and_logged_exceptions(event):
     except Exception as err:
         print(traceback.format_exc())
         _logger.error(f"Processing of event {event} errored with: {err}")
+        _logger.error(f"Filepath was {event.src_path}")
 
 
 class FsWatcher:
@@ -133,7 +134,7 @@ class ArchiveHandler(OrganizationHandler):
 
     def on_created(self, event):
         with caught_and_logged_exceptions(event):
-            _actions.archive(event.src_path, self.org_config, self.collection_id)
+            _actions.archive(event.src_path, self.organization_id, self.collection_id)
 
 
 class C2paProofmodeHandler(OrganizationHandler):
