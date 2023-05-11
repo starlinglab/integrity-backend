@@ -145,55 +145,23 @@ def register_iscn(
     Registers ISCN and returns reciept or None if failed.
     """
 
-    iscn_record = {
-        "contentFingerprints": [
-            f"hash://sha256/{receipt['archiveEncrypted']['sha256']}",
-            f"hash://md5/{receipt['archiveEncrypted']['sha256']}",
-            f"ipfs://{receipt['archiveEncrypted']['sha256']}",
-        ],
-        "stakeholders": [
-            {
-                "contributionType": "http://schema.org/citation",
-                "footprint": f"hash://sha256/{receipt['content']['sha256']}",
-                "description": "The SHA-256 of the original content.",
-            },
-            {
-                "contributionType": "http://schema.org/citation",
-                "footprint": f"hash://md5/{receipt['content']['md5']}",
-                "description": "The MD5 of the original content.",
-            },
-            {
-                "contributionType": "http://schema.org/citation",
-                "footprint": f"ipfs://{receipt['content']['cid']}",
-                "description": "The CID of the original content.",
-            },
-            {
-                "contributionType": "http://schema.org/citation",
-                "footprint": f"hash://sha256/{receipt['archive']['sha256']}",
-                "description": "The SHA-256 of the unencrypted archive.",
-            },
-            {
-                "contributionType": "http://schema.org/citation",
-                "footprint": f"hash://md5/{receipt['archive']['md5']}",
-                "description": "The MD5 of the unencrypted archive.",
-            },
-            {
-                "contributionType": "http://schema.org/citation",
-                "footprint": f"ipfs://{receipt['archive']['cid']}",
-                "description": "The CID of the unencrypted archive.",
-            },
-        ],
-        "type": "Record",
-        "name": content_metadata["name"],
-        "description": content_metadata["description"],
-        "author": content_metadata["author"],
-        "usageInfo": "Encrypted with AES-256.",
-        "keywords": [org_id, collection_id],
-        "datePublished": content_metadata["dateCreated"],
-        "url": "",
-        "recordNotes": json.dumps((content_metadata["extras"]), separators=(",", ":")),
-    }
-    return iscn.Iscn.register(iscn_record)
+    return iscn.Iscn.register_archive(
+        receipt["archiveEncrypted"]["sha256"],
+        receipt["archiveEncrypted"]["md5"],
+        receipt["archiveEncrypted"]["cid"],
+        receipt["content"]["sha256"],
+        receipt["content"]["md5"],
+        receipt["content"]["cid"],
+        receipt["archive"]["sha256"],
+        receipt["archive"]["md5"],
+        receipt["archive"]["cid"],
+        content_metadata["name"],
+        content_metadata["description"],
+        content_metadata["author"],
+        [org_id, collection_id],
+        content_metadata["dateCreated"],
+        json.dumps((content_metadata["extras"]), separators=(",", ":")),
+    )
 
 
 def _register_numbers(
@@ -204,54 +172,28 @@ def _register_numbers(
     chains: list[str],
     custody_token_contract_addr: str = "",
 ):
-    asset_extras = {
-        "author": content_metadata["author"],
-        "usageInfo": "Encrypted with AES-256.",
-        "keywords": [org_id, collection_id],
-        "extras": content_metadata["extras"],
-        "contentFingerprints": [
-            f"hash://sha256/{receipt['archiveEncrypted']['sha256']}",
-            f"hash://md5/{receipt['archiveEncrypted']['md5']}",
-            f"ipfs://{receipt['archiveEncrypted']['cid']}",
-        ],
-        "relatedContent": [
-            {
-                "value": f"hash://sha256/{receipt['content']['sha256']}",
-                "description": "The SHA-256 of the original content.",
-            },
-            {
-                "value": f"hash://md5/{receipt['content']['md5']}",
-                "description": "The MD5 of the original content.",
-            },
-            {
-                "value": f"ipfs://{receipt['content']['cid']}",
-                "description": "The CID of the original content.",
-            },
-            {
-                "value": f"hash://sha256/{receipt['archive']['sha256']}",
-                "description": "The SHA-256 of the unencrypted archive.",
-            },
-            {
-                "value": f"hash://md5/{receipt['archive']['md5']}",
-                "description": "The MD5 of the unencrypted archive.",
-            },
-            {
-                "value": f"ipfs://{receipt['archive']['cid']}",
-                "description": "The CID of the unencrypted archive.",
-            },
-        ],
-    }
-
-    return numbers.Numbers.register(
+    return numbers.Numbers.register_archive(
         content_metadata["name"],
         content_metadata["description"],
         receipt["archiveEncrypted"]["cid"],
         receipt["archiveEncrypted"]["sha256"],
         "application/octet-stream",
         content_metadata["dateCreated"],
-        chains,
-        asset_extras,
         custody_token_contract_addr,
+        content_metadata["author"],
+        org_id,
+        collection_id,
+        content_metadata["extras"],
+        receipt["archiveEncrypted"]["sha256"],
+        receipt["archiveEncrypted"]["md5"],
+        receipt["archiveEncrypted"]["cid"],
+        receipt["content"]["sha256"],
+        receipt["content"]["md5"],
+        receipt["content"]["cid"],
+        receipt["archive"]["sha256"],
+        receipt["archive"]["md5"],
+        receipt["archive"]["cid"],
+        chains,
         False,
     )
 
