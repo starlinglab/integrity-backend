@@ -64,15 +64,13 @@ class Claim:
 
         author_name = meta_content.get("author", {}).get("name")
         copyright = meta_content.get("copyright")
-        if copyright is None:
-            copyright = "copyright holder"
 
         geo = meta_content["private"].get("geolocation")
 
-        photo_meta_data = self._make_photo_meta_data(author_name, copyright, geo)
-        if photo_meta_data is not None:
+        photo_metadata = self._make_photo_metadata(author_name, copyright, geo)
+        if photo_metadata is not None:
             photo_meta = assertion_templates["stds.iptc.photo-metadata"]
-            photo_meta["data"] = photo_meta_data
+            photo_meta["data"] = photo_metadata
             assertions.append(photo_meta)
 
         if geo is not None:
@@ -140,10 +138,10 @@ class Claim:
         author_name = meta_content.get("author", {}).get("name")
         copyright = meta_content.get("copyright")
 
-        photo_meta_data = self._make_photo_meta_data(author_name, copyright, None)
-        if photo_meta_data is not None:
+        photo_metadata = self._make_photo_metadata(author_name, copyright, None)
+        if photo_metadata is not None:
             photo_meta = assertion_templates["stds.iptc.photo-metadata"]
-            photo_meta["data"] = photo_meta_data
+            photo_meta["data"] = photo_metadata
             assertions.append(photo_meta)
 
         # Find proofmode data for asset
@@ -211,21 +209,19 @@ class Claim:
             )
         )["proof"]
 
-    def _make_photo_meta_data(
-        self, author_name: str, copyright: str, geolocation: dict
-    ):
-        photo_meta_data = {
+    def _make_photo_metadata(self, author_name: str, copyright: str, geolocation: dict):
+        photo_metadata = {
             "dc:creator": [author_name],
             "dc:rights": copyright,
             "Iptc4xmpExt:LocationCreated": self._get_location_created(geolocation),
         }
 
-        photo_meta_data = self._remove_keys_with_no_values(photo_meta_data)
+        photo_metadata = self._remove_keys_with_no_values(photo_metadata)
 
-        if not photo_meta_data.keys():
+        if not photo_metadata.keys():
             return None
 
-        return photo_meta_data
+        return photo_metadata
 
     def _get_meta_content_lat_lon_alt(
         self, geolocation: dict
