@@ -97,3 +97,81 @@ class Numbers:
 
         _logger.info(f"Numbers registration succeeded: {resp.text}")
         return data["response"]
+
+    @staticmethod
+    def register_archive(
+        asset_name,
+        asset_description,
+        asset_cid,
+        asset_sha256,
+        asset_mime_type,
+        asset_timestamp_created,
+        nft_contract_address,
+        author,
+        org_id,
+        collection_id,
+        extras,
+        enc_zip_sha,
+        enc_zip_md5,
+        enc_zip_cid,
+        content_sha,
+        content_md5,
+        content_cid,
+        zip_sha,
+        zip_md5,
+        zip_cid,
+    ):
+        """
+        Registers an asset to the integrity blockchain.
+
+        Similar to register(), but asset_extras is generated for you.
+        """
+
+        asset_extras = {
+            "author": author,
+            "usageInfo": "Encrypted with AES-256.",
+            "keywords": [org_id, collection_id],
+            "extras": extras,
+            "contentFingerprints": [
+                f"hash://sha256/{enc_zip_sha}",
+                f"hash://md5/{enc_zip_md5}",
+                f"ipfs://{enc_zip_cid}",
+            ],
+            "relatedContent": [
+                {
+                    "value": f"hash://sha256/{content_sha}",
+                    "description": "The SHA-256 of the original content.",
+                },
+                {
+                    "value": f"hash://md5/{content_md5}",
+                    "description": "The MD5 of the original content.",
+                },
+                {
+                    "value": f"ipfs://{content_cid}",
+                    "description": "The CID of the original content.",
+                },
+                {
+                    "value": f"hash://sha256/{zip_sha}",
+                    "description": "The SHA-256 of the unencrypted archive.",
+                },
+                {
+                    "value": f"hash://md5/{zip_md5}",
+                    "description": "The MD5 of the unencrypted archive.",
+                },
+                {
+                    "value": f"ipfs://{zip_cid}",
+                    "description": "The CID of the unencrypted archive.",
+                },
+            ],
+        }
+
+        return Numbers.register(
+            asset_name,
+            asset_description,
+            asset_cid,
+            asset_sha256,
+            asset_mime_type,
+            asset_timestamp_created,
+            asset_extras,
+            nft_contract_address,
+        )
