@@ -319,7 +319,9 @@ class Actions:
         numbers_receipt = None
         if action_params["registration_policies"]["numbersprotocol"]["active"]:
             try:
-                chains = ["numbers", "avalanche", "near"]
+                chains = action_params["registration_policies"]["numbersprotocol"][
+                    "chains"
+                ]
                 numbers_receipt = Numbers.register_archive(
                     meta_content["name"],
                     meta_content["description"],
@@ -351,12 +353,14 @@ class Actions:
             except requests.exceptions.RequestException as e:
                 _logger.error(f"Content registration on Numbers Protocol failed: {e}")
             else:
-                if all(x in numbers_receipt for x in chains):
-                    _logger.info(
-                        f"Content registered on Numbers Protocol: {numbers_receipt}"
-                    )
-                else:
-                    _logger.error("Content registration on Numbers Protocol failed")
+                for chain in chains:
+                    if chain in numbers_receipt:
+                        _logger.info(f"Registered on Numbers Protocol chain {chain}")
+                    else:
+                        # Don't fail for missing registrations, just log
+                        _logger.error(
+                            f"Registration on Numbers protocol chain {chain} failed"
+                        )
         else:
             _logger.info("Content registration on Numbers Protocol skipped")
 

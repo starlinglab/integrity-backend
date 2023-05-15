@@ -30,7 +30,8 @@
                   },
                   "numbersprotocol": {
                     "active": true,
-                    "testnet": true
+                    "testnet": true,
+                    "chains": ["numbers", "avalanche", "near"]
                   }
                 }
               }
