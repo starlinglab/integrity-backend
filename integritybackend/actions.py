@@ -128,9 +128,10 @@ class Actions:
             },
             "registrationRecords": {},
         }
-        for k, v in reg_records:
-            if v is not None:
-                hash_list["registrationRecords"][k] = v
+        if reg_records is not None:
+            for k, v in reg_records.items():
+                if v is not None:
+                    hash_list["registrationRecords"][k] = v
         if source_id is not None:
             hash_list["sourceId"] = source_id
 
