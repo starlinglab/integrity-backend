@@ -82,10 +82,13 @@ def listing(zip_path):
 
 def hash_file(zip_path: str, file_path: str) -> str:
     """Get the SHA-256 hash of a file in the ZIP.
+
     The file is not extracted to the filesystem.
+
      Args:
         zip_path: path to the ZIP file
         file_path: the path of the file in the ZIP archive
+
     Raises:
         any file i/o exceptions
     """
@@ -101,10 +104,13 @@ def hash_file(zip_path: str, file_path: str) -> str:
 
 def json_load(zip_path: str, file_path: str):
     """Get the parsed JSON object stored in a file.
+
     The file is not extracted to the filesystem.
+
      Args:
         zip_path: path to the ZIP file
         file_path: the path of the file in the ZIP archive
+
     Raises:
         any file i/o exceptions
         any JSON parsing exceptions

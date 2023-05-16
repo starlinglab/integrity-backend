@@ -10,8 +10,6 @@ python-dotenv = "*"
 watchdog = "~=2.1.6"
 # For making HTTP requests
 requests = "~=2.26"
-# For reverse geocoding of lat/longs
-geocoder = "~=1.38"
 # For cryptography
 pycryptodome = "~=3.14.1"
 
