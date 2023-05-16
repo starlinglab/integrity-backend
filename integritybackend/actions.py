@@ -676,18 +676,29 @@ class Actions:
                 datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d"),
             ),
         )
-        # Keep manifest in internal dir but not in shared dir
         _logger.info("New asset file added: %s", internal_asset_file)
+
+        # Treat manifest the same way: both internal and shared dirs
+        # https://github.com/starlinglab/integrity-backend/pull/130#discussion_r1195401358
         internal_claim_file = os.path.join(
             asset_helper.path_for_action(collection_id, action_name),
             "claims",
             asset_file_hash + ".json",
         )
         shutil.move(tmp_claim_file, internal_claim_file)
+        shutil.copy2(
+            internal_claim_file,
+            os.path.join(
+                asset_helper.path_for_action_output(collection_id, action_name),
+                meta_content["author"].get("name", "unknown"),
+                datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            ),
+        )
         _logger.info(
-            "New claim file added to the internal claims directory: %s",
+            "New claim file added: %s",
             internal_claim_file,
         )
+
         return internal_asset_file
 
     def _authsign_data(
