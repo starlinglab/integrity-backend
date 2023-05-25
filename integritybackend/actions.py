@@ -672,8 +672,8 @@ class Actions:
             internal_asset_file,
             os.path.join(
                 asset_helper.path_for_action_output(collection_id, action_name),
-                meta_content["author"].get("name", "unknown"),
-                datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                meta_content["contentMetadata"]["author"].get("name", "unknown"),
+                datetime.now(timezone.utc).strftime("%Y-%m-%d"),
             ),
         )
         _logger.info("New asset file added: %s", internal_asset_file)
@@ -690,8 +690,8 @@ class Actions:
             internal_claim_file,
             os.path.join(
                 asset_helper.path_for_action_output(collection_id, action_name),
-                meta_content["author"].get("name", "unknown"),
-                datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                meta_content["contentMetadata"]["author"].get("name", "unknown"),
+                datetime.now(timezone.utc).strftime("%Y-%m-%d"),
             ),
         )
         _logger.info(
