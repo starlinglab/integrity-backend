@@ -668,13 +668,15 @@ class Actions:
             asset_file_hash + ".jpg",
         )
         shutil.move(tmp_asset_file, internal_asset_file)
+        path=os.path.join(
+                 asset_helper.path_for_action_output(collection_id, action_name),
+                 meta_content["contentMetadata"]["author"].get("name", "unknown"),
+                 datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        )
+        os.makedirs(path,exist_ok=True)
         shutil.copy2(
             internal_asset_file,
-            os.path.join(
-                asset_helper.path_for_action_output(collection_id, action_name),
-                meta_content["contentMetadata"]["author"].get("name", "unknown"),
-                datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-            ),
+            path
         )
         _logger.info("New asset file added: %s", internal_asset_file)
 
