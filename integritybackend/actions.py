@@ -128,9 +128,10 @@ class Actions:
             },
             "registrationRecords": {},
         }
-        for k, v in reg_records:
-            if v is not None:
-                hash_list["registrationRecords"][k] = v
+        if reg_records is not None:
+            for k, v in reg_records.items():
+                if v is not None:
+                    hash_list["registrationRecords"][k] = v
         if source_id is not None:
             hash_list["sourceId"] = source_id
 
@@ -318,6 +319,9 @@ class Actions:
         numbers_receipt = None
         if action_params["registration_policies"]["numbersprotocol"]["active"]:
             try:
+                chains = action_params["registration_policies"]["numbersprotocol"][
+                    "chains"
+                ]
                 numbers_receipt = Numbers.register_archive(
                     meta_content["name"],
                     meta_content["description"],
@@ -341,16 +345,22 @@ class Actions:
                     zip_sha,
                     zip_md5,
                     zip_cid,
+                    chains,
+                    action_params["registration_policies"]["numbersprotocol"].get(
+                        "testnet", False
+                    ),
                 )
             except requests.exceptions.RequestException as e:
                 _logger.error(f"Content registration on Numbers Protocol failed: {e}")
             else:
-                if numbers_receipt is not None:
-                    _logger.info(
-                        f"Content registered on Numbers Protocol: {numbers_receipt}"
-                    )
-                else:
-                    _logger.error("Content registration on Numbers Protocol failed")
+                for chain in chains:
+                    if chain in numbers_receipt:
+                        _logger.info(f"Registered on Numbers Protocol chain {chain}")
+                    else:
+                        # Don't fail for missing registrations, just log
+                        _logger.error(
+                            f"Registration on Numbers protocol chain {chain} failed"
+                        )
         else:
             _logger.info("Content registration on Numbers Protocol skipped")
 

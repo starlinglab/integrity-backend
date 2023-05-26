@@ -4,6 +4,7 @@ import shutil
 from zipfile import ZipFile
 import json
 import time
+from typing import Optional
 
 # Disable org config loading
 os.environ["RUN_ENV"] = "test"
@@ -26,6 +27,7 @@ Commands:
     fixIscn
     fixAvalanche
     fixNumbers
+    fixNear
     fixOpentimestamps
 
 Example usage:
@@ -113,14 +115,18 @@ def receipt_has_iscn(receipt: dict) -> bool:
 
 def receipt_has_avalanche(receipt: dict) -> bool:
     return bool(
-        receipt["registrationRecords"].get("numbersProtocol", {}).get("avalancheTxHash")
+        receipt["registrationRecords"].get("numbersProtocol", {}).get("avalanche")
     )
 
 
 def receipt_has_numbers(receipt: dict) -> bool:
     return bool(
-        receipt["registrationRecords"].get("numbersProtocol", {}).get("numbersTxHash")
+        receipt["registrationRecords"].get("numbersProtocol", {}).get("numbers")
     )
+
+
+def receipt_has_near(receipt: dict) -> bool:
+    return bool(receipt["registrationRecords"].get("numbersProtocol", {}).get("near"))
 
 
 def replace_receipt(zipf: ZipFile, receipt_dir: str, receipt: dict):
@@ -158,11 +164,12 @@ def register_iscn(
     )
 
 
-def register_numbers(
+def _register_numbers(
     receipt: dict,
     content_metadata: dict,
     org_id: str,
     collection_id: str,
+    chains: list[str],
     custody_token_contract_addr: str = "",
 ):
     return numbers.Numbers.register_archive(
@@ -186,6 +193,25 @@ def register_numbers(
         receipt["archive"]["sha256"],
         receipt["archive"]["md5"],
         receipt["archive"]["cid"],
+        chains,
+        False,
+    )
+
+
+def register_numbers(
+    receipt: dict,
+    content_metadata: dict,
+    org_id: str,
+    collection_id: str,
+    custody_token_contract_addr: str = "",
+):
+    return _register_numbers(
+        receipt,
+        content_metadata,
+        org_id,
+        collection_id,
+        ["numbers"],
+        custody_token_contract_addr,
     )
 
 
@@ -196,11 +222,30 @@ def register_avalanche(
     collection_id: str,
     custody_token_contract_addr: str = "",
 ):
-    """
-    Just calls register_numbers for now, as re-registering Numbers is what registers us on Avalanche also.
-    """
-    return register_numbers(
-        receipt, content_metadata, org_id, collection_id, custody_token_contract_addr
+    return _register_numbers(
+        receipt,
+        content_metadata,
+        org_id,
+        collection_id,
+        ["avalanche"],
+        custody_token_contract_addr,
+    )
+
+
+def register_near(
+    receipt: dict,
+    content_metadata: dict,
+    org_id: str,
+    collection_id: str,
+    custody_token_contract_addr: str = "",
+):
+    return _register_numbers(
+        receipt,
+        content_metadata,
+        org_id,
+        collection_id,
+        ["near"],
+        custody_token_contract_addr,
     )
 
 
@@ -209,6 +254,7 @@ def fix_process(
     register_func,  # Like register_iscn
     reg_name: str,
     json_name: str,
+    json_subname: Optional[str],
     delay: int,
     asset_dir: str,
     receipt_dir: str,
@@ -261,7 +307,10 @@ def fix_process(
             )
             sys.exit(1)
 
-        receipt["registrationRecords"][json_name] = new_receipt
+        if json_subname:
+            receipt["registrationRecords"][json_name][json_subname] = new_receipt
+        else:
+            receipt["registrationRecords"][json_name] = new_receipt
         replace_receipt(asset, receipt_dir, receipt)
         print(f"Registered {i} of {broken_assets_n}")
 
@@ -283,7 +332,13 @@ def main():
     asset_dir = sys.argv[4]
     receipt_dir = sys.argv[5]
 
-    if cmd not in ["fixIscn", "fixAvalanche", "fixNumbers", "fixOpentimestamps"]:
+    if cmd not in [
+        "fixIscn",
+        "fixAvalanche",
+        "fixNumbers",
+        "fixNear",
+        "fixOpentimestamps",
+    ]:
         print("Invalid command.")
         print(HELP)
         sys.exit(1)
@@ -302,6 +357,7 @@ def main():
             register_iscn,
             "ISCN",
             "iscn",
+            None,
             ISCN_DELAY,
             asset_dir,
             receipt_dir,
@@ -317,12 +373,12 @@ def main():
             lambda *args: register_avalanche(*args, custody_token_contract_addr=addr),
             "Avalanche",
             "numbersProtocol",
+            "avalanche",
             NUMBERS_DELAY,
             asset_dir,
             receipt_dir,
             org_id,
             collection_id,
-            confirmation_msg="Do you want to register them now? This will also re-register on Numbers. (y/N) ",
         )
 
     elif cmd == "fixNumbers":
@@ -332,12 +388,27 @@ def main():
             lambda *args: register_numbers(*args, custody_token_contract_addr=addr),
             "Numbers",
             "numbersProtocol",
+            "numbers",
             NUMBERS_DELAY,
             asset_dir,
             receipt_dir,
             org_id,
             collection_id,
-            confirmation_msg="Do you want to register them now? This will also re-register on Avalanche. (y/N) ",
+        )
+
+    elif cmd == "fixNear":
+        addr = input("Provide custody token contract address if available: ").strip()
+        fix_process(
+            receipt_has_near,
+            lambda *args: register_near(*args, custody_token_contract_addr=addr),
+            "Near",
+            "numbersProtocol",
+            "near",
+            NUMBERS_DELAY,
+            asset_dir,
+            receipt_dir,
+            org_id,
+            collection_id,
         )
 
 
