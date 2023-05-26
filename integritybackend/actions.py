@@ -668,21 +668,27 @@ class Actions:
             asset_file_hash + ".jpg",
         )
         shutil.move(tmp_asset_file, internal_asset_file)
+        target_path=os.path.join(
+                 asset_helper.path_for_action_output(collection_id, action_name),
+                 meta_content["contentMetadata"]["author"].get("name", "unknown"),
+                 datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        )
+        os.makedirs(target_path,exist_ok=True)
         shutil.copy2(
             internal_asset_file,
-            os.path.join(
-                asset_helper.path_for_action_output(collection_id, action_name),
-                meta_content["author"].get("name", "unknown"),
-                datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-            ),
+            target_path
         )
         _logger.info("New asset file added: %s", internal_asset_file)
 
         # Treat manifest the same way: both internal and shared dirs
         # https://github.com/starlinglab/integrity-backend/pull/130#discussion_r1195401358
-        internal_claim_file = os.path.join(
+        internal_claim_path = os.path.join(
             asset_helper.path_for_action(collection_id, action_name),
-            "claims",
+            "claims"
+        )
+        os.makedirs(internal_claim_path,exist_ok=True)
+        internal_claim_file = os.path.join(
+            internal_claim_path,
             asset_file_hash + ".json",
         )
         shutil.move(tmp_claim_file, internal_claim_file)
@@ -690,8 +696,8 @@ class Actions:
             internal_claim_file,
             os.path.join(
                 asset_helper.path_for_action_output(collection_id, action_name),
-                meta_content["author"].get("name", "unknown"),
-                datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                meta_content["contentMetadata"]["author"].get("name", "unknown"),
+                datetime.now(timezone.utc).strftime("%Y-%m-%d"),
             ),
         )
         _logger.info(
