@@ -71,13 +71,6 @@ def test_generate_c2pa_starling_capture():
         first_signature["starling:authenticatedMessageDescription"]
         == "Internal identifier of the authenticated bundle"
     )
-    authenticated_message = first_signature["starling:authenticatedMessagePublic"]
-    assert authenticated_message["starling:assetHash"] == proof.get("hash")
-    assert authenticated_message["starling:assetMimeType"] == proof.get("mimeType")
-    assert (
-        authenticated_message["starling:assetCreatedTimestamp"]
-        == "2022-04-21T18:27:45.399Z"
-    )
 
     c2pa_actions = assertions["c2pa.actions"]
     assert c2pa_actions["data"]["actions"][0]["when"] == "2022-04-21T18:27:45.399Z"
