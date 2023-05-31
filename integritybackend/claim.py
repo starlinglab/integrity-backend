@@ -51,6 +51,7 @@ class Claim:
 
         claim = copy.deepcopy(CREATE_CLAIM_TEMPLATE)
         claim["recorder"] = "Starling Capture by Numbers Protocol"
+        claim["claim_generator"] = "Starling Integrity"
 
         assertion_templates = self.assertions_by_label(claim)
         assertions = []
@@ -124,7 +125,7 @@ class Claim:
         """
         claim = copy.deepcopy(CREATE_CLAIM_TEMPLATE)
         claim["recorder"] = "ProofMode by Guardian Project and WITNESS"
-
+        claim["claim_generator"] = "Starling Integrity"
         assertion_templates = self.assertions_by_label(claim)
         assertions = []
 

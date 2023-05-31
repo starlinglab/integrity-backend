@@ -669,9 +669,11 @@ class Actions:
             action_params["c2pa_algo"],
         )
         _c2patool.run_claim_dump(tmp_asset_file, tmp_claim_file)
-
+        
         # Copy the C2PA-injected asset to both the internal and shared asset directories.
         asset_file_hash = _file_util.digest_sha256(tmp_asset_file)
+
+        os.makedirs(os.path.join(asset_helper.path_for_action(collection_id, action_name),"assets"),exist_ok=True)
         internal_asset_file = os.path.join(
             asset_helper.path_for_action(collection_id, action_name),
             "assets",
