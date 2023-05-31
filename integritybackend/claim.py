@@ -75,17 +75,18 @@ class Claim:
             assertions.append(photo_meta)
 
         if geo is not None:
-            lat, lon, alt = self._get_meta_content_lat_lon_alt(geo)
-            exif_data = self._make_c2pa_exif_gps_data(
-                lat,
-                lon,
-                alt,
-                datetime.fromisoformat(geo["timestamp"].replace("Z", "+00:00")),
-            )
-            if exif_data is not None:
-                exif = assertion_templates["stds.exif"]
-                exif["data"] = exif_data
-                assertions.append(exif)
+            if geo["timestamp"] is not None:
+                lat, lon, alt = self._get_meta_content_lat_lon_alt(geo)
+                exif_data = self._make_c2pa_exif_gps_data(
+                    lat,
+                    lon,
+                    alt,
+                    datetime.fromisoformat(geo["timestamp"].replace("Z", "+00:00")),
+                )
+                if exif_data is not None:
+                    exif = assertion_templates["stds.exif"]
+                    exif["data"] = exif_data
+                    assertions.append(exif)
 
         proof = self._get_starling_capture_proof(meta_content)
         # Convert from Unix to RFC
