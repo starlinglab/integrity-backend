@@ -442,11 +442,6 @@ class Claim:
                     "starling:signature": signature.get("signature"),
                     "starling:authenticatedMessage": signature.get("proofHash"),
                     "starling:authenticatedMessageDescription": "Internal identifier of the authenticated bundle",
-                    "starling:authenticatedMessagePublic": {
-                        "starling:assetHash": proof.get("hash"),
-                        "starling:assetMimeType": proof.get("mimeType"),
-                        "starling:assetCreatedTimestamp": timestamp,
-                    },
                 }
             )
         return {
@@ -472,9 +467,6 @@ class Claim:
                 "starling:signature": pgp_sig,
                 "starling:authenticatedMessage": sha256hash,
                 "starling:authenticatedMessageDescription": f"File Hash SHA256 of {filename} in ProofMode bundle",
-                "starling:authenticatedMessagePublic": {
-                    "starling:assetHash": sha256hash,
-                },
             }
         )
         return {

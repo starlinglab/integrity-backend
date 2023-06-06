@@ -86,12 +86,7 @@
                         "starling:publicKey": "{{signature_public_key}}",
                         "starling:signature": "{{signature_signature}}",
                         "starling:authenticatedMessage": "{{signature_authenticated_message}}",
-                        "starling:authenticatedMessageDescription": "{{signature_authenticated_message_description}}",
-                        "starling:authenticatedMessagePublic": {
-                            "starling:assetHash": "{{authenticated_asset_hash}}",
-                            "starling:assetMimeType": "{{authenticated_asset_mime_type}}",
-                            "starling:assetCreatedTimestamp": "{{authenticated_asset_created_timestamp}}"
-                        }
+                        "starling:authenticatedMessageDescription": "{{signature_authenticated_message_description}}"
                     }
                 ]
             }
