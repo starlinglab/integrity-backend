@@ -402,6 +402,10 @@ class Actions:
             Exception if errors are encountered during processing
         """
         try:
+            #Acceptable extensions for proofmode
+            # TODO: use starling capture method instead
+            C2PA_EXT=[".jpg",".jpeg","m4a"]
+
             # TODO: change function to take just org_id as param
             action_name = "c2pa-proofmode"
             org_id = org_config["id"]
@@ -458,15 +462,13 @@ class Actions:
                 _file_util.create_dir(tmp_img_dir)
                 with ZipFile(zipf.open(content_zip)) as content_zip_f:
                     for file_path in content_zip_f.namelist():
-                        if os.path.splitext(file_path)[1].lower() in [".jpg", ".jpeg"]:
+                        if os.path.splitext(file_path)[1].lower() in C2PA_EXT:
                             content_zip_f.extract(file_path, tmp_img_dir)
 
             # Get list of JPEGs
             image_filenames = []
             for filename in os.listdir(tmp_img_dir):
-                if filename.lower().endswith(".jpg") or filename.lower().endswith(
-                    ".jpeg"
-                ):
+                if os.path.splitext(filename)[1].lower() in C2PA_EXT:
                     image_filenames.append(filename)
 
             # C2PA-inject all JPEGs
@@ -484,6 +486,7 @@ class Actions:
 
             # Process C2PA-injected JPEGs
             for filename in image_filenames:
+                # TODO: Why is this needed. fix for m4a as well
                 # Rename each image file to .jpg
                 path = os.path.join(tmp_img_dir, filename)
                 image_path = FileUtil.change_filename_extension(path, ".jpg")
@@ -641,6 +644,7 @@ class Actions:
         content_filename, content_sha = self._verify_zip(
             zip_path, collection["asset_extensions"]
         )
+        content_ext=os.path.splitext(content_filename)[1].lower()
 
         # Extract content file
         tmp_dir = asset_helper.path_for_action_tmp(collection_id, action_name)
@@ -654,7 +658,7 @@ class Actions:
         meta_content = zip_util.json_load(zip_path, meta_content_filename)
 
         # Create temporary files to work with.
-        tmp_asset_file = asset_helper.get_tmp_file_fullpath(".jpg")
+        tmp_asset_file = asset_helper.get_tmp_file_fullpath(f".{content_ext}")
         tmp_claim_file = asset_helper.get_tmp_file_fullpath(".json")
 
         # Inject create claim and read back from file.
@@ -677,7 +681,7 @@ class Actions:
         internal_asset_file = os.path.join(
             asset_helper.path_for_action(collection_id, action_name),
             "assets",
-            asset_file_hash + ".jpg",
+            asset_file_hash + f".{content_ext}",
         )
         shutil.move(tmp_asset_file, internal_asset_file)
         target_path=os.path.join(
