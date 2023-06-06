@@ -5,23 +5,17 @@
 - [Architecture](#architecture)
   - [Actions](#actions)
     - [`archive`](#archive)
+    - [`c2pa-proofmode`](#c2pa-proofmode)
+    - [`copy-proofmode`](#copy-proofmode)
+    - [`c2pa-starling-capture`](#c2pa-starling-capture)
 - [Development](#development)
   - [Setup](#setup)
   - [Code style and formatting](#code-style-and-formatting)
-  - [Dockerized Debian environment](#dockerized-debian-environment)
-  - [Specifying custom assertions](#specifying-custom-assertions)
 - [License](#license)
 
 ## Overview
 
 The Starling Integrity Backend ingests data bundles from the filesystem and operates on them for authenticated archival.
-
-It depends on several open source binaries:
-
-Other required binaries:
-- `c2patool` from [contentauth/c2patool](https://github.com/contentauth/c2patool)
-- `ots` from [opentimestamps/opentimestamps-client](https://github.com/opentimestamps/opentimestamps-client)
-- `ipfs` from [ipfs/kubo](https://github.com/ipfs/kubo/)
 
 ## Configuration
 
@@ -29,12 +23,25 @@ The server is configured via environment variables and a JSON file with per-orga
 
 See [config.example.json](./integritybackend/config.example.json) for an example of a valid organization configuration.
 
-See [config.py](./integritybackend/config.py) for the available variables and some notes about each. In development, you can use a local `.env` file setting environment variables. See `.env.example` for an example.
+Environment variables are set in a `.env` file. See `.env.example` for an example. Available variables are documented below.
 
-Most importantly, you will need to provide:
-* `C2PATOOL_PATH`: A path to a v0.3.0 `c2patool` binary. The server should have permissions to execute it, and it should be correctly configured with its keys. You can download one from [here](https://github.com/contentauth/c2patool/releases/tag/v0.3.0) and the repo is [here](https://github.com/contentauth/c2patool).
-* `IMAGES_DIR`: A path to a directory to store images. The server will need write access to this directory. This will be the persistent storage for the received images with their attestations.
-* `ISCN_SERVER`: The instance of the ISCN server to send registration requests to. Typically, this will be `http://localhost:3000` if you are using the sample server at https://github.com/likecoin/iscn-js/tree/master/sample/server in its default configuration.
+| Env Var                    | Description                                                                                                                                      | Required                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
+| `C2PA_CERT_STORE`          | Path to a dir of cert and key files for C2PA                                                                                                     | For C2PA                 |
+| `C2PATOOL_PATH`            | Path to executable `c2patool` [binary](https://github.com/contentauth/c2patool/releases).                                                        | For C2PA                 |
+| `INTERNAL_ASSET_STORE`     | Local dir for storing internal assets, must exist                                                                                                | Yes                      |
+| `IPFS_CLIENT_PATH`         | Path to a IPFS/Kubo CLI [binary](https://github.com/ipfs/kubo)                                                                                   | Yes                      |
+| `ISCN_SERVER`              | ISCN server for registration. The [sample server](https://github.com/likecoin/iscn-js/tree/master/sample/server) runs at `http://localhost:3000` | For ISCN                 |
+| `KEY_STORE`                | Path to a dir where AES keys will be stored                                                                                                      | Yes                      |
+| `NUMBERS_API_KEY`          | API key for Numbers API                                                                                                                          | For Numbers              |
+| `NUMBERS_NUMBERS_SERVER`   | API server for registering on Numbers blockchain                                                                                                 | For Numbers blockchain   |
+| `NUMBERS_AVALANCHE_SERVER` | API server for registering on Avalanche blockchain                                                                                               | For Avalanche blockchain |
+| `NUMBERS_NEAR_SERVER`      | API server for registering on Near blockchain                                                                                                    | For Near blockchain      |
+| `ORG_CONFIG_JSON`          | Path to organization config, see above                                                                                                           | Yes                      |
+| `OTS_CLIENT_PATH`          | Path to [opentimestamps-client](https://github.com/opentimestamps/opentimestamps-client)                                                         | For OpenTimestamps       |
+| `SHARED_FILE_SYSTEM`       | The output of actions are stored here to be shared with third-parties, must exist                                                                | Yes                      |
+| `WEB3_STORAGE_API_TOKEN`   | API token for [web3.storage](https://web3.storage/)                                                                                              | Not currently used       |
+
 
 ## Architecture
 
@@ -59,13 +66,13 @@ After the `inputBundle` is accepted into the data processing queue, actions assi
 
 ### Actions
 
-See [actions.py](https://github.com/starlinglab/integrity-backend/blob/main/integritybackend/actions.py).
+There are four actions: `archive`, `c2pa-proofmode`, `copy-proofmode`, and `c2pa-starling-capture`.
 
 #### `archive`
 
-The `archive` action signs and registers the `inputBundle` onto several L1s according to the following procedure. This adds authenticity data in the archived bundles, and leaves cryptographic hashes on public L1s to establish proof-of-existence records.
+The `archive` action signs and registers the content in a preprocessor ZIP onto several L1s according to the following procedure. This adds authenticity data in the archived bundles, and leaves cryptographic hashes on public L1s to establish proof-of-existence records.
 
-Each file in the `inputBundle` is signed using [webrecorder/authsign](https://github.com/webrecorder/authsign), then registered on the Bitcoin network with [OpenTimestamps](https://opentimestamps.org). The proof files generated by these two steps are appended to the cloned `inputBundle`:
+The content file and metadata are signed using [webrecorder/authsign](https://github.com/webrecorder/authsign), then registered on the Bitcoin network with [OpenTimestamps](https://opentimestamps.org). The proof files generated by these two steps are appended to ZIP:
 
 ```
 sha256(archive).zip
@@ -99,7 +106,7 @@ The pipeline can also be configured to create Custody Tokens (e.g. [snowtrace](h
 
 When this process completes, a receipt file is generated containing all cryptographic hashes and registration records of the archive:
 
-```
+```json
 {
   "inputBundle": {
     "sha256": "e36f4378c07e922af82f96d69fa233298a2a8c8ad97e92893a01cbc9255308e3"
@@ -125,14 +132,40 @@ When this process completes, a receipt file is generated containing all cryptogr
       "iscnId": "iscn://likecoin-chain/POgpqXnFfjueFfPYGDu-baAYeYrlWt1ff90W4qb0y48/1"
     },
     "numbersProtocol": {
-      "avalancheTxHash": "0xee8b163fa0783866526028290796a30fe4803ebe21bb4815719365ce594eba96",
-      "assetCid": "bafybeif3ctgbmiso4oykvwj6jebyrkjxqr26bfrkesla5yr2ypgx47wgle",
-      "assetTreeCid": "bafkreidxsbidpzsxmmzkarp6hcaiisxbzolvyynmzwjgndkzqbrqxrr3zu",
-      "numbersTxHash": "0xaf192d98efdea2e7acc89f8a84a542b6df17bd17d750398d56f7f40b7f005612"
+      "numbers": {
+        "txHash": "0x2a498322c5002c77f01474ebf35bf4fc1d9174b0630df7ad5e88bc0fdd6aa855",
+        "assetCid": "bafybeie7gjinvhjl54dxpbhgq3re4ux4aqhwkpanndd2ubo5qii4no4etq",
+        "assetTreeCid": "bafkreiaasx537maldrfzmjfsiphzsk5xng23typktp6pi3b6aokzhyydye",
+        "order_id": "95ad56fa-54fb-4f93-9c05-7ff9fb6de3f6"
+      },
+      "avalanche": {
+        "txHash": "0xf6bdcd38e28eab1cd64674701577b7e0c9df54810ca8d37d97ab3b0b0064ac99",
+        "assetCid": "bafybeie7gjinvhjl54dxpbhgq3re4ux4aqhwkpanndd2ubo5qii4no4etq",
+        "assetTreeCid": "bafkreiaasx537maldrfzmjfsiphzsk5xng23typktp6pi3b6aokzhyydye",
+        "order_id": "16f88060-db98-4ebf-9b65-55df3e8511b5"
+      },
+      "near": {
+        "txHash": "0x0e45af7f9eefdec9fd5de75434ead2371f11e6123e4b92edcc18ccd2acb7c995",
+        "assetCid": "bafybeie7gjinvhjl54dxpbhgq3re4ux4aqhwkpanndd2ubo5qii4no4etq",
+        "assetTreeCid": "bafkreiaasx537maldrfzmjfsiphzsk5xng23typktp6pi3b6aokzhyydye",
+        "order_id": "9b5a4684-52e9-416b-8e85-027be22f6eff"
+      }
     }
   }
 }
 ```
+
+#### `c2pa-proofmode`
+
+This action processes a preprocessor ZIP, which itself contains a ZIP generated by the Proofmode app. The original JPEGs are extracted, and injected with C2PA.
+
+#### `copy-proofmode`
+
+This action processes a preprocessor ZIP, which itself contains a ZIP generated by the Proofmode app. The original JPEGs are extracted, and copied to the action output folder unchanged.
+
+#### `c2pa-starling-capture`
+
+This action processes a preprocessor ZIP, which contains a JPEG and metadata from the Starling Capture app. The JPEG is injected with C2PA.
 
 ## Development
 
@@ -183,23 +216,6 @@ To auto-format just one file:
 ```
 pipenv run black path/to/your/file.py
 ```
-
-### Dockerized Debian environment
-
-If you need to run the `claim-tool` binary in a Debian environment and don't have one on your machine, you can use the provided `docker-compose.yml` (and `Dockerfile`).
-
-To get a shell inside the container:
-```
-docker-compose run --service-ports api bash
-```
-
-Once inside the container, run the usual commands (`pipenv install`, etc). You will also need a `claim_tool` binary inside the container (you can use `docker cp` to copy it into the container), as well as a directory for image storage.
-
-### Specifying custom assertions
-
-If you want to create a claim with manually created assertions, specify a dictionary where the key is the SHA-256 of the parent file, and the value is a list of custom assertions, then specify the path to your dictionary file in the `CUSTOM_ASSERTIONS_DICTIONARY` environment variable in your local `.env` file.
-
-See [custom-assertions.example.json](custom-assertions.example.json) for an example.
 
 ## License
 

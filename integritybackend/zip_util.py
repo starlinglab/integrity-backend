@@ -1,6 +1,8 @@
 import os.path
 import shutil
 import zipfile
+from hashlib import sha256
+import json
 
 
 def make(filepaths: list[str], out_file: str, flat: bool = False):
@@ -76,3 +78,44 @@ def listing(zip_path):
 
     with zipfile.ZipFile(zip_path, "r") as zipf:
         return zipf.namelist()
+
+
+def hash_file(zip_path: str, file_path: str) -> str:
+    """Get the SHA-256 hash of a file in the ZIP.
+
+    The file is not extracted to the filesystem.
+
+     Args:
+        zip_path: path to the ZIP file
+        file_path: the path of the file in the ZIP archive
+
+    Raises:
+        any file i/o exceptions
+    """
+
+    hasher = sha256()
+
+    with zipfile.ZipFile(zip_path, "r") as zipf:
+        with zipf.open(file_path) as zippedf:
+            for byte_block in iter(lambda: zippedf.read(32 * 1024), b""):
+                hasher.update(byte_block)
+            return hasher.hexdigest()
+
+
+def json_load(zip_path: str, file_path: str):
+    """Get the parsed JSON object stored in a file.
+
+    The file is not extracted to the filesystem.
+
+     Args:
+        zip_path: path to the ZIP file
+        file_path: the path of the file in the ZIP archive
+
+    Raises:
+        any file i/o exceptions
+        any JSON parsing exceptions
+    """
+
+    with zipfile.ZipFile(zip_path, "r") as zipf:
+        with zipf.open(file_path) as zippedf:
+            return json.load(zippedf)

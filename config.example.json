@@ -5,10 +5,7 @@
       "collections": [
         {
           "id": "example-collection-hypha-capture",
-          "asset_extensions": [
-            "jpg",
-            "jpeg"
-          ],
+          "asset_extensions": ["jpg", "jpeg"],
           "actions": [
             {
               "name": "archive",
@@ -30,6 +27,11 @@
                   },
                   "iscn": {
                     "active": true
+                  },
+                  "numbersprotocol": {
+                    "active": true,
+                    "testnet": true,
+                    "chains": ["numbers", "avalanche", "near"]
                   }
                 }
               }

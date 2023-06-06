@@ -8,41 +8,22 @@ import os
 # Loads env variables from local .env, if it is present.
 dotenv.load_dotenv()
 
-# Secret for encoding/decoding JWT tokens.
-JWT_SECRET = os.environ.get("JWT_SECRET")
+# See README for documentation on these variables
+# Sorted alphabetically
 
-# Full path to c2patool binary. Must be already configured.
-C2PATOOL_PATH = os.environ.get("C2PATOOL_PATH")
-# C2PA cert and key files
 C2PA_CERT_STORE = os.environ.get("C2PA_CERT_STORE")
-
-
-# Full path to IPFS client binary. Must be already configured.
-IPFS_CLIENT_PATH = os.environ.get("IPFS_CLIENT_PATH")
-
-# Local directory for storing internal assets. Must exist and be readable by the server.
+C2PATOOL_PATH = os.environ.get("C2PATOOL_PATH")
 INTERNAL_ASSET_STORE = os.environ.get("INTERNAL_ASSET_STORE")
-
-# Local directory for synchronizing with a remote file system. Must exist and be readable by the server.
-SHARED_FILE_SYSTEM = os.environ.get("SHARED_FILE_SYSTEM")
-
-# Local key store for encryption keys
-KEY_STORE = os.environ.get("KEY_STORE")
-
-# Local file containing a dictionary with custom assertions mapped to asset name.
-CUSTOM_ASSERTIONS_DICTIONARY = os.environ.get("CUSTOM_ASSERTIONS_DICTIONARY")
-
-# API token for the web3.storage service
-WEB3_STORAGE_API_TOKEN = os.environ.get("WEB3_STORAGE_API_TOKEN")
-
-# Full path to Opentimestamps client. Must be already configured.
-OTS_CLIENT_PATH = os.environ.get("OTS_CLIENT_PATH")
-
-# Address of ISCN registration HTTP server to use
+IPFS_CLIENT_PATH = os.environ.get("IPFS_CLIENT_PATH")
 ISCN_SERVER = os.environ.get("ISCN_SERVER")
-
+KEY_STORE = os.environ.get("KEY_STORE")
 NUMBERS_API_KEY = os.environ.get("NUMBERS_API_KEY")
-NUMBERS_API_URL = os.environ.get("NUMBERS_API_URL")
+NUMBERS_NUMBERS_SERVER = os.environ.get("NUMBERS_NUMBERS_SERVER")
+NUMBERS_AVALANCHE_SERVER = os.environ.get("NUMBERS_AVALANCHE_SERVER")
+NUMBERS_NEAR_SERVER = os.environ.get("NUMBERS_NEAR_SERVER")
+OTS_CLIENT_PATH = os.environ.get("OTS_CLIENT_PATH")
+SHARED_FILE_SYSTEM = os.environ.get("SHARED_FILE_SYSTEM")
+WEB3_STORAGE_API_TOKEN = os.environ.get("WEB3_STORAGE_API_TOKEN")
 
 
 class OrganizationConfig:
